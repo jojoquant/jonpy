@@ -1,0 +1,33 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+pyqt5 = "*"
+pyqtgraph = "*"
+dataclasses = "*"
+qdarkstyle = "*"
+requests = "*"
+websocket-client = "*"
+peewee = "*"
+pymysql = "*"
+psycopg2 = "*"
+mongoengine = "*"
+numpy = "*"
+matplotlib = "*"
+seaborn = "*"
+futu-api = "*"
+tigeropen = "*"
+rqdatac = "*"
+ta-lib = "*"
+ibapi = "*"
+deap = "*"
+pyzmq = "*"
+sortedcontainers = "*"
+wmi = "*"
+
+[requires]
+python_version = "3.7"
