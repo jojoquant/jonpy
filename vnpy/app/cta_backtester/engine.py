@@ -35,7 +35,7 @@ class BacktesterEngine(BaseEngine):
         """"""
         super().__init__(main_engine, event_engine, APP_NAME)
 
-        self.classes = {}
+        self.classes = {}  # strategy classes
         self.backtesting_engine = None
         self.thread = None
 
@@ -168,8 +168,8 @@ class BacktesterEngine(BaseEngine):
             setting
         )
 
-        engine.load_data()
-        engine.run_backtesting()
+        engine.load_data()  # fangyang, 从数据库中查询结果， 放入engine这个类实例的self.history_data中
+        engine.run_backtesting(backtester_engine=self)
         self.result_df = engine.calculate_result()
         self.result_statistics = engine.calculate_statistics(output=False)
 

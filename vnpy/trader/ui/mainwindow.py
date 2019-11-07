@@ -108,6 +108,7 @@ class MainWindow(QtWidgets.QMainWindow):
         all_apps = self.main_engine.get_all_apps()
         for app in all_apps:
             ui_module = import_module(app.app_module + ".ui")
+            # fangyang 获得CtaManager的值，是class vnpy.app.cta_strategy.ui.widget.CtaManager
             widget_class = getattr(ui_module, app.widget_name)
 
             func = partial(self.open_widget, widget_class, app.app_name)
@@ -191,26 +192,26 @@ class MainWindow(QtWidgets.QMainWindow):
         self.addToolBar(QtCore.Qt.LeftToolBarArea, self.toolbar)
 
     def add_menu_action(
-        self,
-        menu: QtWidgets.QMenu,
-        action_name: str,
-        icon_name: str,
-        func: Callable,
+            self,
+            menu: QtWidgets.QMenu,
+            action_name: str,
+            icon_name: str,
+            func: Callable,
     ):
         """"""
         icon = QtGui.QIcon(get_icon_path(__file__, icon_name))
 
         action = QtWidgets.QAction(action_name, self)
-        action.triggered.connect(func)
+        action.triggered.connect(func)  # fangyang 在激活的时候，实例化app.widget class
         action.setIcon(icon)
 
         menu.addAction(action)
 
     def add_toolbar_action(
-        self,
-        action_name: str,
-        icon_name: str,
-        func: Callable,
+            self,
+            action_name: str,
+            icon_name: str,
+            func: Callable,
     ):
         """"""
         icon = QtGui.QIcon(get_icon_path(__file__, icon_name))
@@ -222,7 +223,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.toolbar.addAction(action)
 
     def create_dock(
-        self, widget_class: QtWidgets.QWidget, name: str, area: int
+            self, widget_class: QtWidgets.QWidget, name: str, area: int
     ):
         """
         Initialize a dock widget.

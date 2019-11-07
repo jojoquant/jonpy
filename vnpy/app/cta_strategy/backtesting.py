@@ -177,7 +177,7 @@ class BacktestingEngine:
         pricetick: float,
         capital: int = 0,
         end: datetime = None,
-        mode: BacktestingMode = BacktestingMode.BAR,
+        mode: BacktestingMode = BacktestingMode.BAR,  # fangyang 这里设置默认回测为BAR模式， 决定load_data()的时候的数据模式
         inverse: bool = False
     ):
         """"""
@@ -245,7 +245,7 @@ class BacktestingEngine:
                     end
                 )
 
-            self.history_data.extend(data)
+            self.history_data.extend(data)  # fangyang 数据库中查询出来的结果放入self.history_data中
 
             progress += progress_delta / total_delta
             progress = min(progress, 1)
@@ -257,7 +257,7 @@ class BacktestingEngine:
 
         self.output(f"历史数据加载完成，数据量：{len(self.history_data)}")
 
-    def run_backtesting(self):
+    def run_backtesting(self, backtester_engine):
         """"""
         if self.mode == BacktestingMode.BAR:
             func = self.new_bar
@@ -277,6 +277,9 @@ class BacktestingEngine:
                     break
 
             self.datetime = data.datetime
+            # fangyang self.callback 是 strategyTemplate里面的 on_bar
+            # self.callback 是在下面的 load_bar(self)函数中赋值的，去策略模板中掉的load_bar/tick
+            # 这里将数据推送进我们的策略
             self.callback(data)
 
         self.strategy.inited = True
@@ -287,8 +290,12 @@ class BacktestingEngine:
         self.output("开始回放历史数据")
 
         # Use the rest of history data for running backtesting
-        for data in self.history_data[ix:]:
+        history_data_length = len(self.history_data[ix:])
+        for index, data in enumerate(self.history_data[ix:]):
             func(data)
+            progress = index / history_data_length
+            if (progress*100) % 10 == 0:
+                backtester_engine.write_log(f"Progress : {progress:.2%}")
 
         self.output("历史数据回放结束")
 
@@ -894,7 +901,10 @@ class BacktestingEngine:
     def load_bar(
         self, vt_symbol: str, days: int, interval: Interval, callback: Callable
     ):
-        """"""
+        """
+        ctaTemplate 里面在初始化策略的时候, 会调用此处的函数，
+        如果策略模板里面没有指定callback, 则默认为on_bar
+        """
         self.days = days
         self.callback = callback
 
