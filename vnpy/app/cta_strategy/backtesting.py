@@ -25,6 +25,7 @@ from .base import (
     STOPORDER_PREFIX,
     StopOrder,
     StopOrderStatus,
+    INTERVAL_DELTA_MAP
 )
 from .template import CtaTemplate
 
@@ -221,6 +222,7 @@ class BacktestingEngine:
         # Load 30 days of data each time and allow for progress update
         progress_delta = timedelta(days=30)
         total_delta = self.end - self.start
+        interval_delta = INTERVAL_DELTA_MAP[self.interval]
 
         start = self.start
         end = self.start + progress_delta
@@ -252,8 +254,8 @@ class BacktestingEngine:
             progress_bar = "#" * int(progress * 10)
             self.output(f"加载进度：{progress_bar} [{progress:.0%}]")
 
-            start = end
-            end += progress_delta
+            start = end + interval_delta
+            end += (progress_delta + interval_delta)
 
         self.output(f"历史数据加载完成，数据量：{len(self.history_data)}")
 
@@ -354,6 +356,7 @@ class BacktestingEngine:
             end_balance = 0
             max_drawdown = 0
             max_ddpercent = 0
+            max_drawdown_duration = 0
             total_net_pnl = 0
             daily_net_pnl = 0
             total_commission = 0
@@ -879,7 +882,7 @@ class BacktestingEngine:
             self.trades[trade.vt_tradeid] = trade
 
             # Update stop order.
-            stop_order.vt_orderid = order.vt_orderid
+            stop_order.vt_orderids.append(order.vt_orderid)
             stop_order.status = StopOrderStatus.TRIGGERED
 
             self.active_stop_orders.pop(stop_order.stop_orderid)
