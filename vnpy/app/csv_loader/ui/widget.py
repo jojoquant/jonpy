@@ -53,6 +53,7 @@ class CsvLoaderWidget(QtWidgets.QWidget):
         self.low_edit = QtWidgets.QLineEdit("Low")
         self.close_edit = QtWidgets.QLineEdit("Close")
         self.volume_edit = QtWidgets.QLineEdit("Volume")
+        self.open_interest_edit = QtWidgets.QLineEdit("OpenInterest")
 
         self.format_edit = QtWidgets.QLineEdit("%Y-%m-%d %H:%M:%S")
 
@@ -80,6 +81,7 @@ class CsvLoaderWidget(QtWidgets.QWidget):
         form.addRow("最低价", self.low_edit)
         form.addRow("收盘价", self.close_edit)
         form.addRow("成交量", self.volume_edit)
+        form.addRow("持仓量", self.open_interest_edit)
         form.addRow(QtWidgets.QLabel())
         form.addRow(format_label)
         form.addRow("时间格式", self.format_edit)
@@ -108,6 +110,7 @@ class CsvLoaderWidget(QtWidgets.QWidget):
         high_head = self.high_edit.text()
         close_head = self.close_edit.text()
         volume_head = self.volume_edit.text()
+        open_interest_head = self.open_interest_edit.text()
         datetime_format = self.format_edit.text()
 
         start, end, count = self.engine.load(
@@ -121,6 +124,7 @@ class CsvLoaderWidget(QtWidgets.QWidget):
             low_head,
             close_head,
             volume_head,
+            open_interest_head,
             datetime_format
         )
 

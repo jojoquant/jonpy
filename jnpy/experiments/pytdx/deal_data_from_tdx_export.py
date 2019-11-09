@@ -27,7 +27,8 @@ if __name__ == '__main__':
             '最高': 'High',
             '最低': 'Low',
             '收盘': 'Close',
-            '成交量': 'Volume'
+            '成交量': 'Volume',
+            '持仓量': 'OpenInterest'
         }
     )
     df.to_csv('RB99.csv', index=False)

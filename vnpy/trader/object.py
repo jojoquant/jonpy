@@ -88,7 +88,7 @@ class BarData(BaseData):
 
     interval: Interval = None
     volume: float = 0
-    open_interest: float = 0
+    open_interest: float = 0  # 持仓量
     open_price: float = 0
     high_price: float = 0
     low_price: float = 0
