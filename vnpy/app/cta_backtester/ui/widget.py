@@ -90,6 +90,10 @@ class BacktesterManager(QtWidgets.QWidget):
         self.inverse_combo = QtWidgets.QComboBox()
         self.inverse_combo.addItems(["正向", "反向"])
 
+        # fangyang add
+        self.debug_combo = QtWidgets.QComboBox()
+        self.debug_combo.addItems(["Thread 运行回测", "Debug 运行回测"])
+
         backtesting_button = QtWidgets.QPushButton("开始回测")
         backtesting_button.clicked.connect(self.start_backtesting)
 
@@ -151,6 +155,8 @@ class BacktesterManager(QtWidgets.QWidget):
         form.addRow("价格跳动", self.pricetick_line)
         form.addRow("回测资金", self.capital_line)
         form.addRow("合约模式", self.inverse_combo)
+        form.addRow("回测模式", self.debug_combo)
+
 
         result_grid = QtWidgets.QGridLayout()
         result_grid.addWidget(self.trade_button, 0, 0)
@@ -218,6 +224,8 @@ class BacktesterManager(QtWidgets.QWidget):
 
     def register_event(self):
         """"""
+        # if self.debug_combo.currentText() == "Debug 运行回测":
+        #     self.signal_log.connect(self.write_log)
         self.signal_log.connect(self.process_log_event)
         self.signal_backtesting_finished.connect(
             self.process_backtesting_finished_event)
@@ -277,6 +285,13 @@ class BacktesterManager(QtWidgets.QWidget):
         else:
             inverse = True
 
+        # fangyang add
+        if self.debug_combo.currentText() == "Thread 运行回测":  # "Debug 运行回测"
+            backtesting_debug_mode = False
+        else:
+            backtesting_debug_mode = True
+        #######################
+
         old_setting = self.settings[class_name]
         dialog = BacktestingSettingEditor(class_name, old_setting)
         i = dialog.exec()
@@ -298,6 +313,7 @@ class BacktesterManager(QtWidgets.QWidget):
             pricetick,
             capital,
             inverse,
+            backtesting_debug_mode,  # fangyang add
             new_setting
         )
 
