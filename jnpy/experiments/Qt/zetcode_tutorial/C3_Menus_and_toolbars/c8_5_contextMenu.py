@@ -20,6 +20,7 @@ class Example(QMainWindow):
         self.show()
 
     def contextMenuEvent(self, QContextMenuEvent):
+        '''右键单击鼠标出现该菜单'''
         cmenu = QMenu(self)
         newAct = cmenu.addAction("New")
         openAct = cmenu.addAction("Open")
