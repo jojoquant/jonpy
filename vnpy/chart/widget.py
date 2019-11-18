@@ -1,6 +1,8 @@
+from functools import partial
 from typing import List, Dict, Type
 
 import pyqtgraph as pg
+from PyQt5.QtWidgets import QMenu, QAction
 
 from vnpy.trader.ui import QtGui, QtWidgets, QtCore
 from vnpy.trader.object import BarData
@@ -12,7 +14,7 @@ from .base import (
 )
 from .axis import DatetimeAxis
 from .item import ChartItem
-
+from ..app.cta_backtester.ui.widget_jnpy import TechIndexSettingEditor
 
 pg.setConfigOptions(antialias=True)
 
@@ -34,8 +36,18 @@ class ChartWidget(pg.PlotWidget):
         self._first_plot: pg.PlotItem = None
         self._cursor: ChartCursor = None
 
-        self._right_ix: int = 0                     # Index of most right data
-        self._bar_count: int = self.MIN_BAR_COUNT   # Total bar visible in chart
+        self._right_ix: int = 0  # Index of most right data
+        self._bar_count: int = self.MIN_BAR_COUNT  # Total bar visible in chart
+
+        # 右键菜单栏 self.tech_dict
+        # key: plot_name, 用于区分在那个图区, 目前分为 candle 和 volume 上下两个图区
+        # value:{key: 技术指标名(str), value: QAction(checkable)}
+        self.tech_dict: dict = {}
+
+        # 右键菜单栏 self.tech_curve_dict
+        # key: plot_name, 用于区分在那个图区, 目前分为 candle 和 volume 上下两个图区
+        # value:{key: 技术指标名(str), value: TechIndexPlotCurveItem(pg.PlotCurveItem())}
+        self.tech_curve_dict: dict = {}
 
         self._init_ui()
 
@@ -59,11 +71,11 @@ class ChartWidget(pg.PlotWidget):
                 self, self._manager, self._plots, self._item_plot_map)
 
     def add_plot(
-        self,
-        plot_name: str,
-        minimum_height: int = 80,
-        maximum_height: int = None,
-        hide_x_axis: bool = False
+            self,
+            plot_name: str,
+            minimum_height: int = 80,
+            maximum_height: int = None,
+            hide_x_axis: bool = False
     ) -> None:
         """
         Add plot area.
@@ -111,10 +123,10 @@ class ChartWidget(pg.PlotWidget):
         self._layout.addItem(plot)
 
     def add_item(
-        self,
-        item_class: Type[ChartItem],
-        item_name: str,
-        plot_name: str
+            self,
+            item_class: Type[ChartItem],
+            item_name: str,
+            plot_name: str
     ):
         """
         Add chart item.
@@ -301,16 +313,80 @@ class ChartWidget(pg.PlotWidget):
         self._update_x_range()
         self._cursor.update_info()
 
+    def call_dialog(self, cursor_pos_plot_name, tech_name_str):
+
+        dialog = TechIndexSettingEditor('TechIndex_Dialog', {'a': 1, 'b': 'aa'})  # 这里传入技术指标的默认参数值
+        i = dialog.exec_()
+        if i != dialog.Accepted:
+            self.tech_dict[cursor_pos_plot_name][tech_name_str].setChecked(False)
+            return
+        new_setting = dialog.get_setting()  # 这里获得用户修改后的技术指标参数值
+
+        # TODO draw curve
+        df = self._manager.get_df()
+
+        plot = self.get_plot(cursor_pos_plot_name)  # 确定在哪张图上画技术指标, candle or volume
+        print(f"plot {tech_name_str} on {plot}")
+
+        if cursor_pos_plot_name not in self.tech_curve_dict:
+            self.tech_curve_dict[cursor_pos_plot_name] = {}
+
+        self.tech_curve_dict[cursor_pos_plot_name][tech_name_str] = pg.PlotCurveItem()
+        close_ma_series_10 = df['close_price'].rolling(window=10).mean().fillna(method='bfill')
+        x = close_ma_series_10.index.values
+        y = close_ma_series_10.to_numpy()
+        self.tech_curve_dict[cursor_pos_plot_name][tech_name_str].setData(x, y)
+        pen_10 = pg.mkPen(width=3, color='y')
+        self.tech_curve_dict[cursor_pos_plot_name][tech_name_str].setPen(pen_10)
+
+        plot.addItem(self.tech_curve_dict[cursor_pos_plot_name][tech_name_str])
+
+        self.tech_dict[cursor_pos_plot_name][tech_name_str].setChecked(True)
+
+    def is_call_dialog(self, cursor_pos_plot_name, tech_name_str):
+        origin_bool = self.tech_dict[cursor_pos_plot_name][tech_name_str].isChecked()
+        print(origin_bool)
+        if self.tech_dict[cursor_pos_plot_name][tech_name_str].isChecked():
+            self.call_dialog(cursor_pos_plot_name, tech_name_str)
+        else:
+            self.tech_dict[cursor_pos_plot_name][tech_name_str].setChecked(False)
+            plot = self.get_plot(cursor_pos_plot_name)
+            plot.removeItem(self.tech_curve_dict[cursor_pos_plot_name][tech_name_str])
+            print(f'抹除{tech_name_str}plot线')
+
+    def contextMenuEvent(self, QContextMenuEvent):
+        '''右键单击鼠标出现该菜单'''
+        cmenu = QMenu(self)
+        cursor_pos_plot_name = self._cursor.get_current_plot_name()
+        menu0 = QMenu('技术指标', self)
+        tech_name_str_list = ['MA', 'boll', 'kdj', 'cci']
+
+        # if not self.tech_dict:
+        if not self.tech_dict.get(cursor_pos_plot_name, {}):
+            self.tech_dict[cursor_pos_plot_name] = {}
+            for tech_name_str in tech_name_str_list:
+                qAction = QAction(tech_name_str, self, checkable=True)
+                qAction.setChecked(False)
+                self.tech_dict[cursor_pos_plot_name][tech_name_str] = qAction
+                qAction.triggered.connect(partial(self.is_call_dialog, cursor_pos_plot_name, tech_name_str))
+                menu0.addAction(self.tech_dict[cursor_pos_plot_name][tech_name_str])
+        else:
+            for tech_name_str, qAction in self.tech_dict[cursor_pos_plot_name].items():
+                menu0.addAction(qAction)
+
+        cmenu.addMenu(menu0)
+        cmenu.exec_(self.mapToGlobal(QContextMenuEvent.pos()))
+
 
 class ChartCursor(QtCore.QObject):
     """"""
 
     def __init__(
-        self,
-        widget: ChartWidget,
-        manager: BarManager,
-        plots: Dict[str, pg.GraphicsObject],
-        item_plot_map: Dict[ChartItem, pg.GraphicsObject]
+            self,
+            widget: ChartWidget,
+            manager: BarManager,
+            plots: Dict[str, pg.GraphicsObject],
+            item_plot_map: Dict[ChartItem, pg.GraphicsObject]
     ):
         """"""
         super().__init__()
@@ -518,6 +594,9 @@ class ChartCursor(QtCore.QObject):
 
         self._update_line()
         self._update_label()
+
+    def get_current_plot_name(self) -> str:
+        return self._plot_name
 
     def clear_all(self) -> None:
         """

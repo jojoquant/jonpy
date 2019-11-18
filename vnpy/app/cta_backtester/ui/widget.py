@@ -68,7 +68,8 @@ class BacktesterManager(QtWidgets.QWidget):
             self.interval_combo.addItem(inteval.value)
 
         end_dt = datetime.now()
-        start_dt = end_dt - timedelta(days=3 * 365)
+        # start_dt = end_dt - timedelta(days=3 * 365)  # debug 临时更改
+        start_dt = end_dt - timedelta(days=100)  # debug 临时更改
 
         self.start_date_edit = QtWidgets.QDateEdit(
             QtCore.QDate(

@@ -1,5 +1,7 @@
 from typing import Dict, List, Tuple
 from datetime import datetime
+import pandas as pd
+from dataclasses import fields
 
 from vnpy.trader.object import BarData
 
@@ -17,6 +19,9 @@ class BarManager:
 
         self._price_ranges: Dict[Tuple[int, int], Tuple[float, float]] = {}
         self._volume_ranges: Dict[Tuple[int, int], Tuple[float, float]] = {}
+
+        self.df: pd.DataFrame = None
+        self.gen_df_flag: bool = False
 
     def update_history(self, history: List[BarData]) -> None:
         """
@@ -158,6 +163,8 @@ class BarManager:
         """
         self._price_ranges.clear()
         self._volume_ranges.clear()
+        self.df = None
+        self.gen_df_flag = False
 
     def clear_all(self) -> None:
         """
@@ -168,3 +175,53 @@ class BarManager:
         self._index_datetime_map.clear()
 
         self._clear_cache()
+
+    def _gen_df(self):
+        '''
+        generate BarManager pd.DataFrame
+        '''
+
+        all_bars = self.get_all_bars()
+        self.gen_df_flag = True
+
+        if all_bars:
+            self.df = pd.DataFrame(all_bars, columns=['all_bars'])
+            for field in fields(all_bars[0]):
+                attr = field.name
+                self.df[attr] = self.df['all_bars'].apply(lambda x: getattr(x, attr))
+            self.df.drop(labels=['all_bars'], axis=1, inplace=True)
+        else:
+            self.df = None
+
+    def get_df(self):
+        '''
+        get generated BarManager pd.DataFrame
+        '''
+        #############################################################
+        # all_bars = self._manager.get_all_bars()
+        ########################################################################
+        ### ArrayManager 读入23000条数据, 耗时 0.9s
+        # start_time = time.time()
+        # am = ArrayManager(size=len(all_bars))
+        # for bar in all_bars:
+        #     am.update_bar(bar)
+        #     if not am.inited:
+        #         continue
+        # print(f'ArrayManager load all bars cost: {time.time()-start_time:.2f}s')
+        ########################################################################
+
+        ##################################################
+        ### Pandas 读入23000条数据并进行处理, 耗时 0.28s
+        # start_time = time.time()
+        # df = pd.DataFrame(all_bars, columns=['all_bars'])
+        # for field in fields(all_bars[0]):
+        #     attr = field.name
+        #     df[attr] = df['all_bars'].apply(lambda x: getattr(x, attr))
+        # df.drop(labels=['all_bars'], axis=1, inplace=True)
+        # print(f'Pandas load all bars cost: {time.time() - start_time:.2f}s')
+        ######################################################
+        if self.gen_df_flag:
+            return self.df
+        else:
+            self._gen_df()
+            return self.df
