@@ -13,7 +13,7 @@ from ibapi.contract import Contract, ContractDetails
 from ibapi.execution import Execution
 from ibapi.order import Order
 from ibapi.order_state import OrderState
-from ibapi.ticktype import TickType
+from ibapi.ticktype import TickType, TickTypeEnum
 from ibapi.wrapper import EWrapper
 from ibapi.errors import BAD_LENGTH
 from ibapi.common import BarData as IbBarData
@@ -320,7 +320,7 @@ class IbApi(EWrapper):
         """
         super(IbApi, self).tickString(reqId, tickType, value)
 
-        if tickType != "45":
+        if tickType != TickTypeEnum.LAST_TIMESTAMP:
             return
 
         tick = self.ticks[reqId]
@@ -509,9 +509,9 @@ class IbApi(EWrapper):
             gateway_name=self.gateway_name,
         )
 
-        self.gateway.on_contract(contract)
-
-        self.contracts[contract.vt_symbol] = contract
+        if contract.vt_symbol not in self.contracts:
+            self.gateway.on_contract(contract)
+            self.contracts[contract.vt_symbol] = contract
 
     def execDetails(
         self, reqId: int, contract: Contract, execution: Execution
