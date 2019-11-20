@@ -99,10 +99,10 @@ class ChartItem(pg.GraphicsObject):
             self.scene().update()
 
     def paint(
-        self,
-        painter: QtGui.QPainter,
-        opt: QtWidgets.QStyleOptionGraphicsItem,
-        w: QtWidgets.QWidget
+            self,
+            painter: QtGui.QPainter,
+            opt: QtWidgets.QStyleOptionGraphicsItem,
+            w: QtWidgets.QWidget
     ):
         """
         Reimplement the paint method of parent class.
@@ -247,6 +247,7 @@ class CandleItem(ChartItem):
                 str(bar.close_price)
             ]
             text = "\n".join(words)
+            # text = "".join([f'{key}\n{value}\n' for key, value in asdict(bar).items()])
         else:
             text = ""
 

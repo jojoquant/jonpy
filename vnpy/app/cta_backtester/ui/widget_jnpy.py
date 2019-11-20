@@ -14,7 +14,7 @@ class TechIndexSettingEditor(QtWidgets.QDialog):
     """
 
     def __init__(
-            self, class_name: str, parameters: dict
+            self, class_name: str, parameters: dict, combox_list: list
     ):
         """"""
         super(TechIndexSettingEditor, self).__init__()
@@ -23,8 +23,8 @@ class TechIndexSettingEditor(QtWidgets.QDialog):
         self.parameters = parameters
         self.edits = {}
         self.column_name_combo_dict = {
-            '数据源1': ['close', 'open', 'volume', 1],
-            '数据源2': ['high', 'low', 'volume']
+            '数据源': combox_list,
+            # '数据源2': ['high', 'low', 'volume']
         }
 
         self.init_ui()
@@ -88,9 +88,11 @@ class TechIndexSettingEditor(QtWidgets.QDialog):
 
         return setting
 
+
 class TechIndexPlotCurveItem(object):
     def __init__(self):
         pass
+
 
 if __name__ == '__main__':
     pass

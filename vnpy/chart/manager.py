@@ -3,6 +3,7 @@ from datetime import datetime
 import pandas as pd
 from dataclasses import fields
 
+from pandas.api.types import is_object_dtype, is_datetime64_any_dtype
 from vnpy.trader.object import BarData
 
 from .base import to_int
@@ -86,6 +87,13 @@ class BarManager:
         dt = self._index_datetime_map.get(ix, None)
         if not dt:
             return None
+
+        # bar = self._bars[dt]
+        # if self.gen_df_flag:
+        #     dd = self.df.iloc[ix]
+        #     aaa = set(dd.index) - {i.name for i in fields(bar)}
+        #     [setattr(bar, i, dd[i]) for i in aaa]
+        # return bar
 
         return self._bars[dt]
 
@@ -225,3 +233,10 @@ class BarManager:
         else:
             self._gen_df()
             return self.df
+
+    def get_df_num_type_columns_list(self):
+        return [col for col in self.df.columns if
+                not (
+                        is_object_dtype(self.df[col].dtype)
+                        or is_datetime64_any_dtype(self.df[col].dtype)
+                )] if self.gen_df_flag else self.df

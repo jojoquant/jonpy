@@ -314,25 +314,31 @@ class ChartWidget(pg.PlotWidget):
         self._cursor.update_info()
 
     def call_dialog(self, cursor_pos_plot_name, tech_name_str):
+        # TODO draw curve
+        df = self._manager.get_df()
+        df_columns_list = self._manager.get_df_num_type_columns_list()
+        # TODO 追加其他默认技术指标参数
 
-        dialog = TechIndexSettingEditor('TechIndex_Dialog', {'a': 1, 'b': 'aa'})  # 这里传入技术指标的默认参数值
+        dialog = TechIndexSettingEditor(
+            class_name='TechIndex_Dialog',
+            parameters={'short_ma': 10, 'long_ma': 20},
+            combox_list=df_columns_list
+        )  # 这里传入技术指标的默认参数值
         i = dialog.exec_()
         if i != dialog.Accepted:
             self.tech_dict[cursor_pos_plot_name][tech_name_str].setChecked(False)
             return
         new_setting = dialog.get_setting()  # 这里获得用户修改后的技术指标参数值
 
-        # TODO draw curve
-        df = self._manager.get_df()
-
         plot = self.get_plot(cursor_pos_plot_name)  # 确定在哪张图上画技术指标, candle or volume
-        print(f"plot {tech_name_str} on {plot}")
+        print(f"plot df[{tech_name_str}_{new_setting['数据源']}] on {plot}")
 
         if cursor_pos_plot_name not in self.tech_curve_dict:
             self.tech_curve_dict[cursor_pos_plot_name] = {}
 
         self.tech_curve_dict[cursor_pos_plot_name][tech_name_str] = pg.PlotCurveItem()
-        close_ma_series_10 = df['close_price'].rolling(window=10).mean().fillna(method='bfill')
+        close_ma_series_10 = df[new_setting['数据源']].rolling(window=10).mean().fillna(method='bfill')
+        df[f"{tech_name_str}_{new_setting['数据源']}"] = close_ma_series_10
         x = close_ma_series_10.index.values
         y = close_ma_series_10.to_numpy()
         self.tech_curve_dict[cursor_pos_plot_name][tech_name_str].setData(x, y)
@@ -352,6 +358,10 @@ class ChartWidget(pg.PlotWidget):
             self.tech_dict[cursor_pos_plot_name][tech_name_str].setChecked(False)
             plot = self.get_plot(cursor_pos_plot_name)
             plot.removeItem(self.tech_curve_dict[cursor_pos_plot_name][tech_name_str])
+            # TODO 完善删除df中相应的列,
+            # 目前只是通过tech_name_str是否包含在df的列名中来锁定删除的列
+            df = self._manager.get_df()
+            df.drop([i for i in df.columns if tech_name_str in i], axis=1, inplace=True)
             print(f'抹除{tech_name_str}plot线')
 
     def contextMenuEvent(self, QContextMenuEvent):
@@ -520,16 +530,19 @@ class ChartCursor(QtCore.QObject):
         bottom_plot = list(self._plots.values())[-1]
         axis_width = bottom_plot.getAxis("right").width()
         axis_height = bottom_plot.getAxis("bottom").height()
-        axis_offset = QtCore.QPointF(axis_width, axis_height)
+        axis_offset = QtCore.QPointF(axis_width + 150, axis_height + 100)
 
         bottom_view = list(self._views.values())[-1]
         bottom_right = bottom_view.mapSceneToView(
             bottom_view.sceneBoundingRect().bottomRight() - axis_offset
         )
 
+        current_data_series = self._manager.get_df().iloc[self._x]
+        label_text = "".join([f'{key} : {value}\n\n' for key, value in current_data_series.items()])
         for plot_name, label in self._y_labels.items():
             if plot_name == self._plot_name:
-                label.setText(str(self._y))
+                # label.setText(str(self._y))
+                label.setText(label_text)
                 label.show()
                 label.setPos(bottom_right.x(), self._y)
             else:
