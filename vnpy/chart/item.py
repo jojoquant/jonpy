@@ -320,3 +320,71 @@ class VolumeItem(ChartItem):
             text = ""
 
         return text
+
+
+class TechIndexItem(ChartItem):
+    """"""
+
+    def __init__(self, manager: BarManager):
+        """"""
+        super().__init__(manager)
+
+    def _draw_bar_picture(self, ix: int, bar: BarData) -> QtGui.QPicture:
+        """"""
+        # Create objects
+        volume_picture = QtGui.QPicture()
+        # painter = QtGui.QPainter(volume_picture)
+
+        # Set painter color
+        # if bar.close_price >= bar.open_price:
+        #     painter.setPen(self._up_pen)
+        #     painter.setBrush(self._up_brush)
+        # else:
+        #     painter.setPen(self._down_pen)
+        #     painter.setBrush(self._down_brush)
+        #
+        # # Draw volume body
+        # rect = QtCore.QRectF(
+        #     ix - BAR_WIDTH,
+        #     0,
+        #     BAR_WIDTH * 2,
+        #     bar.volume
+        # )
+        # painter.drawRect(rect)
+        #
+        # # Finish
+        # painter.end()
+        return volume_picture
+
+    def boundingRect(self) -> QtCore.QRectF:
+        """"""
+        min_volume, max_volume = self._manager.get_volume_range()
+        rect = QtCore.QRectF(
+            0,
+            min_volume,
+            len(self._bar_picutures),
+            max_volume - min_volume
+        )
+        return rect
+
+    def get_y_range(self, min_ix: int = None, max_ix: int = None) -> Tuple[float, float]:
+        """
+        Get range of y-axis with given x-axis range.
+
+        If min_ix and max_ix not specified, then return range with whole data set.
+        """
+        min_volume, max_volume = self._manager.get_tech_index_range(min_ix, max_ix)
+        return min_volume, max_volume
+
+    def get_info_text(self, ix: int) -> str:
+        """
+        Get information text to show by cursor.
+        """
+        bar = self._manager.get_bar(ix)
+
+        if bar:
+            text = f"Volume {bar.volume}"
+        else:
+            text = ""
+
+        return text

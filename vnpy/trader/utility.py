@@ -16,7 +16,6 @@ import talib
 from .object import BarData, TickData
 from .constant import Exchange, Interval
 
-
 log_formatter = logging.Formatter('[%(asctime)s] %(message)s')
 
 
@@ -159,11 +158,11 @@ class BarGenerator:
     """
 
     def __init__(
-        self,
-        on_bar: Callable,
-        window: int = 0,
-        on_window_bar: Callable = None,
-        interval: Interval = Interval.MINUTE
+            self,
+            on_bar: Callable,
+            window: int = 0,
+            on_window_bar: Callable = None,
+            interval: Interval = Interval.MINUTE
     ):
         """Constructor"""
         self.bar = None
@@ -425,6 +424,231 @@ class ArrayManager(object):
         if array:
             return macd, signal, hist
         return macd[-1], signal[-1], hist[-1]
+
+    def adx(self, n, array=False):
+        """
+        ADX.
+        """
+        result = talib.ADX(self.high, self.low, self.close, n)
+        if array:
+            return result
+        return result[-1]
+
+    def boll(self, n, dev, array=False):
+        """
+        Bollinger Channel.
+        """
+        mid = self.sma(n, array)
+        std = self.std(n, array)
+
+        up = mid + std * dev
+        down = mid - std * dev
+
+        return up, down
+
+    def keltner(self, n, dev, array=False):
+        """
+        Keltner Channel.
+        """
+        mid = self.sma(n, array)
+        atr = self.atr(n, array)
+
+        up = mid + atr * dev
+        down = mid - atr * dev
+
+        return up, down
+
+    def donchian(self, n, array=False):
+        """
+        Donchian Channel.
+        """
+        up = talib.MAX(self.high, n)
+        down = talib.MIN(self.low, n)
+
+        if array:
+            return up, down
+        return up[-1], down[-1]
+
+    def aroon(self, n, array=False):
+        """
+        Aroon indicator.
+        """
+        aroon_up, aroon_down = talib.AROON(self.high, self.low, n)
+
+        if array:
+            return aroon_up, aroon_down
+        return aroon_up[-1], aroon_down[-1]
+
+    def aroonosc(self, n, array=False):
+        """
+        Aroon Oscillator.
+        """
+        result = talib.AROONOSC(self.high, self.low, n)
+
+        if array:
+            return result
+        return result[-1]
+
+    def ultosc(self, array=False):
+        """
+        Ultimate Oscillator.
+        """
+        result = talib.ULTOSC(self.high, self.low, self.close)
+        if array:
+            return result
+        return result[-1]
+
+    def mfi(self, n, array=False):
+        """
+        Money Flow Index.
+        """
+        result = talib.MFI(self.high, self.low, self.close, self.volume, n)
+        if array:
+            return result
+        return result[-1]
+
+
+class DataFrameManager(object):
+    """
+    For:
+    1. time series container of bar data
+    2. calculating technical indicator value
+    """
+
+    def __init__(self, df, size=None):
+        """Constructor"""
+        self.df = df
+        self.count = len(df)
+        self.size = size if size else len(df)
+        self.inited = False
+
+        # self.open_array = df['open_price'].values.flatten()[-self.size:]
+        # self.high_array = df['high_price'].values.flatten()[-self.size:]
+        # self.low_array = df['low_price'].values.flatten()[-self.size:]
+        # self.close_array = df['close_price'].values.flatten()[-self.size:]
+        # self.volume_array = df['volume'].values.flatten()[-self.size:]
+        # self.open_interest_array = df['open_interest'].values.flatten()[-self.size:]
+
+    def update_bar(self, bar):
+        """
+        Update new bar data into array manager.
+        """
+        self.count += 1
+        if not self.inited and self.count >= self.size:
+            self.inited = True
+
+        self.open_array[:-1] = self.open_array[1:]
+        self.high_array[:-1] = self.high_array[1:]
+        self.low_array[:-1] = self.low_array[1:]
+        self.close_array[:-1] = self.close_array[1:]
+        self.volume_array[:-1] = self.volume_array[1:]
+
+        self.open_array[-1] = bar.open_price
+        self.high_array[-1] = bar.high_price
+        self.low_array[-1] = bar.low_price
+        self.close_array[-1] = bar.close_price
+        self.volume_array[-1] = bar.volume
+
+    @property
+    def open(self):
+        """
+        Get open price time series.
+        """
+        return self.open_array
+
+    @property
+    def high(self):
+        """
+        Get high price time series.
+        """
+        return self.high_array
+
+    @property
+    def low(self):
+        """
+        Get low price time series.
+        """
+        return self.low_array
+
+    @property
+    def close(self):
+        """
+        Get close price time series.
+        """
+        return self.close_array
+
+    @property
+    def volume(self):
+        """
+        Get trading volume time series.
+        """
+        return self.volume_array
+
+    def sma(self, data_source='close_price', n=10, array=True):
+        """
+        Simple moving average.
+        """
+        standard_flag = False
+        tech_name = 'sma'
+        self.df[f"{data_source}_{tech_name}"] = talib.SMA(self.df[data_source], n).fillna(method='bfill')
+        if array:
+            return standard_flag, self.df[f"{data_source}_{tech_name}"]
+        return standard_flag, self.df[f"{data_source}_{tech_name}"][-1]
+
+    def std(self, n, array=False):
+        """
+        Standard deviation
+        """
+        result = talib.STDDEV(self.close, n)
+        if array:
+            return result
+        return result[-1]
+
+    def cci(self, n, array=False):
+        """
+        Commodity Channel Index (CCI).
+        """
+        result = talib.CCI(self.high, self.low, self.close, n)
+        if array:
+            return result
+        return result[-1]
+
+    def atr(self, n, array=False):
+        """
+        Average True Range (ATR).
+        """
+        result = talib.ATR(self.high, self.low, self.close, n)
+        if array:
+            return result
+        return result[-1]
+
+    def rsi(self, n, array=False):
+        """
+        Relative Strenght Index (RSI).
+        """
+        result = talib.RSI(self.close, n)
+        if array:
+            return result
+        return result[-1]
+
+    def macd(self, data_source='close_price', fast_period=12, slow_period=26, signal_period=9, array=True):
+        """
+        MACD.
+        """
+        standard_flag = True
+        macd, signal, hist = talib.MACD(
+            self.df[data_source], fast_period, slow_period, signal_period
+        )
+        macd.fillna(method='bfill', inplace=True)
+        self.df[f"{data_source}_macd"] = macd
+        signal.fillna(method='bfill', inplace=True)
+        self.df[f"{data_source}_signal"] = signal
+        hist.fillna(method='bfill', inplace=True)
+        self.df[f"{data_source}_hist"] = hist
+        if array:
+            return standard_flag, macd, signal, hist
+
+        return standard_flag, macd[-1], signal[-1], hist[-1]
 
     def adx(self, n, array=False):
         """

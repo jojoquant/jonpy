@@ -1,11 +1,15 @@
+import inspect
+import random
 from functools import partial
 from typing import List, Dict, Type
 
 import pyqtgraph as pg
+import numpy as np
 from PyQt5.QtWidgets import QMenu, QAction
 
 from vnpy.trader.ui import QtGui, QtWidgets, QtCore
 from vnpy.trader.object import BarData
+from vnpy.trader.utility import DataFrameManager
 
 from .manager import BarManager
 from .base import (
@@ -314,14 +318,18 @@ class ChartWidget(pg.PlotWidget):
         self._cursor.update_info()
 
     def call_dialog(self, cursor_pos_plot_name, tech_name_str):
-        # TODO draw curve
+
         df = self._manager.get_df()
         df_columns_list = self._manager.get_df_num_type_columns_list()
-        # TODO 追加其他默认技术指标参数
 
+        df_manager = DataFrameManager(df)
+        parameters = {key: value.default
+                      for key, value in inspect.signature(eval(f"df_manager.{tech_name_str}")).parameters.items()}
+
+        # TODO 追加其他默认技术指标参数
         dialog = TechIndexSettingEditor(
             class_name='TechIndex_Dialog',
-            parameters={'short_ma': 10, 'long_ma': 20},
+            parameters=parameters,
             combox_list=df_columns_list
         )  # 这里传入技术指标的默认参数值
         i = dialog.exec_()
@@ -331,21 +339,35 @@ class ChartWidget(pg.PlotWidget):
         new_setting = dialog.get_setting()  # 这里获得用户修改后的技术指标参数值
 
         plot = self.get_plot(cursor_pos_plot_name)  # 确定在哪张图上画技术指标, candle or volume
-        print(f"plot df[{tech_name_str}_{new_setting['数据源']}] on {plot}")
+        print(f"plot df[{tech_name_str}_{new_setting['data_source']}] on {plot}")
 
         if cursor_pos_plot_name not in self.tech_curve_dict:
             self.tech_curve_dict[cursor_pos_plot_name] = {}
 
-        self.tech_curve_dict[cursor_pos_plot_name][tech_name_str] = pg.PlotCurveItem()
-        close_ma_series_10 = df[new_setting['数据源']].rolling(window=10).mean().fillna(method='bfill')
-        df[f"{tech_name_str}_{new_setting['数据源']}"] = close_ma_series_10
-        x = close_ma_series_10.index.values
-        y = close_ma_series_10.to_numpy()
-        self.tech_curve_dict[cursor_pos_plot_name][tech_name_str].setData(x, y)
-        pen_10 = pg.mkPen(width=3, color='y')
-        self.tech_curve_dict[cursor_pos_plot_name][tech_name_str].setPen(pen_10)
+        # self.tech_curve_dict[cursor_pos_plot_name][tech_name_str] = pg.PlotCurveItem()
+        self.tech_curve_dict[cursor_pos_plot_name][tech_name_str] = []
+        # 生成技术指标结果
+        # close_ma_series_10 = df[new_setting['data_source']].rolling(window=10).mean().fillna(method='bfill')
+        # standard_flag, macd, signal, hist = eval(f'df_manager.{tech_name_str}()')
+        color_list = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
+        for i in eval(f'df_manager.{tech_name_str}(**{new_setting})'):
+            curve_item = pg.PlotCurveItem()
+            if isinstance(i, bool) and (i is True):
+                plot = self.get_plot('tech_chart')
+                continue
+            elif isinstance(i, bool) and (i is False):
+                continue
 
-        plot.addItem(self.tech_curve_dict[cursor_pos_plot_name][tech_name_str])
+            x = np.arange(len(i))
+            y = i.values
+            # self.tech_curve_dict[cursor_pos_plot_name][tech_name_str].setData(x, y)
+            curve_item.setData(x, y)
+            pen_10 = pg.mkPen(width=3, color=random.choice(color_list))
+            # self.tech_curve_dict[cursor_pos_plot_name][tech_name_str].setPen(pen_10)
+            curve_item.setPen(pen_10)
+            # plot.addItem(self.tech_curve_dict[cursor_pos_plot_name][tech_name_str])
+            plot.addItem(curve_item)
+            self.tech_curve_dict[cursor_pos_plot_name][tech_name_str].append(curve_item)
 
         self.tech_dict[cursor_pos_plot_name][tech_name_str].setChecked(True)
 
@@ -357,7 +379,9 @@ class ChartWidget(pg.PlotWidget):
         else:
             self.tech_dict[cursor_pos_plot_name][tech_name_str].setChecked(False)
             plot = self.get_plot(cursor_pos_plot_name)
-            plot.removeItem(self.tech_curve_dict[cursor_pos_plot_name][tech_name_str])
+            for item in self.tech_curve_dict[cursor_pos_plot_name][tech_name_str]:
+                plot.removeItem(item)
+            # plot.removeItem(self.tech_curve_dict[cursor_pos_plot_name][tech_name_str])
             # TODO 完善删除df中相应的列,
             # 目前只是通过tech_name_str是否包含在df的列名中来锁定删除的列
             df = self._manager.get_df()
@@ -369,7 +393,7 @@ class ChartWidget(pg.PlotWidget):
         cmenu = QMenu(self)
         cursor_pos_plot_name = self._cursor.get_current_plot_name()
         menu0 = QMenu('技术指标', self)
-        tech_name_str_list = ['MA', 'boll', 'kdj', 'cci']
+        tech_name_str_list = ['macd', 'sma', 'boll', 'kdj', 'cci']
 
         # if not self.tech_dict:
         if not self.tech_dict.get(cursor_pos_plot_name, {}):

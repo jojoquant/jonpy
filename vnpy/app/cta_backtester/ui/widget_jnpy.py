@@ -23,7 +23,7 @@ class TechIndexSettingEditor(QtWidgets.QDialog):
         self.parameters = parameters
         self.edits = {}
         self.column_name_combo_dict = {
-            '数据源': combox_list,
+            'data_source': combox_list,
             # '数据源2': ['high', 'low', 'volume']
         }
 

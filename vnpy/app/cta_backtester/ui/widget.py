@@ -15,7 +15,7 @@ from vnpy.trader.ui import QtCore, QtWidgets, QtGui
 from vnpy.trader.ui.widget import BaseMonitor, BaseCell, DirectionCell, EnumCell
 from vnpy.trader.ui.editor import CodeEditor
 from vnpy.event import Event, EventEngine
-from vnpy.chart import ChartWidget, CandleItem, VolumeItem
+from vnpy.chart import ChartWidget, CandleItem, VolumeItem, TechIndexItem
 
 
 class BacktesterManager(QtWidgets.QWidget):
@@ -1055,8 +1055,10 @@ class CandleChartDialog(QtWidgets.QDialog):
         # Create chart widget
         self.chart = ChartWidget()
         self.chart.add_plot("candle", hide_x_axis=True)
+        self.chart.add_plot("tech_chart", maximum_height=200)
         self.chart.add_plot("volume", maximum_height=200)
         self.chart.add_item(CandleItem, "candle", "candle")
+        self.chart.add_item(TechIndexItem, "tech_chart", "tech_chart")
         self.chart.add_item(VolumeItem, "volume", "volume")
         self.chart.add_cursor()
 
