@@ -7,7 +7,7 @@ from vnpy.trader.constant import Exchange, Interval
 from vnpy.trader.engine import MainEngine
 from vnpy.trader.ui import QtCore, QtWidgets
 
-from ..engine import APP_NAME
+from ..fengchen_engine import APP_NAME
 
 
 class CsvLoaderWidget(QtWidgets.QWidget):
@@ -19,6 +19,7 @@ class CsvLoaderWidget(QtWidgets.QWidget):
 
         self.engine = main_engine.get_engine(APP_NAME)
 
+        self.progress_bar_dict = {}
         self.init_ui()
 
     def init_ui(self):
@@ -54,7 +55,7 @@ class CsvLoaderWidget(QtWidgets.QWidget):
         self.close_edit = QtWidgets.QLineEdit("Close")
         self.volume_edit = QtWidgets.QLineEdit("Volume")
 
-        self.format_edit = QtWidgets.QLineEdit("%Y-%m-%d %H:%M:%S")
+        self.format_edit = QtWidgets.QLineEdit("%m/%d/%Y %H:%M:%S")
 
         info_label = QtWidgets.QLabel("合约信息")
         info_label.setAlignment(QtCore.Qt.AlignCenter)
@@ -64,6 +65,13 @@ class CsvLoaderWidget(QtWidgets.QWidget):
 
         format_label = QtWidgets.QLabel("格式信息")
         format_label.setAlignment(QtCore.Qt.AlignCenter)
+
+        save_progress_label = QtWidgets.QLabel("保存进度信息")
+        save_progress_label.setAlignment(QtCore.Qt.AlignCenter)
+
+        save_progress_bar= QtWidgets.QProgressBar()
+        save_progress_bar.setAlignment(QtCore.Qt.AlignCenter)
+        self.progress_bar_dict['save_progress_bar'] = save_progress_bar
 
         form = QtWidgets.QFormLayout()
         form.addRow(file_button, self.file_edit)
@@ -84,6 +92,8 @@ class CsvLoaderWidget(QtWidgets.QWidget):
         form.addRow(format_label)
         form.addRow("时间格式", self.format_edit)
         form.addRow(QtWidgets.QLabel())
+        form.addRow(save_progress_label)
+        form.addRow(save_progress_bar)
         form.addRow(load_button)
 
         self.setLayout(form)
@@ -121,7 +131,8 @@ class CsvLoaderWidget(QtWidgets.QWidget):
             low_head,
             close_head,
             volume_head,
-            datetime_format
+            datetime_format,
+            progress_bar_dict=self.progress_bar_dict
         )
 
         msg = f"\

@@ -126,7 +126,7 @@ def init_models(db: Database, driver: Driver):
             return bar
 
         @staticmethod
-        def save_all(objs: List["DbBarData"]):
+        def save_all(objs: List["DbBarData"], progress_bar_dict=None):
             """
             save a list of objects, update if exists.
             """
@@ -144,9 +144,15 @@ def init_models(db: Database, driver: Driver):
                             ),
                         ).execute()
                 else:
+                    total_sz = len(dicts)
+                    loaded = 0
                     for c in chunked(dicts, 50):
                         DbBarData.insert_many(
                             c).on_conflict_replace().execute()
+                        loaded += 50
+                        percent_saved = min(round(100 * loaded/total_sz,2), 100)
+                        progress_bar_dict['save_progress_bar'].setValue(percent_saved)
+
 
     class DbTickData(ModelBase):
         """
@@ -369,9 +375,9 @@ class SqlManager(BaseDatabaseManager):
         data = [db_tick.to_tick() for db_tick in s]
         return data
 
-    def save_bar_data(self, datas: Sequence[BarData]):
+    def save_bar_data(self, datas: Sequence[BarData], progress_bar_dict):
         ds = [self.class_bar.from_bar(i) for i in datas]
-        self.class_bar.save_all(ds)
+        self.class_bar.save_all(ds, progress_bar_dict)
 
     def save_tick_data(self, datas: Sequence[TickData]):
         ds = [self.class_tick.from_tick(i) for i in datas]
