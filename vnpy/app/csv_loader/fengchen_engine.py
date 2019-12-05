@@ -49,7 +49,7 @@ class PdCsvLoaderEngine(BaseEngine):
         bar = BarData(
             symbol=symbol,
             exchange=exchange,
-            datetime=item[datetime_head],
+            datetime=item[datetime_head].to_pydatetime(),
             interval=interval,
             volume=item[volume_head],
             open_interest=item[open_interest_head],

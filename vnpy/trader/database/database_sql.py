@@ -148,12 +148,12 @@ def init_models(db: Database, driver: Driver):
                     total_sz = len(dicts)
                     loaded = 0
                     for c in chunked(dicts, 50):
-                        DbBarData.insert_many(
-                            c).on_conflict_replace().execute()
-                        loaded += 50
-                        percent_saved = min(round(100 * loaded / total_sz, 2), 100)
-                        QApplication.processEvents()
-                        progress_bar_dict['save_progress_bar'].setValue(percent_saved)
+                        DbBarData.insert_many(c).on_conflict_replace().execute()
+                        if 'save_progress_bar' in progress_bar_dict:
+                            loaded += 50
+                            percent_saved = min(round(100 * loaded / total_sz, 2), 100)
+                            QApplication.processEvents()
+                            progress_bar_dict['save_progress_bar'].setValue(percent_saved)
 
     class DbTickData(ModelBase):
         """
@@ -376,7 +376,7 @@ class SqlManager(BaseDatabaseManager):
         data = [db_tick.to_tick() for db_tick in s]
         return data
 
-    def save_bar_data(self, datas: Sequence[BarData], progress_bar_dict):
+    def save_bar_data(self, datas: Sequence[BarData], progress_bar_dict=None):
         ds = [self.class_bar.from_bar(i) for i in datas]
         self.class_bar.save_all(ds, progress_bar_dict)
 

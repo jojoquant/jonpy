@@ -66,6 +66,7 @@ class CsvLoaderEngine(BaseEngine):
             volume_head: str,
             open_interest_head: str,
             datetime_format: str,
+            progress_bar_dict
     ):
         """
         load by text mode file handle
@@ -104,7 +105,7 @@ class CsvLoaderEngine(BaseEngine):
         end = bar.datetime
 
         # insert into database
-        database_manager.save_bar_data(bars)
+        database_manager.save_bar_data(bars, progress_bar_dict)
         return start, end, count
 
     def load(
@@ -121,6 +122,7 @@ class CsvLoaderEngine(BaseEngine):
             volume_head: str,
             open_interest_head: str,
             datetime_format: str,
+            progress_bar_dict
     ):
         """
         load by filename
@@ -139,4 +141,5 @@ class CsvLoaderEngine(BaseEngine):
                 volume_head=volume_head,
                 open_interest_head=open_interest_head,
                 datetime_format=datetime_format,
+                progress_bar_dict=progress_bar_dict
             )

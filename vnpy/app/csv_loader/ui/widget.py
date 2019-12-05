@@ -8,6 +8,7 @@ from vnpy.trader.engine import MainEngine
 from vnpy.trader.ui import QtCore, QtWidgets
 
 from ..fengchen_engine import APP_NAME
+# from ..engine import APP_NAME
 
 
 class CsvLoaderWidget(QtWidgets.QWidget):
