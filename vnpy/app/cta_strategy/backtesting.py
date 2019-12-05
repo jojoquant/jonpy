@@ -903,7 +903,12 @@ class BacktestingEngine:
             self.strategy.on_trade(trade)
 
     def load_bar(
-            self, vt_symbol: str, days: int, interval: Interval, callback: Callable
+        self,
+        vt_symbol: str,
+        days: int,
+        interval: Interval,
+        callback: Callable,
+        use_database: bool
     ):
         """
         ctaTemplate 里面在初始化策略的时候, 会调用此处的函数，
