@@ -2,6 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, Sequence
 
+from PyQt5.QtWidgets import QApplication
 from mongoengine import DateTimeField, Document, FloatField, StringField, connect
 
 from vnpy.trader.constant import Exchange, Interval
@@ -263,12 +264,12 @@ class DbTickData(Document):
 class MongoManager(BaseDatabaseManager):
 
     def load_bar_data(
-        self,
-        symbol: str,
-        exchange: Exchange,
-        interval: Interval,
-        start: datetime,
-        end: datetime,
+            self,
+            symbol: str,
+            exchange: Exchange,
+            interval: Interval,
+            start: datetime,
+            end: datetime,
     ) -> Sequence[BarData]:
         s = DbBarData.objects(
             symbol=symbol,
@@ -281,7 +282,7 @@ class MongoManager(BaseDatabaseManager):
         return data
 
     def load_tick_data(
-        self, symbol: str, exchange: Exchange, start: datetime, end: datetime
+            self, symbol: str, exchange: Exchange, start: datetime, end: datetime
     ) -> Sequence[TickData]:
         s = DbTickData.objects(
             symbol=symbol,
@@ -299,16 +300,24 @@ class MongoManager(BaseDatabaseManager):
             for k, v in d.__dict__.items()
         }
 
-    def save_bar_data(self, datas: Sequence[BarData]):
-        for d in datas:
+    def save_bar_data(self, datas: Sequence[BarData], progress_bar_dict):
+        total_sz = len(datas)
+        percent_1 = round(total_sz / 100)
+        progress_bar_display = 1
+        for idx, d in enumerate(datas):
             updates = self.to_update_param(d)
             updates.pop("set__gateway_name")
             updates.pop("set__vt_symbol")
-            (
-                DbBarData.objects(
-                    symbol=d.symbol, interval=d.interval.value, datetime=d.datetime
-                ).update_one(upsert=True, **updates)
-            )
+
+            DbBarData.objects(
+                symbol=d.symbol, interval=d.interval.value, datetime=d.datetime
+            ).update_one(upsert=True, **updates)
+
+            if idx % percent_1 == 0:
+                percent_saved = min(progress_bar_display, 100)
+                progress_bar_display += 1
+                QApplication.processEvents()
+                progress_bar_dict['save_progress_bar'].setValue(percent_saved)
 
     def save_tick_data(self, datas: Sequence[TickData]):
         for d in datas:
@@ -322,24 +331,24 @@ class MongoManager(BaseDatabaseManager):
             )
 
     def get_newest_bar_data(
-        self, symbol: str, exchange: "Exchange", interval: "Interval"
+            self, symbol: str, exchange: "Exchange", interval: "Interval"
     ) -> Optional["BarData"]:
         s = (
             DbBarData.objects(symbol=symbol, exchange=exchange.value)
-            .order_by("-datetime")
-            .first()
+                .order_by("-datetime")
+                .first()
         )
         if s:
             return s.to_bar()
         return None
 
     def get_newest_tick_data(
-        self, symbol: str, exchange: "Exchange"
+            self, symbol: str, exchange: "Exchange"
     ) -> Optional["TickData"]:
         s = (
             DbTickData.objects(symbol=symbol, exchange=exchange.value)
-            .order_by("-datetime")
-            .first()
+                .order_by("-datetime")
+                .first()
         )
         if s:
             return s.to_tick()

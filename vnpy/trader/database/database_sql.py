@@ -2,6 +2,7 @@
 from datetime import datetime
 from typing import List, Optional, Sequence, Type
 
+from PyQt5.QtWidgets import QApplication
 from peewee import (
     AutoField,
     CharField,
@@ -150,9 +151,9 @@ def init_models(db: Database, driver: Driver):
                         DbBarData.insert_many(
                             c).on_conflict_replace().execute()
                         loaded += 50
-                        percent_saved = min(round(100 * loaded/total_sz,2), 100)
+                        percent_saved = min(round(100 * loaded / total_sz, 2), 100)
+                        QApplication.processEvents()
                         progress_bar_dict['save_progress_bar'].setValue(percent_saved)
-
 
     class DbTickData(ModelBase):
         """
@@ -337,12 +338,12 @@ class SqlManager(BaseDatabaseManager):
         self.class_tick = class_tick
 
     def load_bar_data(
-        self,
-        symbol: str,
-        exchange: Exchange,
-        interval: Interval,
-        start: datetime,
-        end: datetime,
+            self,
+            symbol: str,
+            exchange: Exchange,
+            interval: Interval,
+            start: datetime,
+            end: datetime,
     ) -> Sequence[BarData]:
         s = (
             self.class_bar.select()
@@ -353,13 +354,13 @@ class SqlManager(BaseDatabaseManager):
                 & (self.class_bar.datetime >= start)
                 & (self.class_bar.datetime <= end)
             )
-            .order_by(self.class_bar.datetime)
+                .order_by(self.class_bar.datetime)
         )
         data = [db_bar.to_bar() for db_bar in s]
         return data
 
     def load_tick_data(
-        self, symbol: str, exchange: Exchange, start: datetime, end: datetime
+            self, symbol: str, exchange: Exchange, start: datetime, end: datetime
     ) -> Sequence[TickData]:
         s = (
             self.class_tick.select()
@@ -369,7 +370,7 @@ class SqlManager(BaseDatabaseManager):
                 & (self.class_tick.datetime >= start)
                 & (self.class_tick.datetime <= end)
             )
-            .order_by(self.class_tick.datetime)
+                .order_by(self.class_tick.datetime)
         )
 
         data = [db_tick.to_tick() for db_tick in s]
@@ -384,7 +385,7 @@ class SqlManager(BaseDatabaseManager):
         self.class_tick.save_all(ds)
 
     def get_newest_bar_data(
-        self, symbol: str, exchange: "Exchange", interval: "Interval"
+            self, symbol: str, exchange: "Exchange", interval: "Interval"
     ) -> Optional["BarData"]:
         s = (
             self.class_bar.select()
@@ -393,15 +394,15 @@ class SqlManager(BaseDatabaseManager):
                 & (self.class_bar.exchange == exchange.value)
                 & (self.class_bar.interval == interval.value)
             )
-            .order_by(self.class_bar.datetime.desc())
-            .first()
+                .order_by(self.class_bar.datetime.desc())
+                .first()
         )
         if s:
             return s.to_bar()
         return None
 
     def get_newest_tick_data(
-        self, symbol: str, exchange: "Exchange"
+            self, symbol: str, exchange: "Exchange"
     ) -> Optional["TickData"]:
         s = (
             self.class_tick.select()
@@ -409,8 +410,8 @@ class SqlManager(BaseDatabaseManager):
                 (self.class_tick.symbol == symbol)
                 & (self.class_tick.exchange == exchange.value)
             )
-            .order_by(self.class_tick.datetime.desc())
-            .first()
+                .order_by(self.class_tick.datetime.desc())
+                .first()
         )
         if s:
             return s.to_tick()

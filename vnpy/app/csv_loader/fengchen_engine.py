@@ -1,5 +1,7 @@
 import csv
 import os
+import time
+
 import pandas as pd
 from datetime import datetime
 from typing import TextIO
@@ -42,18 +44,20 @@ class PdCsvLoaderEngine(BaseEngine):
                     low_head: str,
                     close_head: str,
                     volume_head: str,
+                    open_interest_head: str
                     ):
         bar = BarData(
             symbol=symbol,
             exchange=exchange,
-            datetime=datetime_head,
+            datetime=item[datetime_head],
             interval=interval,
             volume=item[volume_head],
+            open_interest=item[open_interest_head],
             open_price=item[open_head],
             high_price=item[high_head],
             low_price=item[low_head],
             close_price=item[close_head],
-            gateway_name="DB",
+            gateway_name="DB"
         )
         return bar
 
@@ -69,22 +73,32 @@ class PdCsvLoaderEngine(BaseEngine):
             low_head: str,
             close_head: str,
             volume_head: str,
+            open_interest_head: str,
             datetime_format: str,
             progress_bar_dict
     ):
-
+        start_time = time.time()
         data[datetime_head] = data[datetime_head].apply(
             lambda x: datetime.strptime(x, datetime_format) if datetime_format else datetime.fromisoformat(x))
+        print(f'df apply 处理日期时间 cost {time.time()-start_time:.2f}s')
 
-        bars = data.apply(self.to_bar_data, args=(symbol,
-        exchange,
-        interval,
-        datetime_head,
-        open_head,
-        high_head,
-        low_head,
-        close_head,
-        volume_head,), axis=1).tolist()
+        start_time = time.time()
+        bars = data.apply(
+            self.to_bar_data,
+            args=(
+                symbol,
+                exchange,
+                interval,
+                datetime_head,
+                open_head,
+                high_head,
+                low_head,
+                close_head,
+                volume_head,
+                open_interest_head
+            ),
+            axis=1).tolist()
+        print(f'df apply 处理bars时间 cost {time.time() - start_time:.2f}s')
 
         start = data[datetime_head].iloc[0]
         end = data[datetime_head].iloc[-1]
@@ -105,6 +119,7 @@ class PdCsvLoaderEngine(BaseEngine):
             low_head: str,
             close_head: str,
             volume_head: str,
+            open_interest_head: str,
             datetime_format: str,
             progress_bar_dict
 
@@ -112,18 +127,20 @@ class PdCsvLoaderEngine(BaseEngine):
         """
         load by filename   %m/%d/%Y
         """
-        data = pd.read_csv('C:/Users/25145/Desktop/test.csv')
+        data = pd.read_csv(file_path)
 
-        return self.load_by_handle(data,
-                                   symbol=symbol,
-                                   exchange=exchange,
-                                   interval=interval,
-                                   datetime_head=datetime_head,
-                                   open_head=open_head,
-                                   high_head=high_head,
-                                   low_head=low_head,
-                                   close_head=close_head,
-                                   volume_head=volume_head,
-                                   datetime_format=datetime_format,
-                                   progress_bar_dict=progress_bar_dict
-                                   )
+        return self.load_by_handle(
+            data,
+            symbol=symbol,
+            exchange=exchange,
+            interval=interval,
+            datetime_head=datetime_head,
+            open_head=open_head,
+            high_head=high_head,
+            low_head=low_head,
+            close_head=close_head,
+            volume_head=volume_head,
+            open_interest_head=open_interest_head,
+            datetime_format=datetime_format,
+            progress_bar_dict=progress_bar_dict
+        )

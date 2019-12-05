@@ -56,7 +56,7 @@ class CsvLoaderWidget(QtWidgets.QWidget):
         self.volume_edit = QtWidgets.QLineEdit("Volume")
         self.open_interest_edit = QtWidgets.QLineEdit("OpenInterest")
 
-        self.format_edit = QtWidgets.QLineEdit("%m/%d/%Y %H:%M:%S")
+        self.format_edit = QtWidgets.QLineEdit("%Y-%m-%d %H:%M:%S")
 
         info_label = QtWidgets.QLabel("合约信息")
         info_label.setAlignment(QtCore.Qt.AlignCenter)
@@ -70,7 +70,7 @@ class CsvLoaderWidget(QtWidgets.QWidget):
         save_progress_label = QtWidgets.QLabel("保存进度信息")
         save_progress_label.setAlignment(QtCore.Qt.AlignCenter)
 
-        save_progress_bar= QtWidgets.QProgressBar()
+        save_progress_bar = QtWidgets.QProgressBar()
         save_progress_bar.setAlignment(QtCore.Qt.AlignCenter)
         self.progress_bar_dict['save_progress_bar'] = save_progress_bar
 
@@ -134,6 +134,7 @@ class CsvLoaderWidget(QtWidgets.QWidget):
             low_head,
             close_head,
             volume_head,
+            open_interest_head,
             datetime_format,
             progress_bar_dict=self.progress_bar_dict
         )
