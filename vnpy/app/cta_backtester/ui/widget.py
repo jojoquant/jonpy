@@ -8,7 +8,7 @@ from vnpy.trader.ui import QtCore, QtWidgets, QtGui
 from vnpy.trader.ui.widget import BaseMonitor, BaseCell, DirectionCell, EnumCell
 from vnpy.trader.ui.editor import CodeEditor
 from vnpy.event import Event, EventEngine
-from vnpy.chart import ChartWidget, CandleItem, VolumeItem
+from vnpy.chart import ChartWidget, CandleItem, VolumeItem, TechIndexItem
 from vnpy.trader.utility import load_json, save_json
 
 from ..engine import (
@@ -18,7 +18,6 @@ from ..engine import (
     EVENT_BACKTESTER_OPTIMIZATION_FINISHED,
     OptimizationSetting
 )
-from vnpy.chart import ChartWidget, CandleItem, VolumeItem, TechIndexItem
 
 
 class BacktesterManager(QtWidgets.QWidget):
@@ -316,6 +315,13 @@ class BacktesterManager(QtWidgets.QWidget):
             inverse = False
         else:
             inverse = True
+
+        # fangyang add
+        if self.debug_combo.currentText() == "Thread 运行回测":  # "Debug 运行回测"
+            backtesting_debug_mode = False
+        else:
+            backtesting_debug_mode = True
+        #######################
 
         old_setting = self.settings[class_name]
         dialog = BacktestingSettingEditor(class_name, old_setting)
