@@ -41,11 +41,12 @@ class ExhqAPI(TdxExHq_API):
         main_engine.connect(setting, "CTP")
 
         for i in range(timeout):
-            # time.sleep(1)  # 等待在队列中的event查询交易所信息返回
+            time.sleep(1)  # 等待在队列中的event查询交易所信息返回
             oms_engine = main_engine.get_engine("oms")
             contracts_dict = oms_engine.contracts
             if contracts_dict:
                 #TODO parse contracts
+                self.info_log.write_log(f"{i + 1}/{timeout} 成功从交易所获取 {len(contracts_dict)} 条contracts信息")
                 break
             else:
                 # main_engine.write_log(msg=f"{i+1}/{timeout} 从交易所获取contracts信息失败")
@@ -80,7 +81,7 @@ class ExhqAPI(TdxExHq_API):
             start += 500
 
         if result_df.shape[0] == 0:
-            print(f"{code} 数据条数为 0 !")
+            self.info_log(f"{code} 数据条数为 0 !")
             return result_df
 
         select_columns_list = ["open", "high", "low", "close", "position", "trade", "datetime"]
