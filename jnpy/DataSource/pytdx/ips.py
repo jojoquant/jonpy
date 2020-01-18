@@ -9,6 +9,7 @@
 from pytdx.exhq import TdxExHq_API
 from pytdx.hq import TdxHq_API
 import time
+from log import LogModule
 
 
 class IPsSource:
@@ -37,6 +38,7 @@ class IPsSource:
         }
         self.hq_port = 7709
         self.exhq_port = 7727
+        self.log = LogModule(name="IPsSource", level="info")
 
     def get_fast_exhq_ip(self) -> (str, int):
 
@@ -48,10 +50,14 @@ class IPsSource:
                 start_time = time.time()
                 instrument_count = exhq_api.get_instrument_count()
                 cost_time = time.time() - start_time
-                print(f"{name}, {ip}, cost time: {cost_time:.3f}s, test result: {instrument_count}")
+                self.log.write_log(f"{name}({ip}), time: {cost_time:.3f}s, response: {instrument_count}")
                 fast_exhq_ip_dict[f"{ip}:{self.exhq_port}"] = cost_time
 
         ip_str, port_str = min(fast_exhq_ip_dict, key=fast_exhq_ip_dict.get).split(":")
+        self.log.write_log(f"-"*50)
+        self.log.write_log(f"Select ({ip_str} : {port_str})")
+        self.log.write_log(f"-"*50)
+
         return ip_str, int(port_str)
 
     def get_fast_hq_ip(self) -> (str, int):
@@ -69,17 +75,18 @@ class IPsSource:
                 start_time = time.time()
                 instrument_count = hq_api.get_security_count(0)
                 cost_time = time.time() - start_time
-                print(f"{name}, {ip}, cost time: {cost_time:.3f}s, test result: {instrument_count}")
+                self.log.write_log(f"{name}({ip}), time: {cost_time:.3f}s, response: {instrument_count}")
                 fast_hq_ip_dict[f"{ip}:{hq_port}"] = cost_time
 
         ip_str, port_str = min(fast_hq_ip_dict, key=fast_hq_ip_dict.get).split(":")
+        self.log.write_log(f"-" * 50)
+        self.log.write_log(f"Select ({ip_str} : {port_str})")
+        self.log.write_log(f"-" * 50)
         return ip_str, int(port_str)
 
 
 if __name__ == '__main__':
     ips_pool = IPsSource()
     exhq_ip, exhq_port = ips_pool.get_fast_exhq_ip()
-    print("-" * 50)
     hq_ip, hq_port = ips_pool.get_fast_hq_ip()
-    print(exhq_ip, exhq_port)
-    print(hq_ip, hq_port)
+
