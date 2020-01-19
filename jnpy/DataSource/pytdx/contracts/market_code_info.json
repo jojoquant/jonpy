@@ -1,0 +1,344 @@
+{
+    "FU": {
+        "exchange": "SHFE",
+        "name": "燃料油2006",
+        "main_continue_code": "FUL8",
+        "index_code": "FUL9"
+    },
+    "SC": {
+        "exchange": "INE",
+        "name": "原油2109",
+        "main_continue_code": "SCL8",
+        "index_code": "SCL9"
+    },
+    "CF": {
+        "exchange": "CZCE",
+        "name": "棉花007",
+        "main_continue_code": "CFL8",
+        "index_code": "CFL9"
+    },
+    "TA": {
+        "exchange": "CZCE",
+        "name": "化纤007",
+        "main_continue_code": "TAL8",
+        "index_code": "TAL9"
+    },
+    "BU": {
+        "exchange": "SHFE",
+        "name": "沥青2003",
+        "main_continue_code": "BUL8",
+        "index_code": "BUL9"
+    },
+    "T": {
+        "exchange": "CFFEX",
+        "name": "10年国债2003",
+        "main_continue_code": "TL8",
+        "index_code": "TL9"
+    },
+    "TF": {
+        "exchange": "CFFEX",
+        "name": "5年国债2003",
+        "main_continue_code": "TFL8",
+        "index_code": "TFL9"
+    },
+    "TS": {
+        "exchange": "CFFEX",
+        "name": "2年期国债2003",
+        "main_continue_code": "TSL8",
+        "index_code": "TSL9"
+    },
+    "L": {
+        "exchange": "DCE",
+        "name": "聚乙烯2008",
+        "main_continue_code": "LL8",
+        "index_code": "LL9"
+    },
+    "M": {
+        "exchange": "DCE",
+        "name": "豆粕2008",
+        "main_continue_code": "ML8",
+        "index_code": "ML9"
+    },
+    "P": {
+        "exchange": "DCE",
+        "name": "棕榈油2008",
+        "main_continue_code": "PL8",
+        "index_code": "PL9"
+    },
+    "PP": {
+        "exchange": "DCE",
+        "name": "聚丙烯2008",
+        "main_continue_code": "PPL8",
+        "index_code": "PPL9"
+    },
+    "V": {
+        "exchange": "DCE",
+        "name": "聚氯乙烯2008",
+        "main_continue_code": "VL8",
+        "index_code": "VL9"
+    },
+    "Y": {
+        "exchange": "DCE",
+        "name": "豆油2008",
+        "main_continue_code": "YL8",
+        "index_code": "YL9"
+    },
+    "CY": {
+        "exchange": "CZCE",
+        "name": "棉纱008",
+        "main_continue_code": "CYL8",
+        "index_code": "CYL9"
+    },
+    "FG": {
+        "exchange": "CZCE",
+        "name": "玻璃008",
+        "main_continue_code": "FGL8",
+        "index_code": "FGL9"
+    },
+    "MA": {
+        "exchange": "CZCE",
+        "name": "甲醇MA008",
+        "main_continue_code": "MAL8",
+        "index_code": "MAL9"
+    },
+    "RM": {
+        "exchange": "CZCE",
+        "name": "菜籽粕008",
+        "main_continue_code": "RML8",
+        "index_code": "RML9"
+    },
+    "RS": {
+        "exchange": "CZCE",
+        "name": "油菜籽008",
+        "main_continue_code": "RSL8",
+        "index_code": "RSL9"
+    },
+    "SF": {
+        "exchange": "CZCE",
+        "name": "硅铁008",
+        "main_continue_code": "SFL8",
+        "index_code": "SFL9"
+    },
+    "SM": {
+        "exchange": "CZCE",
+        "name": "锰硅008",
+        "main_continue_code": "SML8",
+        "index_code": "SML9"
+    },
+    "SR": {
+        "exchange": "CZCE",
+        "name": "白砂糖101",
+        "main_continue_code": "SRL8",
+        "index_code": "SRL9"
+    },
+    "AG": {
+        "exchange": "SHFE",
+        "name": "白银2101",
+        "main_continue_code": "AGL8",
+        "index_code": "AGL9"
+    },
+    "AL": {
+        "exchange": "SHFE",
+        "name": "铝2101",
+        "main_continue_code": "ALL8",
+        "index_code": "ALL9"
+    },
+    "AU": {
+        "exchange": "SHFE",
+        "name": "黄金2102",
+        "main_continue_code": "AUL8",
+        "index_code": "AUL9"
+    },
+    "CU": {
+        "exchange": "SHFE",
+        "name": "铜2101",
+        "main_continue_code": "CUL8",
+        "index_code": "CUL9"
+    },
+    "HC": {
+        "exchange": "SHFE",
+        "name": "热轧板2101",
+        "main_continue_code": "HCL8",
+        "index_code": "HCL9"
+    },
+    "NI": {
+        "exchange": "SHFE",
+        "name": "镍2101",
+        "main_continue_code": "NIL8",
+        "index_code": "NIL9"
+    },
+    "PB": {
+        "exchange": "SHFE",
+        "name": "铅2101",
+        "main_continue_code": "PBL8",
+        "index_code": "PBL9"
+    },
+    "RB": {
+        "exchange": "SHFE",
+        "name": "螺纹钢2101",
+        "main_continue_code": "RBL8",
+        "index_code": "RBL9"
+    },
+    "RU": {
+        "exchange": "SHFE",
+        "name": "天然橡胶2101",
+        "main_continue_code": "RUL8",
+        "index_code": "RUL9"
+    },
+    "SN": {
+        "exchange": "SHFE",
+        "name": "锡2101",
+        "main_continue_code": "SNL8",
+        "index_code": "SNL9"
+    },
+    "SP": {
+        "exchange": "SHFE",
+        "name": "漂针浆2101",
+        "main_continue_code": "SPL8",
+        "index_code": "SPL9"
+    },
+    "WR": {
+        "exchange": "SHFE",
+        "name": "线材2101",
+        "main_continue_code": "WRL8",
+        "index_code": "WRL9"
+    },
+    "ZN": {
+        "exchange": "SHFE",
+        "name": "锌2101",
+        "main_continue_code": "ZNL8",
+        "index_code": "ZNL9"
+    },
+    "AP": {
+        "exchange": "CZCE",
+        "name": "苹果101",
+        "main_continue_code": "APL8",
+        "index_code": "APL9"
+    },
+    "JR": {
+        "exchange": "CZCE",
+        "name": "粳稻101",
+        "main_continue_code": "JRL8",
+        "index_code": "JRL9"
+    },
+    "LR": {
+        "exchange": "CZCE",
+        "name": "晚籼稻101",
+        "main_continue_code": "LRL8",
+        "index_code": "LRL9"
+    },
+    "OI": {
+        "exchange": "CZCE",
+        "name": "菜籽油101",
+        "main_continue_code": "OIL8",
+        "index_code": "OIL9"
+    },
+    "PM": {
+        "exchange": "CZCE",
+        "name": "普通小麦101",
+        "main_continue_code": "PML8",
+        "index_code": "PML9"
+    },
+    "RI": {
+        "exchange": "CZCE",
+        "name": "早籼稻101",
+        "main_continue_code": "RIL8",
+        "index_code": "RIL9"
+    },
+    "WH": {
+        "exchange": "CZCE",
+        "name": "强筋麦101",
+        "main_continue_code": "WHL8",
+        "index_code": "WHL9"
+    },
+    "A": {
+        "exchange": "DCE",
+        "name": "黄大豆1号2101",
+        "main_continue_code": "AL8",
+        "index_code": "AL9"
+    },
+    "B": {
+        "exchange": "DCE",
+        "name": "黄大豆2号2101",
+        "main_continue_code": "BL8",
+        "index_code": "BL9"
+    },
+    "BB": {
+        "exchange": "DCE",
+        "name": "胶合板2101",
+        "main_continue_code": "BBL8",
+        "index_code": "BBL9"
+    },
+    "C": {
+        "exchange": "DCE",
+        "name": "黄玉米2101",
+        "main_continue_code": "CL8",
+        "index_code": "CL9"
+    },
+    "CS": {
+        "exchange": "DCE",
+        "name": "玉米淀粉2101",
+        "main_continue_code": "CSL8",
+        "index_code": "CSL9"
+    },
+    "FB": {
+        "exchange": "DCE",
+        "name": "纤维板2101",
+        "main_continue_code": "FBL8",
+        "index_code": "FBL9"
+    },
+    "I": {
+        "exchange": "DCE",
+        "name": "铁矿石2101",
+        "main_continue_code": "IL8",
+        "index_code": "IL9"
+    },
+    "J": {
+        "exchange": "DCE",
+        "name": "焦炭2101",
+        "main_continue_code": "JL8",
+        "index_code": "JL9"
+    },
+    "JM": {
+        "exchange": "DCE",
+        "name": "焦煤2101",
+        "main_continue_code": "JML8",
+        "index_code": "JML9"
+    },
+    "EG": {
+        "exchange": "DCE",
+        "name": "乙二醇2009",
+        "main_continue_code": "EGL8",
+        "index_code": "EGL9"
+    },
+    "JD": {
+        "exchange": "DCE",
+        "name": "鲜鸡蛋2009",
+        "main_continue_code": "JDL8",
+        "index_code": "JDL9"
+    },
+    "IC": {
+        "exchange": "CFFEX",
+        "name": "中证500股指2001",
+        "main_continue_code": "ICL8",
+        "index_code": "ICL9"
+    },
+    "IF": {
+        "exchange": "CFFEX",
+        "name": "沪深300股指2001",
+        "main_continue_code": "IFL8",
+        "index_code": "IFL9"
+    },
+    "IH": {
+        "exchange": "CFFEX",
+        "name": "上证50股指2001",
+        "main_continue_code": "IHL8",
+        "index_code": "IHL9"
+    },
+    "ZC": {
+        "exchange": "CZCE",
+        "name": "动力煤ZC101",
+        "main_continue_code": "ZCL8",
+        "index_code": "ZCL9"
+    }
+}

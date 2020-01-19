@@ -40,5 +40,17 @@ class KBarType(Enum):
     KLINE_TYPE_YEARLY = 11
 
 
+class FutureMarketCode(Enum):
+    '''
+    使用pytdx获取
+    data_df = ex_api.to_df(ex_api.get_markets())
+    '''
+    CFFEX = 47  # 中国金融期货交易所(期货), 期权是 7
+    SHFE = 30  # 上海期货交易所
+    CZCE = 28  # 郑州商品交易所
+    DCE = 29  # 大连商品交易所
+    INE = 30  # 上海国际能源交易中心
+
+
 if __name__ == '__main__':
     pass
