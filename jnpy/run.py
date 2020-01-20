@@ -43,6 +43,8 @@ from vnpy.app.script_trader import ScriptTraderApp
 from vnpy.app.rpc_service import RpcServiceApp
 from vnpy.app.spread_trading import SpreadTradingApp
 
+from vnpy.app.pytdx_loader import PytdxLoaderApp
+
 
 def main():
     """"""
@@ -90,6 +92,8 @@ def main():
     main_engine.add_app(ScriptTraderApp)
     main_engine.add_app(RpcServiceApp)
     main_engine.add_app(SpreadTradingApp)
+
+    main_engine.add_app(PytdxLoaderApp)
 
     main_window = MainWindow(main_engine, event_engine)
     main_window.showMaximized()
