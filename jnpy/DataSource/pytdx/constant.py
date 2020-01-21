@@ -9,7 +9,6 @@
 from enum import Enum, unique
 
 
-@unique
 class KBarType(Enum):
     '''
     K 线种类
@@ -26,15 +25,22 @@ class KBarType(Enum):
     10 - 季K 线
     11 - 年K 线
     '''
-    KLINE_TYPE_5MIN = 0
-    KLINE_TYPE_15MIN = 1
-    KLINE_TYPE_30MIN = 2
-    KLINE_TYPE_1HOUR = 3
-    KLINE_TYPE_DAILY = 4
-    KLINE_TYPE_WEEKLY = 5
-    KLINE_TYPE_MONTHLY = 6
-    KLINE_TYPE_EXHQ_1MIN = 7
+    KLINE_TYPE_5MIN = MINUTE_5 = 0
+    KLINE_TYPE_15MIN = MINUTE_15 = 1
+    KLINE_TYPE_30MIN = MINUTE_30 = 2
+    KLINE_TYPE_1HOUR = HOUR = 3
+    KLINE_TYPE_DAILY = DAILY = 4
+    KLINE_TYPE_WEEKLY = WEEKLY = 5
+    KLINE_TYPE_EXHQ_1MIN = MINUTE = 7
     KLINE_TYPE_1MIN = 8
+    # vnpy.trade.constant 的 Interval 枚举类
+    # 在 pytdxLoader 读取数据的时候, 将vnpy界面拿到的参数转成pytdx
+    # MINUTE_5 = 0
+    # MINUTE_15 = 1
+    # MINUTE_30 = 2
+    # HOUR = 3
+
+    KLINE_TYPE_MONTHLY = 6
     KLINE_TYPE_RI_K = 9
     KLINE_TYPE_3MONTH = 10
     KLINE_TYPE_YEARLY = 11
@@ -53,4 +59,5 @@ class FutureMarketCode(Enum):
 
 
 if __name__ == '__main__':
-    pass
+    x = FutureMarketCode['SHFE'].value
+    print(1)

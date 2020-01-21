@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from vnpy.trader.app import BaseApp
-from .fengchen_engine import APP_NAME, PytdxLoaderEngine
+from .engine import APP_NAME, PytdxLoaderEngine
 # from .engine import APP_NAME, CsvLoaderEngine
 
 

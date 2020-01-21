@@ -9,9 +9,9 @@
 import pandas as pd
 
 from pytdx.exhq import TdxExHq_API
-from ips import IPsSource
-from log import LogModule
-from constant import KBarType
+from .ips import IPsSource
+from .log import LogModule
+from .constant import KBarType
 
 
 class ExhqAPI(TdxExHq_API):
@@ -34,8 +34,9 @@ class ExhqAPI(TdxExHq_API):
         start = 0
 
         while True:
-            df = ex_api.to_df(
-                ex_api.get_instrument_bars(
+            self.info_log.write_log(f"开始获取{start}条数据...")
+            df = self.to_df(
+                self.get_instrument_bars(
                     category=category,
                     market=market, code=code, start=start, count=500
                 )
@@ -68,7 +69,7 @@ if __name__ == '__main__':
 
         # ex_api.update_contracts_info_by_ctp_gateway()
 
-        from constant import FutureMarketCode
+        from .constant import FutureMarketCode
 
         params_dict = {
             "category": KBarType.KLINE_TYPE_1HOUR.value,

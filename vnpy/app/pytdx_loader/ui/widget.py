@@ -7,7 +7,7 @@ from vnpy.trader.constant import Exchange, Interval
 from vnpy.trader.engine import MainEngine
 from vnpy.trader.ui import QtCore, QtWidgets
 
-from ..fengchen_engine import APP_NAME
+from ..engine import APP_NAME
 # from ..engine import APP_NAME
 
 from jnpy.DataSource.pytdx.contracts import read_contracts_json_dict
@@ -27,21 +27,18 @@ class PytdxLoaderWidget(QtWidgets.QWidget):
 
     def init_ui(self):
         """"""
-        self.setWindowTitle("CSV载入")
-        self.setFixedWidth(300)
+        self.setWindowTitle("pytdx载入")
+        self.setFixedWidth(600)
 
         self.setWindowFlags(
             (self.windowFlags() | QtCore.Qt.CustomizeWindowHint)
             & ~QtCore.Qt.WindowMaximizeButtonHint)
 
-        file_button = QtWidgets.QPushButton("选择文件")
-        file_button.clicked.connect(self.select_file)
-
         load_button = QtWidgets.QPushButton("载入数据")
         load_button.clicked.connect(self.load_data)
 
-        self.file_edit = QtWidgets.QLineEdit()
-        self.symbol_edit = QtWidgets.QLineEdit()
+
+        self.symbol_type = QtWidgets.QLineEdit("L8")
 
         self.symbol_combo = QtWidgets.QComboBox()
         self.exchange_combo = QtWidgets.QComboBox()
@@ -80,12 +77,11 @@ class PytdxLoaderWidget(QtWidgets.QWidget):
         self.progress_bar_dict['save_progress_bar'] = save_progress_bar
 
         form = QtWidgets.QFormLayout()
-        form.addRow(file_button, self.file_edit)
         form.addRow(QtWidgets.QLabel())
         form.addRow(info_label)
-        form.addRow("代码", self.symbol_edit)
         form.addRow("交易所", self.exchange_combo)
         form.addRow("代码", self.symbol_combo)
+        form.addRow("类型\n(L8主连/L9指数/2006)", self.symbol_type)
         form.addRow("周期", self.interval_combo)
         form.addRow(QtWidgets.QLabel())
         form.addRow(head_label)
@@ -122,22 +118,16 @@ class PytdxLoaderWidget(QtWidgets.QWidget):
             for symbol in symbols_dict[exchange_str]:
                 self.symbol_combo.addItem(symbol, symbol)
         else:
-            print(f"{exchange_str} is not in pytdx market_code_info.json file!")
+            err_msg = f"{exchange_str} is not in pytdx market_code_info.json file!"
+            QtWidgets.QMessageBox.information(self, "载入失败！", err_msg)
+            print(err_msg)
 
-        print(1)
 
-    def select_file(self):
-        """"""
-        result: str = QtWidgets.QFileDialog.getOpenFileName(
-            self, filter="CSV (*.csv)")
-        filename = result[0]
-        if filename:
-            self.file_edit.setText(filename)
 
     def load_data(self):
         """"""
-        file_path = self.file_edit.text()
-        symbol = self.symbol_edit.text()
+        symbol_code = self.symbol_combo.currentData()
+        symbol_type = self.symbol_type.text()
         exchange = self.exchange_combo.currentData()
         interval = self.interval_combo.currentData()
         datetime_head = self.datetime_edit.text()
@@ -149,8 +139,8 @@ class PytdxLoaderWidget(QtWidgets.QWidget):
         open_interest_head = self.open_interest_edit.text()
         datetime_format = self.format_edit.text()
 
+        symbol = symbol_code + symbol_type
         start, end, count = self.engine.load(
-            file_path,
             symbol,
             exchange,
             interval,

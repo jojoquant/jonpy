@@ -12,6 +12,8 @@ from vnpy.trader.database import database_manager
 from vnpy.trader.engine import BaseEngine, MainEngine
 from vnpy.trader.object import BarData
 
+from jnpy.DataSource.pytdx import ExhqAPI, IPsSource, FutureMarketCode, KBarType
+
 APP_NAME = "PytdxLoader"
 
 
@@ -78,9 +80,14 @@ class PytdxLoaderEngine(BaseEngine):
             progress_bar_dict
     ):
         start_time = time.time()
-        data[datetime_head] = data[datetime_head].apply(
-            lambda x: datetime.strptime(x, datetime_format) if datetime_format else datetime.fromisoformat(x))
-        print(f'df apply 处理日期时间 cost {time.time()-start_time:.2f}s')
+        if isinstance(data[datetime_head][0], str):
+            data[datetime_head] = data[datetime_head].apply(
+                lambda x: datetime.strptime(x, datetime_format) if datetime_format else datetime.fromisoformat(x))
+        elif isinstance(data[datetime_head][0], pd.Timestamp):
+            print("datetime 格式为 pd.Timestamp, 不用处理.")
+        else:
+            print("未知datetime类型, 请检查")
+        print(f'df apply 处理日期时间 cost {time.time() - start_time:.2f}s')
 
         start_time = time.time()
         bars = data.apply(
@@ -109,7 +116,6 @@ class PytdxLoaderEngine(BaseEngine):
 
     def load(
             self,
-            file_path: str,
             symbol: str,
             exchange: Exchange,
             interval: Interval,
@@ -127,10 +133,33 @@ class PytdxLoaderEngine(BaseEngine):
         """
         load by filename   %m/%d/%Y
         """
-        data = pd.read_csv(file_path)
+        # data = pd.read_csv(file_path)
+        ip, port = IPsSource().get_fast_exhq_ip()
+        ex_api = ExhqAPI()
+        with ex_api.connect(ip, port):
+            params_dict = {
+                "category": KBarType[interval.name].value,
+                "market": FutureMarketCode[exchange.value].value,
+                "code": symbol,
+            }
+            data_df = ex_api.get_all_KBars_df(**params_dict)
+
+            # transform column name to vnpy format
+            data_df.rename(
+                columns={
+                    "datetime": "Datetime",
+                    "open": "Open",
+                    "high": "High",
+                    "low": "Low",
+                    "close": "Close",
+                    "position": "OpenInterest",
+                    "trade": "Volume",
+                },
+                inplace=True
+            )
 
         return self.load_by_handle(
-            data,
+            data_df,
             symbol=symbol,
             exchange=exchange,
             interval=interval,
