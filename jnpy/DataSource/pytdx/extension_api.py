@@ -9,10 +9,10 @@
 import pandas as pd
 
 from pytdx.exhq import TdxExHq_API
-from .ips import IPsSource
-from .log import LogModule
-from .constant import KBarType
-
+# from ips import IPsSource
+from jnpy.DataSource.pytdx.ips import IPsSource
+from jnpy.DataSource.pytdx.log import LogModule
+from jnpy.DataSource.pytdx.constant import KBarType
 
 class ExhqAPI(TdxExHq_API):
 
@@ -69,7 +69,7 @@ if __name__ == '__main__':
 
         # ex_api.update_contracts_info_by_ctp_gateway()
 
-        from .constant import FutureMarketCode
+        from constant import FutureMarketCode
 
         params_dict = {
             "category": KBarType.KLINE_TYPE_1HOUR.value,
