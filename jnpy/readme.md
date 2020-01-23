@@ -52,4 +52,8 @@ vnctpmd.cpython-37m-x86_64-linux-gnu.so
 和vnctptd.cpython-37m-x86_64-linux-gnu.so，
 把它们粘贴到/vnpy-2.0.9/vnpy/api/ctp目录下即可。
 
+之前因为在manjaro上面对这2个.so文件做了版本控制， 所以需要将其删除， 然后重新build， 然后粘贴过来
+
+最后记得，、要不连接交易所的时候报错
+sudo locale-gen zh_CN.GB18030
 #日呀！
