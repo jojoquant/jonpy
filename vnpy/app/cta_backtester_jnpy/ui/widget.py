@@ -2,13 +2,18 @@ import numpy as np
 import pyqtgraph as pg
 from datetime import datetime, timedelta
 
+import pandas as pd
+from vnpy.trader.setting import get_settings
+from vnpy.app.cta_backtester_jnpy.db_operation import DBOperation
+from jnpy.DataSource.pytdx.contracts import read_contracts_json_dict
+
 from vnpy.trader.constant import Interval, Direction, Offset
 from vnpy.trader.engine import MainEngine
 from vnpy.trader.ui import QtCore, QtWidgets, QtGui
 from vnpy.trader.ui.widget import BaseMonitor, BaseCell, DirectionCell, EnumCell
 from vnpy.trader.ui.editor import CodeEditor
 from vnpy.event import Event, EventEngine
-from vnpy.chart import ChartWidget, CandleItem, VolumeItem
+from vnpy.chart import ChartWidget, CandleItem, VolumeItem, TechIndexItem
 from vnpy.trader.utility import load_json, save_json
 
 from ..engine import (
@@ -20,7 +25,7 @@ from ..engine import (
 )
 
 
-class BacktesterManager(QtWidgets.QWidget):
+class JnpyBacktesterManager(QtWidgets.QWidget):
     """"""
 
     setting_filename = "cta_backtester_setting.json"
@@ -39,6 +44,9 @@ class BacktesterManager(QtWidgets.QWidget):
         self.backtester_engine = main_engine.get_engine(APP_NAME)
         self.class_names = []
         self.settings = {}
+        self.db_instance = DBOperation(get_settings("database."))
+        self.dbbardata_groupby_df = pd.DataFrame()
+        self.pytdx_contracts_dict = read_contracts_json_dict()
 
         self.target_display = ""
 
@@ -64,14 +72,30 @@ class BacktesterManager(QtWidgets.QWidget):
         # Setting Part
         self.class_combo = QtWidgets.QComboBox()
 
-        self.symbol_line = QtWidgets.QLineEdit("IF88.CFFEX")
+        # self.symbol_line = QtWidgets.QLineEdit("IF88.CFFEX")
+        self.symbol_line = QtWidgets.QLineEdit("RB.SHFE")
+        self.symbol_label = QtWidgets.QLabel()
+        self.symbol_label.setText("燃料油!!!")
+        self.data_counts_label = QtWidgets.QLabel()
+
+        #############################################
+        # fangyang add, 根据数据库内容进行选项显示
+        self.dbbardata_groupby_df = self.db_instance.get_groupby_data_from_sql_db()
+
+        self.exchange_combo = QtWidgets.QComboBox()
+        self.exchange_combo.addItems(self.dbbardata_groupby_df['exchange'].to_list())
+        self.exchange_combo.activated[str].connect(self.onExchangeActivated)
+
+        self.symbol_combo = QtWidgets.QComboBox()
+        self.symbol_combo.currentIndexChanged.connect(self.onSymbolActivated)
 
         self.interval_combo = QtWidgets.QComboBox()
-        for inteval in Interval:
-            self.interval_combo.addItem(inteval.value)
+        self.interval_combo.currentIndexChanged.connect(self.onIntervalActivated)
+        ##########################################
 
         end_dt = datetime.now()
-        start_dt = end_dt - timedelta(days=3 * 365)
+        # start_dt = end_dt - timedelta(days=3 * 365)  # debug 临时更改
+        start_dt = end_dt - timedelta(days=100)  # debug 临时更改
 
         self.start_date_edit = QtWidgets.QDateEdit(
             QtCore.QDate(
@@ -85,13 +109,17 @@ class BacktesterManager(QtWidgets.QWidget):
         )
 
         self.rate_line = QtWidgets.QLineEdit("0.000025")
-        self.slippage_line = QtWidgets.QLineEdit("0.2")
-        self.size_line = QtWidgets.QLineEdit("300")
-        self.pricetick_line = QtWidgets.QLineEdit("0.2")
+        self.slippage_line = QtWidgets.QLineEdit("1")
+        self.size_line = QtWidgets.QLineEdit("10")
+        self.pricetick_line = QtWidgets.QLineEdit("1")
         self.capital_line = QtWidgets.QLineEdit("1000000")
 
         self.inverse_combo = QtWidgets.QComboBox()
         self.inverse_combo.addItems(["正向", "反向"])
+
+        # fangyang add
+        self.debug_combo = QtWidgets.QComboBox()
+        self.debug_combo.addItems(["Thread 运行回测", "Debug 运行回测"])
 
         backtesting_button = QtWidgets.QPushButton("开始回测")
         backtesting_button.clicked.connect(self.start_backtesting)
@@ -128,32 +156,37 @@ class BacktesterManager(QtWidgets.QWidget):
         reload_button = QtWidgets.QPushButton("策略重载")
         reload_button.clicked.connect(self.reload_strategy_class)
 
-        for button in [
-            backtesting_button,
-            optimization_button,
-            downloading_button,
-            self.result_button,
-            self.order_button,
-            self.trade_button,
-            self.daily_button,
-            self.candle_button,
-            edit_button,
-            reload_button
-        ]:
-            button.setFixedHeight(button.sizeHint().height() * 2)
+        # for button in [
+        #     backtesting_button,
+        #     optimization_button,
+        #     downloading_button,
+        #     self.result_button,
+        #     self.order_button,
+        #     self.trade_button,
+        #     self.daily_button,
+        #     self.candle_button,
+        #     edit_button,
+        #     reload_button
+        # ]:
+        #     button.setFixedHeight(button.sizeHint().height() * 2)
 
         form = QtWidgets.QFormLayout()
         form.addRow("交易策略", self.class_combo)
         form.addRow("本地代码", self.symbol_line)
+        form.addRow("交易所代码", self.exchange_combo)
+        form.addRow("本地代码2", self.symbol_combo)
+        form.addRow("合约名称", self.symbol_label)
         form.addRow("K线周期", self.interval_combo)
         form.addRow("开始日期", self.start_date_edit)
         form.addRow("结束日期", self.end_date_edit)
+        form.addRow("数据量", self.data_counts_label)
         form.addRow("手续费率", self.rate_line)
         form.addRow("交易滑点", self.slippage_line)
         form.addRow("合约乘数", self.size_line)
         form.addRow("价格跳动", self.pricetick_line)
         form.addRow("回测资金", self.capital_line)
         form.addRow("合约模式", self.inverse_combo)
+        form.addRow("回测模式", self.debug_combo)
 
         result_grid = QtWidgets.QGridLayout()
         result_grid.addWidget(self.trade_button, 0, 0)
@@ -245,8 +278,63 @@ class BacktesterManager(QtWidgets.QWidget):
         else:
             self.inverse_combo.setCurrentIndex(1)
 
+    def onExchangeActivated(self, current_exchange_text):
+
+        '''
+        exchange变化触发, 重置symbol QCombox
+        '''
+
+        self.symbol_combo.clear()
+
+        self.symbol_combo.addItems(
+            self.dbbardata_groupby_df[
+                self.dbbardata_groupby_df['exchange'] == current_exchange_text
+                ]['symbol'].to_list()
+        )
+
+    def onSymbolActivated(self):
+
+        '''
+        symbol变化触发, 重置interval QCombox
+        '''
+
+        self.interval_combo.clear()
+        current_symbol = self.symbol_combo.currentText()
+        current_exchange = self.exchange_combo.currentText()
+
+        self.interval_combo.addItems(
+            self.dbbardata_groupby_df[
+                (self.dbbardata_groupby_df['symbol'] == current_symbol)
+                & (self.dbbardata_groupby_df['exchange'] == current_exchange)
+                ]['interval'].to_list()
+        )
+
+    def onIntervalActivated(self):
+
+        current_symbol = self.symbol_combo.currentText()
+        current_exchange = self.exchange_combo.currentText()
+        current_interval = self.interval_combo.currentText()
+
+        count_series = self.dbbardata_groupby_df[
+            (self.dbbardata_groupby_df['symbol'] == current_symbol)
+            & (self.dbbardata_groupby_df['exchange'] == current_exchange)
+            & (self.dbbardata_groupby_df['interval'] == current_interval)
+            ]['count(1)']
+
+        if count_series.empty:
+            self.data_counts_label.setText("0")
+        else:
+            self.data_counts_label.setText(f'''{count_series.values[0]}''')
+
+        if current_symbol:
+            symbol_de_L8_str = current_symbol[:-2]
+            self.size_line.setText(f"{self.pytdx_contracts_dict[symbol_de_L8_str]['size']}")
+            self.pricetick_line.setText(f"{self.pytdx_contracts_dict[symbol_de_L8_str]['pricetick']}")
+
     def register_event(self):
         """"""
+        # if self.debug_combo.currentText() == "Debug 运行回测":
+        #     self.signal_log.connect(self.write_log)
         self.signal_log.connect(self.process_log_event)
         self.signal_backtesting_finished.connect(
             self.process_backtesting_finished_event)
@@ -306,21 +394,13 @@ class BacktesterManager(QtWidgets.QWidget):
         else:
             inverse = True
 
-        # Save backtesting parameters
-        backtesting_setting = {
-            "class_name": class_name,
-            "vt_symbol": vt_symbol,
-            "interval": interval,
-            "rate": rate,
-            "slippage": slippage,
-            "size": size,
-            "pricetick": pricetick,
-            "capital": capital,
-            "inverse": inverse,
-        }
-        save_json(self.setting_filename, backtesting_setting)
+        # fangyang add
+        if self.debug_combo.currentText() == "Thread 运行回测":  # "Debug 运行回测"
+            backtesting_debug_mode = False
+        else:
+            backtesting_debug_mode = True
+        #######################
 
-        # Get strategy setting
         old_setting = self.settings[class_name]
         dialog = BacktestingSettingEditor(class_name, old_setting)
         i = dialog.exec()
@@ -342,6 +422,7 @@ class BacktesterManager(QtWidgets.QWidget):
             pricetick,
             capital,
             inverse,
+            backtesting_debug_mode,  # fangyang add
             new_setting
         )
 
@@ -584,7 +665,7 @@ class BacktestingSettingEditor(QtWidgets.QDialog):
     """
 
     def __init__(
-        self, class_name: str, parameters: dict
+            self, class_name: str, parameters: dict
     ):
         """"""
         super(BacktestingSettingEditor, self).__init__()
@@ -783,7 +864,7 @@ class OptimizationSettingEditor(QtWidgets.QDialog):
     }
 
     def __init__(
-        self, class_name: str, parameters: dict
+            self, class_name: str, parameters: dict
     ):
         """"""
         super().__init__()
@@ -902,7 +983,7 @@ class OptimizationResultMonitor(QtWidgets.QDialog):
     """
 
     def __init__(
-        self, result_values: list, target_display: str
+            self, result_values: list, target_display: str
     ):
         """"""
         super().__init__()
@@ -1014,11 +1095,11 @@ class BacktestingResultDialog(QtWidgets.QDialog):
     """
 
     def __init__(
-        self,
-        main_engine: MainEngine,
-        event_engine: EventEngine,
-        title: str,
-        table_class: QtWidgets.QTableWidget
+            self,
+            main_engine: MainEngine,
+            event_engine: EventEngine,
+            title: str,
+            table_class: QtWidgets.QTableWidget
     ):
         """"""
         super().__init__()
@@ -1082,8 +1163,10 @@ class CandleChartDialog(QtWidgets.QDialog):
         # Create chart widget
         self.chart = ChartWidget()
         self.chart.add_plot("candle", hide_x_axis=True)
+        self.chart.add_plot("tech_chart", maximum_height=200)
         self.chart.add_plot("volume", maximum_height=200)
         self.chart.add_item(CandleItem, "candle", "candle")
+        self.chart.add_item(TechIndexItem, "tech_chart", "tech_chart")
         self.chart.add_item(VolumeItem, "volume", "volume")
         self.chart.add_cursor()
 
@@ -1120,14 +1203,14 @@ class CandleChartDialog(QtWidgets.QDialog):
             }
 
             if trade.direction == Direction.LONG:
-                scatter_symbol = "t1"   # Up arrow
+                scatter_symbol = "t1"  # Up arrow
             else:
-                scatter_symbol = "t"    # Down arrow
+                scatter_symbol = "t"  # Down arrow
 
             if trade.offset == Offset.OPEN:
-                scatter_brush = pg.mkBrush((255, 255, 0))   # Yellow
+                scatter_brush = pg.mkBrush((255, 255, 0))  # Yellow
             else:
-                scatter_brush = pg.mkBrush((0, 0, 255))     # Blue
+                scatter_brush = pg.mkBrush((0, 0, 255))  # Blue
 
             scatter["symbol"] = scatter_symbol
             scatter["brush"] = scatter_brush

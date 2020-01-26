@@ -19,7 +19,7 @@ from vnpy.app.cta_strategy import (
     OptimizationSetting
 )
 
-APP_NAME = "CtaBacktester"
+APP_NAME = "CtaBacktester_jnpy"
 
 EVENT_BACKTESTER_LOG = "eBacktesterLog"
 EVENT_BACKTESTER_BACKTESTING_FINISHED = "eBacktesterBacktestingFinished"
@@ -35,7 +35,7 @@ class BacktesterEngine(BaseEngine):
         """"""
         super().__init__(main_engine, event_engine, APP_NAME)
 
-        self.classes = {}
+        self.classes = {}  # strategy classes
         self.backtesting_engine = None
         self.thread = None
 
@@ -128,19 +128,19 @@ class BacktesterEngine(BaseEngine):
         return list(self.classes.keys())
 
     def run_backtesting(
-        self,
-        class_name: str,
-        vt_symbol: str,
-        interval: str,
-        start: datetime,
-        end: datetime,
-        rate: float,
-        slippage: float,
-        size: int,
-        pricetick: float,
-        capital: int,
-        inverse: bool,
-        setting: dict
+            self,
+            class_name: str,
+            vt_symbol: str,
+            interval: str,
+            start: datetime,
+            end: datetime,
+            rate: float,
+            slippage: float,
+            size: int,
+            pricetick: float,
+            capital: int,
+            inverse: bool,
+            setting: dict
     ):
         """"""
         self.result_df = None
@@ -168,8 +168,8 @@ class BacktesterEngine(BaseEngine):
             setting
         )
 
-        engine.load_data()
-        engine.run_backtesting()
+        engine.load_data()  # fangyang, 从数据库中查询结果， 放入engine这个类实例的self.history_data中
+        engine.run_backtesting(backtester_engine=self)
         self.result_df = engine.calculate_result()
         self.result_statistics = engine.calculate_statistics(output=False)
 
@@ -181,28 +181,29 @@ class BacktesterEngine(BaseEngine):
         self.event_engine.put(event)
 
     def start_backtesting(
-        self,
-        class_name: str,
-        vt_symbol: str,
-        interval: str,
-        start: datetime,
-        end: datetime,
-        rate: float,
-        slippage: float,
-        size: int,
-        pricetick: float,
-        capital: int,
-        inverse: bool,
-        setting: dict
+            self,
+            class_name: str,
+            vt_symbol: str,
+            interval: str,
+            start: datetime,
+            end: datetime,
+            rate: float,
+            slippage: float,
+            size: int,
+            pricetick: float,
+            capital: int,
+            inverse: bool,
+            backtesting_debug_mode: bool,
+            setting: dict
     ):
         if self.thread:
             self.write_log("已有任务在运行中，请等待完成")
             return False
 
         self.write_log("-" * 40)
-        self.thread = Thread(
-            target=self.run_backtesting,
-            args=(
+        if backtesting_debug_mode:
+            self.backtesting_engine.output = self.backtesting_engine.output_for_backtester
+            self.run_backtesting(
                 class_name,
                 vt_symbol,
                 interval,
@@ -216,8 +217,25 @@ class BacktesterEngine(BaseEngine):
                 inverse,
                 setting
             )
-        )
-        self.thread.start()
+        else:
+            self.thread = Thread(
+                target=self.run_backtesting,
+                args=(
+                    class_name,
+                    vt_symbol,
+                    interval,
+                    start,
+                    end,
+                    rate,
+                    slippage,
+                    size,
+                    pricetick,
+                    capital,
+                    inverse,
+                    setting
+                )
+            )
+            self.thread.start()
 
         return True
 
@@ -239,20 +257,20 @@ class BacktesterEngine(BaseEngine):
         return strategy_class.get_class_parameters()
 
     def run_optimization(
-        self,
-        class_name: str,
-        vt_symbol: str,
-        interval: str,
-        start: datetime,
-        end: datetime,
-        rate: float,
-        slippage: float,
-        size: int,
-        pricetick: float,
-        capital: int,
-        inverse: bool,
-        optimization_setting: OptimizationSetting,
-        use_ga: bool
+            self,
+            class_name: str,
+            vt_symbol: str,
+            interval: str,
+            start: datetime,
+            end: datetime,
+            rate: float,
+            slippage: float,
+            size: int,
+            pricetick: float,
+            capital: int,
+            inverse: bool,
+            optimization_setting: OptimizationSetting,
+            use_ga: bool
     ):
         """"""
         if use_ga:
@@ -304,20 +322,20 @@ class BacktesterEngine(BaseEngine):
         self.event_engine.put(event)
 
     def start_optimization(
-        self,
-        class_name: str,
-        vt_symbol: str,
-        interval: str,
-        start: datetime,
-        end: datetime,
-        rate: float,
-        slippage: float,
-        size: int,
-        pricetick: float,
-        capital: int,
-        inverse: bool,
-        optimization_setting: OptimizationSetting,
-        use_ga: bool
+            self,
+            class_name: str,
+            vt_symbol: str,
+            interval: str,
+            start: datetime,
+            end: datetime,
+            rate: float,
+            slippage: float,
+            size: int,
+            pricetick: float,
+            capital: int,
+            inverse: bool,
+            optimization_setting: OptimizationSetting,
+            use_ga: bool
     ):
         if self.thread:
             self.write_log("已有任务在运行中，请等待完成")
@@ -347,11 +365,11 @@ class BacktesterEngine(BaseEngine):
         return True
 
     def run_downloading(
-        self,
-        vt_symbol: str,
-        interval: str,
-        start: datetime,
-        end: datetime
+            self,
+            vt_symbol: str,
+            interval: str,
+            start: datetime,
+            end: datetime
     ):
         """
         Query bar data from RQData.
@@ -393,11 +411,11 @@ class BacktesterEngine(BaseEngine):
         self.thread = None
 
     def start_downloading(
-        self,
-        vt_symbol: str,
-        interval: str,
-        start: datetime,
-        end: datetime
+            self,
+            vt_symbol: str,
+            interval: str,
+            start: datetime,
+            end: datetime
     ):
         if self.thread:
             self.write_log("已有任务在运行中，请等待完成")

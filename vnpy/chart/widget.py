@@ -18,7 +18,7 @@ from .base import (
 )
 from .axis import DatetimeAxis
 from .item import ChartItem
-from ..app.cta_backtester.ui.widget_jnpy import TechIndexSettingEditor
+from vnpy.app.cta_backtester_jnpy.ui.widget_jnpy import TechIndexSettingEditor
 
 pg.setConfigOptions(antialias=True)
 

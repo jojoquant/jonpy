@@ -82,7 +82,10 @@ class VnpyCtpGateway:
                     # "name": "".join(re.findall(r'[\u4e00-\u9fa5]+', value.name)),
                     "name": value.name,
                     "main_continue_code": f"{code_str}{self.con_type_dict['主连']}",
-                    "index_code": f"{code_str}{self.con_type_dict['指数']}"
+                    "index_code": f"{code_str}{self.con_type_dict['指数']}",
+                    "size": value.size,
+                    "pricetick": value.pricetick,
+                    "min_volume": value.min_volume,
                 }
 
         return result_dict
