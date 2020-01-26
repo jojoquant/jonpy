@@ -73,9 +73,8 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         self.class_combo = QtWidgets.QComboBox()
 
         # self.symbol_line = QtWidgets.QLineEdit("IF88.CFFEX")
-        self.symbol_line = QtWidgets.QLineEdit("RB.SHFE")
+        self.symbol_line = ""
         self.symbol_label = QtWidgets.QLabel()
-        self.symbol_label.setText("燃料油!!!")
         self.data_counts_label = QtWidgets.QLabel()
 
         #############################################
@@ -83,7 +82,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         self.dbbardata_groupby_df = self.db_instance.get_groupby_data_from_sql_db()
 
         self.exchange_combo = QtWidgets.QComboBox()
-        self.exchange_combo.addItems(self.dbbardata_groupby_df['exchange'].to_list())
+        self.exchange_combo.addItems(self.dbbardata_groupby_df['exchange'].drop_duplicates().to_list())
         self.exchange_combo.activated[str].connect(self.onExchangeActivated)
 
         self.symbol_combo = QtWidgets.QComboBox()
@@ -172,14 +171,13 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
 
         form = QtWidgets.QFormLayout()
         form.addRow("交易策略", self.class_combo)
-        form.addRow("本地代码", self.symbol_line)
         form.addRow("交易所代码", self.exchange_combo)
-        form.addRow("本地代码2", self.symbol_combo)
+        form.addRow("本地代码", self.symbol_combo)
         form.addRow("合约名称", self.symbol_label)
         form.addRow("K线周期", self.interval_combo)
         form.addRow("开始日期", self.start_date_edit)
         form.addRow("结束日期", self.end_date_edit)
-        form.addRow("数据量", self.data_counts_label)
+        form.addRow("DB内总数据量", self.data_counts_label)
         form.addRow("手续费率", self.rate_line)
         form.addRow("交易滑点", self.slippage_line)
         form.addRow("合约乘数", self.size_line)
@@ -261,8 +259,6 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
             self.class_combo.findText(setting["class_name"])
         )
 
-        self.symbol_line.setText(setting["vt_symbol"])
-
         self.interval_combo.setCurrentIndex(
             self.interval_combo.findText(setting["interval"])
         )
@@ -289,7 +285,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         self.symbol_combo.addItems(
             self.dbbardata_groupby_df[
                 self.dbbardata_groupby_df['exchange'] == current_exchange_text
-                ]['symbol'].to_list()
+                ]['symbol'].drop_duplicates().to_list()
         )
 
     def onSymbolActivated(self):
@@ -326,10 +322,40 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         else:
             self.data_counts_label.setText(f'''{count_series.values[0]}''')
 
-        if current_symbol:
+        if current_exchange and current_symbol and current_interval:
             symbol_de_L8_str = current_symbol[:-2]
+            self.symbol_label.setText(f"{self.pytdx_contracts_dict[symbol_de_L8_str]['name']}")
             self.size_line.setText(f"{self.pytdx_contracts_dict[symbol_de_L8_str]['size']}")
             self.pricetick_line.setText(f"{self.pytdx_contracts_dict[symbol_de_L8_str]['pricetick']}")
+
+            # TODO 增加重置日期后统计数据数目
+            # 重置日期
+            db_end_dt = self.db_instance.get_end_date_from_db(
+                symbol=current_symbol,
+                exchange=current_exchange,
+                interval=current_interval
+            )
+            db_end_dt = datetime.strptime(db_end_dt, '%Y-%m-%d %H:%M:%S')
+            db_start_dt = self.db_instance.get_start_date_from_db(
+                symbol=current_symbol,
+                exchange=current_exchange,
+                interval=current_interval
+            )
+            db_start_dt = datetime.strptime(db_start_dt, '%Y-%m-%d %H:%M:%S')
+            self.start_date_edit.setDate(
+                QtCore.QDate(
+                    db_start_dt.year,
+                    db_start_dt.month,
+                    db_start_dt.day
+                )
+            )
+            self.end_date_edit.setDate(
+                QtCore.QDate(
+                    db_end_dt.year,
+                    db_end_dt.month,
+                    db_end_dt.day
+                )
+            )
 
     def register_event(self):
         """"""
@@ -379,7 +405,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
     def start_backtesting(self):
         """"""
         class_name = self.class_combo.currentText()
-        vt_symbol = self.symbol_line.text()
+        vt_symbol = f"{self.symbol_combo.currentText()}.{self.exchange_combo.currentText()}"
         interval = self.interval_combo.currentText()
         start = self.start_date_edit.date().toPyDate()
         end = self.end_date_edit.date().toPyDate()
@@ -443,7 +469,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
     def start_optimization(self):
         """"""
         class_name = self.class_combo.currentText()
-        vt_symbol = self.symbol_line.text()
+        vt_symbol = f"{self.symbol_combo.currentText()}.{self.exchange_combo.currentText()}"
         interval = self.interval_combo.currentText()
         start = self.start_date_edit.date().toPyDate()
         end = self.end_date_edit.date().toPyDate()
