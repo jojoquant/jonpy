@@ -561,23 +561,24 @@ class ChartCursor(QtCore.QObject):
             bottom_view.sceneBoundingRect().bottomRight() - axis_offset
         )
 
-        current_data_series = self._manager.get_df().iloc[self._x]
-        label_text = "".join([f'{key} : {value}\n\n' for key, value in current_data_series.items()])
-        for plot_name, label in self._y_labels.items():
-            if plot_name == self._plot_name:
-                # label.setText(str(self._y))
-                label.setText(label_text)
-                label.show()
-                label.setPos(bottom_right.x(), self._y)
-            else:
-                label.hide()
+        if self._x < self._manager.get_count():
+            current_data_series = self._manager.get_df().iloc[self._x]
+            label_text = "".join([f'{key} : {value}\n\n' for key, value in current_data_series.items()])
+            for plot_name, label in self._y_labels.items():
+                if plot_name == self._plot_name:
+                    # label.setText(str(self._y))
+                    label.setText(label_text)
+                    label.show()
+                    label.setPos(bottom_right.x(), self._y)
+                else:
+                    label.hide()
 
-        dt = self._manager.get_datetime(self._x)
-        if dt:
-            self._x_label.setText(dt.strftime("%Y-%m-%d %H:%M:%S"))
-            self._x_label.show()
-            self._x_label.setPos(self._x, bottom_right.y())
-            self._x_label.setAnchor((0, 0))
+            dt = self._manager.get_datetime(self._x)
+            if dt:
+                self._x_label.setText(dt.strftime("%Y-%m-%d %H:%M:%S"))
+                self._x_label.show()
+                self._x_label.setPos(self._x, bottom_right.y())
+                self._x_label.setAnchor((0, 0))
 
     def update_info(self) -> None:
         """"""

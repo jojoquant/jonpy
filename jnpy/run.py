@@ -43,6 +43,7 @@ from vnpy.app.risk_manager import RiskManagerApp
 from vnpy.app.script_trader import ScriptTraderApp
 from vnpy.app.rpc_service import RpcServiceApp
 from vnpy.app.spread_trading import SpreadTradingApp
+from vnpy.app.chart_wizard import ChartWizardApp
 
 from vnpy.app.pytdx_loader import PytdxLoaderApp
 
@@ -94,6 +95,7 @@ def main():
     # main_engine.add_app(ScriptTraderApp)
     # main_engine.add_app(RpcServiceApp)
     # main_engine.add_app(SpreadTradingApp)
+    main_engine.add_app(ChartWizardApp)
 
     main_engine.add_app(PytdxLoaderApp)
 
