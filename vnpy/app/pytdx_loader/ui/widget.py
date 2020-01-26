@@ -44,7 +44,7 @@ class PytdxLoaderWidget(QtWidgets.QWidget):
         self.exchange_combo = QtWidgets.QComboBox()
         for i in Exchange:
             self.exchange_combo.addItem(str(i.name), i)
-        self.exchange_combo.currentIndexChanged.connect(self.change_symbol)
+        self.exchange_combo.activated[str].connect(self.onExchangeActivated)
 
         self.interval_combo = QtWidgets.QComboBox()
         for i in Interval:
@@ -102,17 +102,17 @@ class PytdxLoaderWidget(QtWidgets.QWidget):
 
         self.setLayout(form)
 
-    def change_symbol(self):
-        exchange_str = self.exchange_combo.currentText()
+    def onExchangeActivated(self, exchange_str):
+        self.symbol_combo.clear()
         contracts_dict = read_contracts_json_dict()
 
         # 提取 contracts_dict 中信息变为 symbols_dict
         symbols_dict = {}
         for key, value in contracts_dict.items():
             if value["exchange"] in symbols_dict:
-                symbols_dict[value["exchange"]].append(key)
+                symbols_dict[value["exchange"]].append(f"{key}.{value['name']}")
             else:
-                symbols_dict[value["exchange"]] = [key]
+                symbols_dict[value["exchange"]] = [f"{key}.{value['name']}"]
 
         if exchange_str in symbols_dict:
             for symbol in symbols_dict[exchange_str]:
@@ -126,7 +126,7 @@ class PytdxLoaderWidget(QtWidgets.QWidget):
 
     def load_data(self):
         """"""
-        symbol_code = self.symbol_combo.currentData()
+        symbol_code = self.symbol_combo.currentData().split(".")[0]
         symbol_type = self.symbol_type.text()
         exchange = self.exchange_combo.currentData()
         interval = self.interval_combo.currentData()

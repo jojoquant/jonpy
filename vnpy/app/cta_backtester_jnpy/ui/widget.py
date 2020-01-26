@@ -183,7 +183,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         form.addRow("合约乘数", self.size_line)
         form.addRow("价格跳动", self.pricetick_line)
         form.addRow("回测资金", self.capital_line)
-        form.addRow("合约模式", self.inverse_combo)
+        form.addRow("合约模式\n(数字货币用反向)", self.inverse_combo)
         form.addRow("回测模式", self.debug_combo)
 
         result_grid = QtWidgets.QGridLayout()
