@@ -29,7 +29,6 @@ class ExhqAPI(TdxExHq_API):
         category=KBarType.KLINE_TYPE_DAILY.value
 
         market 信息可以通过 data_df = ex_api.to_df(ex_api.get_markets()) 获得
-
         '''
         result_df = pd.DataFrame()
         start = 0
@@ -59,14 +58,11 @@ class ExhqAPI(TdxExHq_API):
         result_df['datetime'] = pd.to_datetime(result_df['datetime'])
         return result_df
 
-    def get_all_Ticks_df(self,
-                         category=KBarType.KLINE_TYPE_DAILY.value,
-                         market=30, date=20191227, code="FU2006") -> pd.DataFrame:  # 29 LL8  FUL8 主链
+    def get_all_Ticks_df(self, market=30, date=20191227, code="FU2006") -> pd.DataFrame:  # 29 LL8  FUL8 主链
         '''
         category=KBarType.KLINE_TYPE_DAILY.value
 
         market 信息可以通过 data_df = ex_api.to_df(ex_api.get_markets()) 获得
-
         '''
         result_df = pd.DataFrame()
         start = 0
@@ -76,7 +72,6 @@ class ExhqAPI(TdxExHq_API):
             self.info_log.write_log(f"开始获取{start}条数据...")
             df = self.to_df(
                 self.get_history_transaction_data(
-                    # category=category,
                     market=market, code=code, date=date, start=start, count=count
                 )
             )
@@ -90,7 +85,8 @@ class ExhqAPI(TdxExHq_API):
             self.info_log.write_log(f"{code} 数据条数为 0 !")
             return result_df
 
-        select_columns_list = ["price", "volume", "zengcang", "natrue_name", "direction", "date"]  # 好像是时间相关,暂时不用"nature"]
+        select_columns_list = ["price", "volume", "zengcang", "natrue_name", "direction",
+                               "date"]  # 好像是时间相关,暂时不用"nature"]
         result_df = result_df[select_columns_list]
 
         result_df['date'] = pd.to_datetime(result_df['date'])
@@ -113,8 +109,10 @@ if __name__ == '__main__':
             "market": FutureMarketCode.INE.value,
             "code": "SCL8",
         }
+
         # df = ex_api.get_all_KBars_df(**params_dict)
 
         params_dict['date'] = 20191227
+        del params_dict['category']
         df = ex_api.get_all_Ticks_df(**params_dict)
         print(1)
