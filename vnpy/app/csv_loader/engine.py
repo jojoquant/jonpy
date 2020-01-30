@@ -71,7 +71,8 @@ class CsvLoaderEngine(BaseEngine):
         """
         load by text mode file handle
         """
-        reader = csv.DictReader(f)
+        buf = [line.replace("\0", "") for line in f]
+        reader = csv.DictReader(buf, delimiter=",")
 
         bars = []
         start = None
