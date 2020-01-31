@@ -7,6 +7,7 @@
 
 
 import pandas as pd
+import datetime
 
 from pytdx.exhq import TdxExHq_API
 # from ips import IPsSource
@@ -21,6 +22,7 @@ class ExhqAPI(TdxExHq_API):
         super(ExhqAPI, self).__init__()
         self.info_log = LogModule(name="ExhqAPI_info", level="info")
         self.err_log = LogModule(name="ExhqAPI_error", level="error")
+        self.ddelay = datetime.timedelta(days=1)
 
     def get_all_KBars_df(self,
                          category=KBarType.KLINE_TYPE_DAILY.value,
@@ -45,6 +47,13 @@ class ExhqAPI(TdxExHq_API):
 
             if df.shape[0] == 0 | (("value" in df.columns) and (df["value"][0] is None)):
                 break
+
+            # TODO 通达信这里还是有点问题,
+            # (1) 按照现在这么写, 如果是星期一, 那么0点前的数据推到了星期日,
+            #  0点后到9点开盘前应该是上周五晚上的行情, 算作星期一凌晨
+            # 暂时不影响回测, 这里有个小坑注意
+            df['datetime'] = pd.to_datetime(df['datetime']).apply(lambda x: x if 0 <= x.hour < 16 else x - self.ddelay)
+
             result_df = pd.concat([df, result_df], axis=0, ignore_index=True)
             start += count
 
@@ -55,7 +64,6 @@ class ExhqAPI(TdxExHq_API):
         select_columns_list = ["open", "high", "low", "close", "position", "trade", "datetime"]
         result_df = result_df[select_columns_list]
 
-        result_df['datetime'] = pd.to_datetime(result_df['datetime'])
         return result_df
 
     def get_all_Ticks_df(self, market=30, date=20191227, code="FU2006") -> pd.DataFrame:  # 29 LL8  FUL8 主链
@@ -78,6 +86,8 @@ class ExhqAPI(TdxExHq_API):
 
             if df.shape[0] == 0 | (("value" in df.columns) and (df["value"][0] is None)):
                 break
+
+            df['date'] = pd.to_datetime(df['date']).apply(lambda x: x if 0 <= x.hour < 16 else x - self.ddelay)
             result_df = pd.concat([df, result_df], axis=0, ignore_index=True)
             start += count
 
@@ -88,8 +98,6 @@ class ExhqAPI(TdxExHq_API):
         select_columns_list = ["price", "volume", "zengcang", "natrue_name", "direction",
                                "date"]  # 好像是时间相关,暂时不用"nature"]
         result_df = result_df[select_columns_list]
-
-        result_df['date'] = pd.to_datetime(result_df['date'])
         return result_df
 
 
@@ -105,14 +113,14 @@ if __name__ == '__main__':
         from constant import FutureMarketCode
 
         params_dict = {
-            "category": KBarType.KLINE_TYPE_1HOUR.value,
+            "category": KBarType.KLINE_TYPE_1MIN.value,
             "market": FutureMarketCode.INE.value,
-            "code": "SCL8",
+            "code": "RBL8",
         }
 
-        # df = ex_api.get_all_KBars_df(**params_dict)
+        df = ex_api.get_all_KBars_df(**params_dict)
 
-        params_dict['date'] = 20191227
-        del params_dict['category']
-        df = ex_api.get_all_Ticks_df(**params_dict)
+        # params_dict['date'] = 20191227
+        # del params_dict['category']
+        # df = ex_api.get_all_Ticks_df(**params_dict)
         print(1)

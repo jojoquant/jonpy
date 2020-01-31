@@ -176,7 +176,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         form.addRow("合约名称", self.symbol_label)
         form.addRow("K线周期", self.interval_combo)
         form.addRow("开始日期", self.start_date_edit)
-        form.addRow("结束日期", self.end_date_edit)
+        form.addRow("结束日期\n(+1天才能回测到最后这天)", self.end_date_edit)
         form.addRow("DB内总数据量", self.data_counts_label)
         form.addRow("手续费率", self.rate_line)
         form.addRow("交易滑点", self.slippage_line)
