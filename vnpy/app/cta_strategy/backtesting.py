@@ -144,6 +144,8 @@ class BacktestingEngine:
         self.daily_results = {}
         self.daily_df = None
 
+        self.backtester_engine = None  # fangyang add 用于在run_backtesting显示进度
+
     def clear_data(self):
         """
         Clear all data of last backtesting.
@@ -259,7 +261,7 @@ class BacktestingEngine:
 
         self.output(f"历史数据加载完成，数据量：{len(self.history_data)}")
 
-    def run_backtesting(self, backtester_engine):
+    def run_backtesting(self):
         """"""
         if self.mode == BacktestingMode.BAR:
             func = self.new_bar
@@ -295,9 +297,12 @@ class BacktestingEngine:
         history_data_length = len(self.history_data[ix:])
         for index, data in enumerate(self.history_data[ix:]):
             func(data)
-            progress = index / history_data_length
-            if (progress * 100) % 10 == 0:
-                backtester_engine.write_log(f"Progress : {progress:.2%}")
+            # fangyang 如果有设置这个属性, 那么就在这个属性打印回测进度的 log 信息
+            # 进度显示适用于 在策略中计算 耗时长的回测
+            if self.backtester_engine:
+                progress = index / history_data_length
+                if (progress * 100) % 10 == 0:
+                    self.backtester_engine.write_log(f"{self.strategy.strategy_name} on_bar() progress : {progress:.2%}")
 
         self.output("历史数据回放结束")
 

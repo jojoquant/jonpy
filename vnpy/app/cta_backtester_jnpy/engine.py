@@ -169,7 +169,13 @@ class BacktesterEngine(BaseEngine):
         )
 
         engine.load_data()  # fangyang, 从数据库中查询结果， 放入engine这个类实例的self.history_data中
-        engine.run_backtesting(backtester_engine=self)
+
+        # fangyang 如果engine有这个属性, 即为 BacktestingEngine 类型的实例,
+        # 将本 BacktesterEngine 传入, 用于接收 BacktestingEngine 实例产生的信息, 即回测进度信息
+        if hasattr(engine, "backtester_engine"):
+            engine.backtester_engine = self
+
+        engine.run_backtesting()
         self.result_df = engine.calculate_result()
         self.result_statistics = engine.calculate_statistics(output=False)
 
