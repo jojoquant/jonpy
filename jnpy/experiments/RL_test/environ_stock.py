@@ -16,6 +16,7 @@ import gym
 DEFAULT_BARS_COUNT = 10
 DEFAULT_COMMISSION_PERC = 2.5 / 10000
 DEFAULT_TIME_COST = 0.1 / 10000
+BALANCE = 1.0e6
 
 
 class Actions(enum.Enum):
@@ -31,15 +32,20 @@ class Actions(enum.Enum):
 class StocksEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, prices_df: pd.DataFrame, bars_count: int = DEFAULT_BARS_COUNT,
-                 commission: float = DEFAULT_COMMISSION_PERC, time_cost: float = DEFAULT_TIME_COST):
+    def __init__(
+            self, prices_df: pd.DataFrame, bars_count: int = DEFAULT_BARS_COUNT,
+            commission: float = DEFAULT_COMMISSION_PERC, time_cost: float = DEFAULT_TIME_COST,
+            balance: float = BALANCE
+    ):
 
         assert commission >= 0.0, "Commission should >= 0.0"
+        assert balance >= 0.0, "Balance should >= 0.0"
         assert time_cost >= 0.0, "Time cost should >= 0.0"
         assert len(prices_df) > 0, "DataFrame length should > 0"
         assert len(Actions) > 1, "Actions length should > 1"
 
         self.commission_perc = commission
+        self.balance = balance
         self.time_cost = time_cost
 
         prices_df['position'] = 0
@@ -81,7 +87,7 @@ class StocksEnv(gym.Env):
 
         return self.cur_state_df
 
-    def update_new_df(self, new_df: pd.DataFrame, action: Actions, reward:float):
+    def update_new_df(self, new_df: pd.DataFrame, action: Actions, reward: float):
         """
         记录 开平仓价格 和 位置,
         给出step_reward均摊更新到new step的每个bar上
