@@ -18,6 +18,7 @@ from vnpy.app.cta_strategy import (
     BacktestingEngine,
     OptimizationSetting
 )
+from vnpy.app.cta_backtester_jnpy.DRL.main import accept_bars_data_list
 
 APP_NAME = "CtaBacktester_jnpy"
 
@@ -126,6 +127,39 @@ class BacktesterEngine(BaseEngine):
     def get_strategy_class_names(self):
         """"""
         return list(self.classes.keys())
+
+    def rl_training(
+            self, class_name: str,
+            vt_symbol: str,
+            interval: str,
+            start: datetime,
+            end: datetime,
+            rate: float,
+            slippage: float,
+            size: int,
+            pricetick: float,
+            capital: int,
+            inverse: bool,
+            setting: dict):
+
+        engine = self.backtesting_engine
+        engine.clear_data()
+        engine.set_parameters(
+            vt_symbol=vt_symbol,
+            interval=interval,
+            start=start,
+            end=end,
+            rate=rate,
+            slippage=slippage,
+            size=size,
+            pricetick=pricetick,
+            capital=capital,
+            inverse=inverse
+        )
+        engine.load_data()
+
+        all_bars_list = engine.history_data
+        accept_bars_data_list(all_bars_list)
 
     def run_backtesting(
             self,

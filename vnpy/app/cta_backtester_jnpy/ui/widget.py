@@ -125,6 +125,9 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         backtesting_button = QtWidgets.QPushButton("开始回测")
         backtesting_button.clicked.connect(self.start_backtesting)
 
+        rl_train_button = QtWidgets.QPushButton("开始RL训练")
+        rl_train_button.clicked.connect(self.start_rl_train)
+
         optimization_button = QtWidgets.QPushButton("参数优化")
         optimization_button.clicked.connect(self.start_optimization)
 
@@ -197,6 +200,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         left_vbox = QtWidgets.QVBoxLayout()
         left_vbox.addLayout(form)
         left_vbox.addWidget(backtesting_button)
+        left_vbox.addWidget(rl_train_button)
         left_vbox.addWidget(downloading_button)
         left_vbox.addStretch()
         left_vbox.addLayout(result_grid)
@@ -403,6 +407,51 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         """"""
         self.write_log("请点击[优化结果]按钮查看")
         self.result_button.setEnabled(True)
+
+    def start_rl_train(self):
+
+        print("start RL !!!")
+        class_name = self.class_combo.currentText()
+        vt_symbol = f"{self.symbol_combo.currentText()}.{self.exchange_combo.currentText()}"
+        interval = self.interval_combo.currentText()
+        start = self.start_date_edit.date().toPyDate()
+        end = self.end_date_edit.date().toPyDate()
+        rate = float(self.rate_line.text())
+        slippage = float(self.slippage_line.text())
+        size = float(self.size_line.text())
+        pricetick = float(self.pricetick_line.text())
+        capital = float(self.capital_line.text())
+
+        if self.inverse_combo.currentText() == "正向":
+            inverse = False
+        else:
+            inverse = True
+
+        backtesting_debug_mode = True
+        # Get strategy setting
+        old_setting = self.settings[class_name]
+        dialog = BacktestingSettingEditor(class_name, old_setting)
+        i = dialog.exec()
+        if i != dialog.Accepted:
+            return
+
+        new_setting = dialog.get_setting()
+        self.settings[class_name] = new_setting
+
+        result = self.backtester_engine.rl_training(
+            class_name,
+            vt_symbol,
+            interval,
+            start,
+            end,
+            rate,
+            slippage,
+            size,
+            pricetick,
+            capital,
+            inverse,
+            new_setting
+        )
 
     def start_backtesting(self):
         """"""
