@@ -6,6 +6,7 @@ from functools import lru_cache
 from time import time
 import multiprocessing
 import random
+import traceback
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -29,7 +30,10 @@ from .base import (
 )
 from .template import CtaTemplate
 
+# Set seaborn style
 sns.set_style("whitegrid")
+
+# Set deap algo
 creator.create("FitnessMax", base.Fitness, weights=(1.0,))
 creator.create("Individual", list, fitness=creator.FitnessMax)
 
@@ -284,7 +288,13 @@ class BacktestingEngine:
             # fangyang self.callback 是 strategyTemplate里面的 on_bar
             # self.callback 是在下面的 load_bar(self)函数中赋值的，去策略模板中掉的load_bar/tick
             # 这里将数据推送进我们的策略
-            self.callback(data)
+
+            try:
+                self.callback(data)
+            except Exception:
+                self.output("触发异常，回测终止")
+                self.output(traceback.format_exc())
+                return
 
         self.strategy.inited = True
         self.output("策略初始化完成")
@@ -296,13 +306,20 @@ class BacktestingEngine:
         # Use the rest of history data for running backtesting
         history_data_length = len(self.history_data[ix:])
         for index, data in enumerate(self.history_data[ix:]):
-            func(data)
-            # fangyang 如果有设置这个属性, 那么就在这个属性打印回测进度的 log 信息
-            # 进度显示适用于 在策略中计算 耗时长的回测
-            if self.backtester_engine:
-                progress = index / history_data_length
-                if (progress * 100) % 10 == 0:
-                    self.backtester_engine.write_log(f"{self.strategy.strategy_name} on_bar() progress : {progress:.2%}")
+            try:
+                func(data)
+                # fangyang 如果有设置这个属性, 那么就在这个属性打印回测进度的 log 信息
+                # 进度显示适用于 在策略中计算 耗时长的回测
+                if self.backtester_engine:
+                    progress = index / history_data_length
+                    if (progress * 100) % 10 == 0:
+                        self.backtester_engine.write_log(
+                            f"{self.strategy.strategy_name} on_bar() progress : {progress:.2%}"
+                        )
+            except Exception:
+                self.output("触发异常，回测终止")
+                self.output(traceback.format_exc())
+                return
 
         self.output("历史数据回放结束")
 
@@ -513,6 +530,7 @@ class BacktestingEngine:
                 value = 0
             statistics[key] = np.nan_to_num(value)
 
+        self.output("策略统计指标计算完成")
         return statistics
 
     def show_chart(self, df: DataFrame = None):
@@ -560,7 +578,9 @@ class BacktestingEngine:
             return
 
         # Use multiprocessing pool for running backtesting with different setting
-        pool = multiprocessing.Pool(multiprocessing.cpu_count())
+        # Force to use spawn method to create new process (instead of fork on Linux)
+        ctx = multiprocessing.get_context("spawn")
+        pool = ctx.Pool(multiprocessing.cpu_count())
 
         results = []
         for setting in settings:

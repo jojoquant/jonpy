@@ -23,20 +23,27 @@ from vnpy.trader.utility import round_to, save_json, load_json
 
 from .base import (
     APP_NAME, CHAIN_UNDERLYING_MAP,
-    EVENT_OPTION_LOG, EVENT_OPTION_NEW_PORTFOLIO,
+    EVENT_OPTION_NEW_PORTFOLIO,
     EVENT_OPTION_ALGO_PRICING, EVENT_OPTION_ALGO_TRADING,
+    EVENT_OPTION_ALGO_STATUS, EVENT_OPTION_ALGO_LOG,
     InstrumentData, PortfolioData
 )
-from .pricing import (
-    black_76_cython, binomial_tree_cython, black_scholes_cython
-)
+try:
+    from .pricing import black_76_cython as black_76
+    from .pricing import binomial_tree_cython as binomial_tree
+    from .pricing import black_scholes_cython as black_scholes
+except ImportError:
+    from .pricing import (
+        black_76, binomial_tree, black_scholes
+    )
+    print("Faile to import cython option pricing model, please rebuild with cython in cmd.")
 from .algo import ElectronicEyeAlgo
 
 
 PRICING_MODELS = {
-    "Black-76 欧式期货期权": black_76_cython,
-    "Black-Scholes 欧式股票期权": black_scholes_cython,
-    "二叉树 美式期货期权": binomial_tree_cython
+    "Black-76 欧式期货期权": black_76,
+    "Black-Scholes 欧式股票期权": black_scholes,
+    "二叉树 美式期货期权": binomial_tree
 }
 
 
@@ -44,6 +51,7 @@ class OptionEngine(BaseEngine):
     """"""
 
     setting_filename = "option_master_setting.json"
+    data_filename = "option_master_data.json"
 
     def __init__(self, main_engine: MainEngine, event_engine: EventEngine):
         """"""
@@ -67,29 +75,79 @@ class OptionEngine(BaseEngine):
         self.load_setting()
         self.register_event()
 
-    def close(self):
+    def close(self) -> None:
         """"""
         self.save_setting()
+        self.save_data()
 
-    def load_setting(self):
+    def load_setting(self) -> None:
         """"""
         self.setting = load_json(self.setting_filename)
 
-    def save_setting(self):
+    def save_setting(self) -> None:
+        """
+        Save underlying adjustment.
+        """
+        save_json(self.setting_filename, self.setting)
+
+    def load_data(self) -> None:
         """"""
-        # Save underlying adjustment
-        adjustment_settings = {}
+        data = load_json(self.data_filename)
 
         for portfolio in self.active_portfolios.values():
-            adjustment_setting = {}
+            portfolio_name = portfolio.name
+
+            # Load underlying adjustment from setting
+            chain_adjustments = data.get("chain_adjustments", {})
+            chain_adjustment_data = chain_adjustments.get(portfolio_name, {})
+
+            if chain_adjustment_data:
+                for chain in portfolio.chains.values():
+                    chain.underlying_adjustment = chain_adjustment_data.get(
+                        chain.chain_symbol, 0
+                    )
+
+            # Load pricing impv from setting
+            pricing_impvs = data.get("pricing_impvs", {})
+            pricing_impv_data = pricing_impvs.get(portfolio_name, {})
+
+            if pricing_impv_data:
+                for chain in portfolio.chains.values():
+                    for index in chain.indexes:
+                        key = f"{chain.chain_symbol}_{index}"
+                        pricing_impv = pricing_impv_data.get(key, 0)
+
+                        if pricing_impv:
+                            call = chain.calls[index]
+                            call.pricing_impv = pricing_impv
+
+                            put = chain.puts[index]
+                            put.pricing_impv = pricing_impv
+
+    def save_data(self) -> None:
+        """"""
+        chain_adjustments = {}
+        pricing_impvs = {}
+
+        for portfolio in self.active_portfolios.values():
+            chain_adjustment_data = {}
+            pricing_impv_data = {}
             for chain in portfolio.chains.values():
-                adjustment_setting[chain.chain_symbol] = chain.underlying_adjustment
+                chain_adjustment_data[chain.chain_symbol] = chain.underlying_adjustment
 
-            adjustment_settings[portfolio.name] = adjustment_setting
+                for call in chain.calls.values():
+                    key = f"{chain.chain_symbol}_{call.chain_index}"
+                    pricing_impv_data[key] = call.pricing_impv
 
-        self.setting["underlying_adjustments"] = adjustment_settings
+            chain_adjustments[portfolio.name] = chain_adjustment_data
+            pricing_impvs[portfolio.name] = pricing_impv_data
 
-        save_json(self.setting_filename, self.setting)
+        data = {
+            "chain_adjustments": chain_adjustments,
+            "pricing_impvs": pricing_impvs
+        }
+
+        save_json(self.data_filename, data)
 
     def register_event(self) -> None:
         """"""
@@ -174,12 +232,6 @@ class OptionEngine(BaseEngine):
 
         return portfolio
 
-    def write_log(self, msg: str) -> None:
-        """"""
-        log = LogData(msg=msg, gateway_name=APP_NAME)
-        event = Event(EVENT_OPTION_LOG, log)
-        self.event_engine.put(event)
-
     def subscribe_data(self, vt_symbol: str) -> None:
         """"""
         contract = self.main_engine.get_contract(vt_symbol)
@@ -249,15 +301,8 @@ class OptionEngine(BaseEngine):
 
         portfolio.calculate_pos_greeks()
 
-        # Load underlying adjustment from setting
-        adjustment_settings = self.setting.get("underlying_adjustments", {})
-        adjustment_setting = adjustment_settings.get(portfolio_name)
-
-        if adjustment_setting:
-            for chain in portfolio.chains.values():
-                chain.underlying_adjustment = adjustment_setting.get(
-                    chain.chain_symbol, 0
-                )
+        # Load chain adjustment and pricing impv data
+        self.load_data()
 
         return True
 
@@ -287,7 +332,7 @@ class OptionEngine(BaseEngine):
         instrument = self.instruments[vt_symbol]
         return instrument
 
-    def set_timer_trigger(self, timer_trigger: int):
+    def set_timer_trigger(self, timer_trigger: int) -> None:
         """"""
         self.timer_trigger = timer_trigger
 
@@ -315,12 +360,12 @@ class OptionHedgeEngine:
 
         self.register_event()
 
-    def register_event(self):
+    def register_event(self) -> None:
         """"""
         self.event_engine.register(EVENT_ORDER, self.process_order_event)
         self.event_engine.register(EVENT_TIMER, self.process_timer_event)
 
-    def process_order_event(self, event: Event):
+    def process_order_event(self, event: Event) -> None:
         """"""
         order: OrderData = event.data
 
@@ -330,7 +375,7 @@ class OptionHedgeEngine:
         if not order.is_active():
             self.active_orderids.remove(order.vt_orderid)
 
-    def process_timer_event(self, event: Event):
+    def process_timer_event(self, event: Event) -> None:
         """"""
         if not self.active:
             return
@@ -350,7 +395,7 @@ class OptionHedgeEngine:
         delta_target: int,
         delta_range: int,
         hedge_payup: int
-    ):
+    ) -> None:
         """"""
         if self.active:
             return
@@ -364,7 +409,7 @@ class OptionHedgeEngine:
 
         self.active = True
 
-    def stop(self):
+    def stop(self) -> None:
         """"""
         if not self.active:
             return
@@ -372,7 +417,7 @@ class OptionHedgeEngine:
         self.active = False
         self.timer_count = 0
 
-    def run(self):
+    def run(self) -> None:
         """"""
         if not self.check_order_finished():
             self.cancel_all()
@@ -448,14 +493,14 @@ class OptionHedgeEngine:
             open_orderid = self.main_engine.send_order(open_req, contract.gateway_name)
             self.active_orderids.add(open_orderid)
 
-    def check_order_finished(self):
+    def check_order_finished(self) -> None:
         """"""
         if self.active_orderids:
             return False
         else:
             return True
 
-    def cancel_all(self):
+    def cancel_all(self) -> None:
         """"""
         for vt_orderid in self.active_orderids:
             order: OrderData = self.main_engine.get_order(vt_orderid)
@@ -479,7 +524,7 @@ class OptionAlgoEngine:
 
         self.register_event()
 
-    def init_engine(self, portfolio_name: str):
+    def init_engine(self, portfolio_name: str) -> None:
         """"""
         if self.algos:
             return
@@ -490,27 +535,27 @@ class OptionAlgoEngine:
             algo = ElectronicEyeAlgo(self, option)
             self.algos[option.vt_symbol] = algo
 
-    def register_event(self):
+    def register_event(self) -> None:
         """"""
         self.event_engine.register(EVENT_ORDER, self.process_order_event)
         self.event_engine.register(EVENT_TRADE, self.process_trade_event)
         self.event_engine.register(EVENT_TIMER, self.process_timer_event)
 
-    def process_underlying_tick_event(self, event: Event):
+    def process_underlying_tick_event(self, event: Event) -> None:
         """"""
         tick: TickData = event.data
 
         for algo in self.underlying_algo_map[tick.vt_symbol]:
             algo.on_underlying_tick(algo)
 
-    def process_option_tick_event(self, event: Event):
+    def process_option_tick_event(self, event: Event) -> None:
         """"""
         tick: TickData = event.data
 
         algo = self.algos[tick.vt_symbol]
         algo.on_option_tick(algo)
 
-    def process_order_event(self, event: Event):
+    def process_order_event(self, event: Event) -> None:
         """"""
         order: OrderData = event.data
         algo = self.order_algo_map.get(order.vt_orderid, None)
@@ -518,7 +563,7 @@ class OptionAlgoEngine:
         if algo:
             algo.on_order(order)
 
-    def process_trade_event(self, event: Event):
+    def process_trade_event(self, event: Event) -> None:
         """"""
         trade: TradeData = event.data
         algo = self.order_algo_map.get(trade.vt_orderid, None)
@@ -526,51 +571,58 @@ class OptionAlgoEngine:
         if algo:
             algo.on_trade(trade)
 
-    def process_timer_event(self, event: Event):
+    def process_timer_event(self, event: Event) -> None:
         """"""
         for algo in self.active_algos.values():
             algo.on_timer()
 
-    def start_algo_pricing(self, vt_symbol: str, params: dict):
+    def start_algo_pricing(self, vt_symbol: str, params: dict) -> None:
         """"""
         algo = self.algos[vt_symbol]
+
+        result = algo.start_pricing(params)
+        if not result:
+            return
 
         self.underlying_algo_map[algo.underlying.vt_symbol].append(algo)
 
         self.event_engine.register(
             EVENT_TICK + algo.option.vt_symbol,
-            self.process_tick_event
+            self.process_option_tick_event
         )
         self.event_engine.register(
             EVENT_TICK + algo.underlying.vt_symbol,
-            self.process_tick_event
+            self.process_underlying_tick_event
         )
 
-        algo.start_pricing(params)
-
-    def stop_algo_pricing(self, vt_symbol: str):
+    def stop_algo_pricing(self, vt_symbol: str) -> None:
         """"""
         algo = self.algos[vt_symbol]
 
-        self.underlying_algo_map[algo.underlying.vt_symbol].remove(algo)
+        result = algo.stop_pricing()
+        if not result:
+            return
 
         self.event_engine.unregister(
-            EVENT_TICK + algo.option.vt_symbol,
-            self.process_tick_event
-        )
-        self.event_engine.unregister(
-            EVENT_TICK + algo.underlying.vt_symbol,
-            self.process_tick_event
+            EVENT_TICK + vt_symbol,
+            self.process_option_tick_event
         )
 
-        algo.stop_pricing()
+        buf = self.underlying_algo_map[algo.underlying.vt_symbol]
+        buf.remove(algo)
 
-    def start_algo_trading(self, vt_symbol: str, params: dict):
+        if not buf:
+            self.event_engine.unregister(
+                EVENT_TICK + algo.underlying.vt_symbol,
+                self.process_underlying_tick_event
+            )
+
+    def start_algo_trading(self, vt_symbol: str, params: dict) -> None:
         """"""
         algo = self.algos[vt_symbol]
         algo.start_trading(params)
 
-    def stop_algo_trading(self, vt_symbol: str):
+    def stop_algo_trading(self, vt_symbol: str) -> None:
         """"""
         algo = self.algos[vt_symbol]
         algo.stop_trading()
@@ -602,18 +654,30 @@ class OptionAlgoEngine:
 
         return vt_orderid
 
-    def cancel_order(self, vt_orderid: str):
+    def cancel_order(self, vt_orderid: str) -> None:
         """"""
         order = self.main_engine.get_order(vt_orderid)
         req = order.create_cancel_request()
         self.main_engine.cancel_order(req, order.gateway_name)
 
-    def put_algo_pricing_event(self, algo: ElectronicEyeAlgo):
+    def write_algo_log(self, algo: ElectronicEyeAlgo, msg: str) -> None:
+        """"""
+        msg = f"[{algo.vt_symbol}] {msg}"
+        log = LogData(APP_NAME, msg)
+        event = Event(EVENT_OPTION_ALGO_LOG, log)
+        self.event_engine.put(event)
+
+    def put_algo_pricing_event(self, algo: ElectronicEyeAlgo) -> None:
         """"""
         event = Event(EVENT_OPTION_ALGO_PRICING, algo)
         self.event_engine.put(event)
 
-    def put_algo_trading_event(self, algo: ElectronicEyeAlgo):
+    def put_algo_trading_event(self, algo: ElectronicEyeAlgo) -> None:
         """"""
         event = Event(EVENT_OPTION_ALGO_TRADING, algo)
+        self.event_engine.put(event)
+
+    def put_algo_status_event(self, algo: ElectronicEyeAlgo) -> None:
+        """"""
+        event = Event(EVENT_OPTION_ALGO_STATUS, algo)
         self.event_engine.put(event)
