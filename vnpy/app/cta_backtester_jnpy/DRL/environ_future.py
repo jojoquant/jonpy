@@ -23,9 +23,12 @@ class FutureEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(
-            self, prices_df: pd.DataFrame, bars_count: int = DEFAULT_BARS_COUNT,
-            commission_rate: float = DEFAULT_COMMISSION_RATE, time_cost: float = DEFAULT_TIME_COST,
-            balance: float = BALANCE, security_rate: float = DEFAULT_SECURITY_RATE,
+            self, prices_df: pd.DataFrame,
+            bars_count: int = DEFAULT_BARS_COUNT,
+            commission_rate: float = DEFAULT_COMMISSION_RATE,
+            time_cost: float = DEFAULT_TIME_COST,
+            balance: float = BALANCE,
+            security_rate: float = DEFAULT_SECURITY_RATE,
             contract_prod: int = DEFAULT_CONTRACT_PROD
     ):
 
@@ -58,28 +61,28 @@ class FutureEnv(gym.Env):
         self.net_position = 0  # 带正负号
         self.long_position = 0  # 不带正负号
         self.short_position = 0  # 不带正负号
-        self.long_profit_df = pd.DataFrame()
-        self.short_profit_df = pd.DataFrame()
+        # self.long_profit_df = pd.DataFrame()
+        # self.short_profit_df = pd.DataFrame()
 
-        prices_df['net_position'] = 0
-        prices_df['long_position'] = 0
-        prices_df['short_position'] = 0
-
-        prices_df['profit'] = 0.0
-        prices_df['balance'] = self.start_balance
-        prices_df['trade_num'] = 0
-        prices_df['hold_share_value'] = 0.0
-        prices_df['hold_money_value'] = 0.0
+        self.prices_df_columns_list = list(prices_df.columns)
+        self.account_position_columns_list = [
+            'net_position', 'long_position', 'short_position'  # , 'trade_num'
+        ]
+        self.account_value_columns_list = [
+            'balance', 'hold_share_value', 'hold_money_value'  # , 'profit'
+        ]
+        for col in self.account_position_columns_list + self.account_value_columns_list:
+            prices_df[col] = self.start_balance if (col == 'balance' or col == 'hold_money_value') else 0.0
 
         self.prices_df = prices_df
         self.prices_df_length = len(prices_df)
         self.cur_state_df = pd.DataFrame()
         self.trade_record_df = pd.DataFrame()
 
-        self.action_space = gym.spaces.Box(low=-1.1, high=1.1, shape=(1,), dtype=np.float32)
+        self.action_space = gym.spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
         # shape 为 df columns (包含时间, 去掉日期) + position + reward
         self.observation_space = gym.spaces.Box(low=-np.inf, high=np.inf,
-                                                shape=(self.prices_df.shape[1],),
+                                                shape=(self.prices_df.shape[1] * self.step_len,),
                                                 dtype=np.float32)
 
     def reset(self):
@@ -120,7 +123,7 @@ class FutureEnv(gym.Env):
             self.hold_money_value += (trade_share_on_first_bar_open_value - commission)
 
         # 账户余额
-        new_df['hold_money_value'] = self.hold_money_value
+        new_df.loc[:, 'hold_money_value'] = self.hold_money_value
 
         # 更新交易记录表
         if self.trade_record_df.empty:
@@ -130,17 +133,21 @@ class FutureEnv(gym.Env):
         # 实时净值
         if self.buy_condition or self.sell_condition:
             # 持仓share的实时价值
-            new_df['hold_share_value'] = new_df.apply(
-                lambda x: x['close_price'] * self.contract_prod * self.security_rate * x['long_position'], axis=1)
-            new_df['balance'] = new_df['hold_share_value'] + self.hold_money_value
-            new_df['profit'] = new_df['balance'] - self.start_balance
+            new_df.loc[:, 'hold_share_value'] = new_df.apply(
+                lambda x: x['close_price'] * self.contract_prod * self.security_rate * x['long_position'],
+                axis=1
+            )
+            new_df.loc[:, 'balance'] = new_df.loc[:, 'hold_share_value'] + self.hold_money_value
+            # new_df['profit'] = new_df['balance'] - self.start_balance
 
         elif self.short_condition or self.cover_condition:
-            new_df['hold_share_value'] = new_df.apply(
+
+            new_df.loc[:, 'hold_share_value'] = new_df.apply(
                 lambda x: x['close_price'] * self.contract_prod * self.security_rate * abs(x['short_position']), axis=1)
-            new_df['balance'] = 2 * (self.start_balance - commission) - abs(
-                new_df['hold_share_value']) - self.hold_money_value
-            new_df['profit'] = new_df['balance'] - self.start_balance
+
+            new_df.loc[:, 'balance'] = 2 * (self.start_balance - commission) - abs(
+                new_df.loc[:, 'hold_share_value']) - self.hold_money_value
+            # new_df['profit'] = new_df['balance'] - self.start_balance
 
         # 在上面条件判断后, 更新多空持仓逻辑
         self.have_long_position = True if self.long_position > 0 else False
@@ -151,14 +158,14 @@ class FutureEnv(gym.Env):
     def get_cur_state_trade_num_by_money(self, action: float, current_price: float):
         """通过多空仓位资金使用比例, 计算当前状态下最后一根bar收盘价可交易的数量"""
         # (买入比例 * 账户金额) / (当前价格 * 合约乘数 * 保证金比例) = 交易手数
-        return int(
-            (action * self.hold_money_value) / (
+        return round(
+            (action[0] * self.hold_money_value) / (
                     current_price * self.contract_prod * self.security_rate))
 
     def get_cur_state_trade_num_by_share(self, action: float, current_price: float):
         """通过持仓可使用比例, 计算当前状态下最后一根bar收盘价可交易的数量"""
         # (买入比例 * 账户金额) / (当前价格 * 合约乘数 * 保证金比例) = 交易手数
-        return int(action * abs(self.net_position))
+        return round(action[0] * abs(self.net_position))
 
     def get_next_state_commission(self, trade_num):
         """ float: = 交易手数 * 合约乘数 * 成交价格(open) * 交易费率 """
@@ -185,13 +192,15 @@ class FutureEnv(gym.Env):
 
         new_df = self.prices_df.iloc[obs_last_index + 1: obs_last_index + 1 + self.step_n]
         # 获取当前状态的最后收盘价, 用于计算开仓数量
-        current_price = obs['close_price'].iloc[-1]
+        # current_price = obs['close_price'].iloc[-1]
+        current_price = obs.loc[:, 'close_price'].iloc[-1]
         # buy, sell 通过hold_money来计算比例
         if self.buy_condition or self.short_condition:
             trade_num = self.get_cur_state_trade_num_by_money(action, current_price)  # 有正负, 和action一致
         else:
             trade_num = self.get_cur_state_trade_num_by_share(action, current_price)
-        self.new_df_first_bar_open_price = new_df['open_price'].iloc[0]
+        # self.new_df_first_bar_open_price = new_df['open_price'].iloc[0]
+        self.new_df_first_bar_open_price = new_df.loc[:, 'open_price'].iloc[0]
         commission = self.get_next_state_commission(trade_num)  # no sign >= 0
 
         # 给出下一个状态的 reward 和 done flag
@@ -221,17 +230,18 @@ class FutureEnv(gym.Env):
             reward -= self.time_cost
             trade_num = 0
             new_df = self.update_new_df_position_info(trade_num, new_df)
-            new_df['hold_money_value'] = self.hold_money_value
+            new_df.loc[:, 'hold_money_value'] = self.hold_money_value
 
-            new_df['hold_share_value'] = new_df.apply(
+            new_df.loc[:, 'hold_share_value'] = new_df.apply(
                 lambda x: x['close_price'] * self.contract_prod * self.security_rate * abs(x['net_position']), axis=1)
 
             if self.have_long_position:
-                new_df['balance'] = new_df['hold_share_value'] + self.hold_money_value
-                new_df['profit'] = new_df['balance'] - self.start_balance
+                new_df.loc[:, 'balance'] = new_df.loc[:, 'hold_share_value'] + self.hold_money_value
+                # new_df['profit'] = new_df['balance'] - self.start_balance
             elif self.have_short_position:
-                new_df['balance'] = 2 * self.start_balance - abs(new_df['hold_share_value']) - self.hold_money_value
-                new_df['profit'] = new_df['balance'] - self.start_balance
+                new_df.loc[:, 'balance'] = 2 * self.start_balance - abs(
+                    new_df.loc[:, 'hold_share_value']) - self.hold_money_value
+                # new_df['profit'] = new_df['balance'] - self.start_balance
 
         obs = obs.append(new_df)
         self.cur_state_df = obs
@@ -244,11 +254,11 @@ class FutureEnv(gym.Env):
 
     def update_new_df_position_info(self, trade_num: int, new_df: pd.DataFrame):
 
-        new_df['trade_num'] = trade_num
-        new_df['long_position'] = self.long_position
-        new_df['short_position'] = self.short_position
+        # new_df['trade_num'] = trade_num
+        new_df.loc[:, 'long_position'] = self.long_position
+        new_df.loc[:, 'short_position'] = self.short_position
         self.net_position = self.long_position - self.short_position
-        new_df['net_position'] = self.net_position
+        new_df.loc[:, 'net_position'] = self.net_position
 
         return new_df
 
