@@ -103,6 +103,13 @@ class FutureEnv(gym.Env):
 
         return self.cur_state_df
 
+    def reset_from_start(self):
+        """ 初始化第一个state, 用于回测"""
+        self.ix = 0
+        self.cur_state_df = self.prices_df.iloc[self.ix: self.ix + self.step_len, :].reset_index(drop=True)
+
+        return self.cur_state_df
+
     def update_new_df(self, action: float, new_df: pd.DataFrame, commission: float, trade_num: int):
         """
         记录 开平仓价格 和 位置,
@@ -157,10 +164,11 @@ class FutureEnv(gym.Env):
 
     def get_cur_state_trade_num_by_money(self, action: float, current_price: float):
         """通过多空仓位资金使用比例, 计算当前状态下最后一根bar收盘价可交易的数量"""
-        # (买入比例 * 账户金额) / (当前价格 * 合约乘数 * 保证金比例) = 交易手数
+        # (买入比例 * 账户金额) / (当前价格 * 合约乘数 * (保证金比例 + 手续费率)) = 交易手数
         return round(
-            (action[0] * self.hold_money_value) / (
-                    current_price * self.contract_prod * self.security_rate))
+            (action[0] * self.hold_money_value) /
+            (current_price * self.contract_prod * (self.security_rate + self.commission_rate))
+        )
 
     def get_cur_state_trade_num_by_share(self, action: float, current_price: float):
         """通过持仓可使用比例, 计算当前状态下最后一根bar收盘价可交易的数量"""
@@ -192,15 +200,13 @@ class FutureEnv(gym.Env):
 
         new_df = self.prices_df.iloc[obs_last_index + 1: obs_last_index + 1 + self.step_n]
         # 获取当前状态的最后收盘价, 用于计算开仓数量
-        # current_price = obs['close_price'].iloc[-1]
-        current_price = obs.loc[:, 'close_price'].iloc[-1]
+        self.new_df_first_bar_open_price = new_df.loc[:, 'open_price'].iloc[0]
         # buy, sell 通过hold_money来计算比例
         if self.buy_condition or self.short_condition:
-            trade_num = self.get_cur_state_trade_num_by_money(action, current_price)  # 有正负, 和action一致
+            # 有正负, 和action一致
+            trade_num = self.get_cur_state_trade_num_by_money(action, self.new_df_first_bar_open_price)
         else:
-            trade_num = self.get_cur_state_trade_num_by_share(action, current_price)
-        # self.new_df_first_bar_open_price = new_df['open_price'].iloc[0]
-        self.new_df_first_bar_open_price = new_df.loc[:, 'open_price'].iloc[0]
+            trade_num = self.get_cur_state_trade_num_by_share(action, self.new_df_first_bar_open_price)
         commission = self.get_next_state_commission(trade_num)  # no sign >= 0
 
         # 给出下一个状态的 reward 和 done flag
