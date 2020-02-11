@@ -49,7 +49,7 @@ class FutureEnv(gym.Env):
         self.time_cost = time_cost
         self.start_balance = balance
 
-        self.initial_gobal_var()
+        self.initial_global_var()
 
         self.prices_df_columns_list = list(prices_df.columns)
         self.account_position_columns_list = [
@@ -73,7 +73,7 @@ class FutureEnv(gym.Env):
                                                 dtype=np.float32)
 
 
-    def initial_gobal_var(self):
+    def initial_global_var(self):
         self.hold_money_value = self.start_balance
         self.hold_share_value = 0.0
         self.net_position = 0  # 带正负号
@@ -89,7 +89,7 @@ class FutureEnv(gym.Env):
 
     def reset(self):
         """ 初始化第一个state, 默认上面没有任何操作"""
-        self.initial_gobal_var()
+        self.initial_global_var()
         self.ix = random.choice(range(len(self.prices_df) - self.step_len))
         self.cur_state_df = self.prices_df.iloc[self.ix: self.ix + self.step_len, :].copy()
 
@@ -108,7 +108,7 @@ class FutureEnv(gym.Env):
 
     def reset_from_start(self):
         """ 初始化第一个state, 用于回测"""
-        self.initial_gobal_var()
+        self.initial_global_var()
         self.cur_state_df = self.prices_df.iloc[self.ix: self.ix + self.step_len, :].copy().reset_index(drop=True)
 
         return self.cur_state_df
