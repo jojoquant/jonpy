@@ -42,27 +42,14 @@ class FutureEnv(gym.Env):
         self.ix = 0  # 每次游戏开始数据的起始的索引
         self.step_len = bars_count  # 每个step的长度
         self.step_n = 1  # 连续obs 相邻 steps 之间的跨度, 为了简化计算, 这里默认为1步, 如果想改周期, 请修改输入的KBar周期
-        self.have_long_position = False  # 是否持多仓
-        self.have_short_position = False  # 是否持空仓
-        self.new_df_first_bar_open_price = 0.0  # 开仓价格
-        self.buy_condition = False
-        self.sell_condition = False
-        self.short_condition = False
-        self.cover_condition = False
 
         self.commission_rate = commission_rate  # 手续费率
         self.contract_prod = contract_prod  # 合约乘数
         self.security_rate = security_rate  # 保证金比例
         self.time_cost = time_cost
-
         self.start_balance = balance
-        self.hold_money_value = self.start_balance
-        self.hold_share_value = 0.0
-        self.net_position = 0  # 带正负号
-        self.long_position = 0  # 不带正负号
-        self.short_position = 0  # 不带正负号
-        # self.long_profit_df = pd.DataFrame()
-        # self.short_profit_df = pd.DataFrame()
+
+        self.initial_gobal_var()
 
         self.prices_df_columns_list = list(prices_df.columns)
         self.account_position_columns_list = [
@@ -85,10 +72,26 @@ class FutureEnv(gym.Env):
                                                 shape=(self.prices_df.shape[1] * self.step_len,),
                                                 dtype=np.float32)
 
+
+    def initial_gobal_var(self):
+        self.hold_money_value = self.start_balance
+        self.hold_share_value = 0.0
+        self.net_position = 0  # 带正负号
+        self.long_position = 0  # 不带正负号
+        self.short_position = 0  # 不带正负号
+        self.have_long_position = False  # 是否持多仓
+        self.have_short_position = False  # 是否持空仓
+        self.new_df_first_bar_open_price = 0.0  # 开仓价格
+        self.buy_condition = False
+        self.sell_condition = False
+        self.short_condition = False
+        self.cover_condition = False
+
     def reset(self):
         """ 初始化第一个state, 默认上面没有任何操作"""
+        self.initial_gobal_var()
         self.ix = random.choice(range(len(self.prices_df) - self.step_len))
-        self.cur_state_df = self.prices_df.iloc[self.ix: self.ix + self.step_len, :]
+        self.cur_state_df = self.prices_df.iloc[self.ix: self.ix + self.step_len, :].copy()
 
         # 初始化起始状态时, 可能在某个bar上有多空仓位, 此处排除 Sell Cover 平仓动作
         # start_position_index = random.choice(range(self.step_len))
@@ -105,8 +108,8 @@ class FutureEnv(gym.Env):
 
     def reset_from_start(self):
         """ 初始化第一个state, 用于回测"""
-        self.ix = 0
-        self.cur_state_df = self.prices_df.iloc[self.ix: self.ix + self.step_len, :].reset_index(drop=True)
+        self.initial_gobal_var()
+        self.cur_state_df = self.prices_df.iloc[self.ix: self.ix + self.step_len, :].copy().reset_index(drop=True)
 
         return self.cur_state_df
 
@@ -198,7 +201,7 @@ class FutureEnv(gym.Env):
             info = {}
             return obs, reward, done, info
 
-        new_df = self.prices_df.iloc[obs_last_index + 1: obs_last_index + 1 + self.step_n]
+        new_df = self.prices_df.iloc[obs_last_index + 1: obs_last_index + 1 + self.step_n].copy()
         # 获取当前状态的最后收盘价, 用于计算开仓数量
         self.new_df_first_bar_open_price = new_df.loc[:, 'open_price'].iloc[0]
         # buy, sell 通过hold_money来计算比例
