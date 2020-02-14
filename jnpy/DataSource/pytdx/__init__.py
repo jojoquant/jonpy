@@ -8,8 +8,6 @@
 from .constant import *
 from .extension_api import ExhqAPI
 from .ips import IPsSource
-from .log import LogModule
-
 
 if __name__ == '__main__':
     pass

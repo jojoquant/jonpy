@@ -9,7 +9,7 @@
 from pytdx.exhq import TdxExHq_API
 from pytdx.hq import TdxHq_API
 import time
-from jnpy.DataSource.pytdx.log import LogModule
+from jnpy.utils.logging.log import LogModule
 
 
 class IPsSource:

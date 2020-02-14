@@ -12,7 +12,7 @@ import datetime
 from pytdx.exhq import TdxExHq_API
 # from ips import IPsSource
 from jnpy.DataSource.pytdx.ips import IPsSource
-from jnpy.DataSource.pytdx.log import LogModule
+from jnpy.utils.logging.log import LogModule
 from jnpy.DataSource.pytdx.constant import KBarType
 
 
