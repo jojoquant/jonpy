@@ -21,7 +21,6 @@ class PreProcessor(object):
         self.df = df.dropna()
         self.cols = self.df.columns.tolist()
         self.not_used_func_lst = not_used_func_lst
-        self.func_lst = [1, 23, 4]
         self.alpha = alpha  # 方差滤波阈值，方差低于阈值的列会被删除
         self.beta = beta  # 相关性滤波阈值，相关性系数高于阈值的列会被删除
         self.method = method  # 相关性系数，还可以选择'spearman'和'kendall'

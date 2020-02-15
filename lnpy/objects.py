@@ -6,6 +6,7 @@
 @Author   :   Fangyang
 """
 from dataclasses import dataclass
+from typing import List
 
 
 @dataclass
