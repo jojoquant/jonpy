@@ -1,22 +1,27 @@
-import csv
-from datetime import datetime, timedelta
 
+from datetime import datetime, timedelta
+import csv
 import numpy as np
 import pyqtgraph as pg
-
 import pandas as pd
-from vnpy.trader.setting import get_settings
-from vnpy.app.cta_backtester_jnpy.db_operation import DBOperation
-from jnpy.DataSource.pytdx.contracts import read_contracts_json_dict
+import webbrowser
 
+from vnpy.trader.setting import get_settings
 from vnpy.trader.constant import Interval, Direction, Offset
 from vnpy.trader.engine import MainEngine
 from vnpy.trader.ui import QtCore, QtWidgets, QtGui
 from vnpy.trader.ui.widget import BaseMonitor, BaseCell, DirectionCell, EnumCell
 from vnpy.trader.ui.editor import CodeEditor
+from vnpy.trader.utility import load_json, save_json
+
 from vnpy.event import Event, EventEngine
 from vnpy.chart import ChartWidget, CandleItem, VolumeItem, TechIndexItem
-from vnpy.trader.utility import load_json, save_json
+
+from vnpy.app.cta_backtester_jnpy.db_operation import DBOperation
+from vnpy.app.cta_backtester_jnpy.ui.KLine_pyecharts import draw_charts
+
+from jnpy.DataSource.pytdx.contracts import read_contracts_json_dict
+from jnpy.utils.DataManager import ArrayManagerWithDatetime
 
 from ..engine import (
     APP_NAME,
@@ -154,6 +159,10 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         self.candle_button.clicked.connect(self.show_candle_chart)
         self.candle_button.setEnabled(False)
 
+        self.candle_button_web = QtWidgets.QPushButton("K线图表web")
+        self.candle_button_web.clicked.connect(self.show_candle_chart_web)
+        # self.candle_button_web.setEnabled(False)
+
         edit_button = QtWidgets.QPushButton("代码编辑")
         edit_button.clicked.connect(self.edit_strategy_code)
 
@@ -196,6 +205,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         result_grid.addWidget(self.order_button, 0, 1)
         result_grid.addWidget(self.daily_button, 1, 0)
         result_grid.addWidget(self.candle_button, 1, 1)
+        result_grid.addWidget(self.candle_button_web, 2, 1)
 
         left_vbox = QtWidgets.QVBoxLayout()
         left_vbox.addLayout(form)
@@ -627,6 +637,27 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
             self.daily_dialog.update_data(results)
 
         self.daily_dialog.exec_()
+
+    def show_candle_chart_web(self):
+
+        results = self.backtester_engine.get_all_daily_results()
+        history = self.backtester_engine.get_history_data()
+        # trades = self.backtester_engine.get_all_trades()
+        # orders = self.backtester_engine.get_all_orders()
+
+        if results:
+            am = ArrayManagerWithDatetime(size=len(results))
+            [am.update_bar(bar) for bar in history]
+
+            tech_line_dict = {
+                "ma5": am.sma(5, array=True).tolist(),
+                "ma10": am.sma(10, array=True).tolist()
+            }
+            oclh_data_list = np.vstack((am.open, am.close, am.low, am.high)).T.tolist()
+            volume_list = am.volume.tolist()
+            x_axis_list = am.datetime_list
+            file_path = draw_charts(x_axis_list, oclh_data_list, volume_list, tech_line_dict)
+            webbrowser.open(file_path)
 
     def show_candle_chart(self):
         """"""
