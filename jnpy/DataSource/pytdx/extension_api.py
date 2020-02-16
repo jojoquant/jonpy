@@ -91,8 +91,9 @@ class ExhqAPI(TdxExHq_API):
             result_df = pd.concat([df, result_df], axis=0, ignore_index=True)
             start += count
 
+        self.info_log.write_log(f"{code} {date}数据条数为 {result_df.shape[0]} !")
         if result_df.shape[0] == 0:
-            self.info_log.write_log(f"{code} 数据条数为 0 !")
+            self.info_log.write_log(f"{code} {date}数据条数为 0 !")
             return result_df
 
         select_columns_list = ["price", "volume", "zengcang", "natrue_name", "direction",
@@ -118,9 +119,9 @@ if __name__ == '__main__':
             "code": "RBL8",
         }
 
-        df = ex_api.get_all_KBars_df(**params_dict)
+        # df = ex_api.get_all_KBars_df(**params_dict)
 
-        # params_dict['date'] = 20191227
-        # del params_dict['category']
-        # df = ex_api.get_all_Ticks_df(**params_dict)
+        params_dict['date'] = 20191227
+        del params_dict['category']
+        df = ex_api.get_all_Ticks_df(**params_dict)
         print(1)

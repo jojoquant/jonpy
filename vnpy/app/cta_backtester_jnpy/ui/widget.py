@@ -1,4 +1,3 @@
-
 from datetime import datetime, timedelta
 import csv
 import numpy as np
@@ -22,6 +21,7 @@ from vnpy.app.cta_backtester_jnpy.ui.KLine_pyecharts import draw_charts
 
 from jnpy.DataSource.pytdx.contracts import read_contracts_json_dict
 from jnpy.utils.DataManager import ArrayManagerWithDatetime
+from .KLine_pro_pyecharts import draw_chart
 
 from ..engine import (
     APP_NAME,
@@ -640,24 +640,49 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
 
     def show_candle_chart_web(self):
 
-        results = self.backtester_engine.get_all_daily_results()
+
+        # 所有的 BarData
         history = self.backtester_engine.get_history_data()
+        # 比history少了初始化用掉的那些bars, 多了pnl信息
+        results = self.backtester_engine.get_all_daily_results()
+        # 真实发生交易的结果, 都是成交的订单
         # trades = self.backtester_engine.get_all_trades()
-        # orders = self.backtester_engine.get_all_orders()
+        # 策略实际产生的订单, 包括未成交订单
+        orders = self.backtester_engine.get_all_orders()
 
-        if results:
-            am = ArrayManagerWithDatetime(size=len(results))
-            [am.update_bar(bar) for bar in history]
+        #TODO 从策略中获取使用的ta-lib技术指标信息
+        strategy_tech_visual_list = self.backtester_engine.backtesting_engine.strategy.variables
+        strategy_tech_visual_list = ["am.sma(n=5, array=True)", "am.sma(10, True)"]
+        file_path = draw_chart(history, results, orders, strategy_tech_visual_list)
 
-            tech_line_dict = {
-                "ma5": am.sma(5, array=True).tolist(),
-                "ma10": am.sma(10, array=True).tolist()
-            }
-            oclh_data_list = np.vstack((am.open, am.close, am.low, am.high)).T.tolist()
-            volume_list = am.volume.tolist()
-            x_axis_list = am.datetime_list
-            file_path = draw_charts(x_axis_list, oclh_data_list, volume_list, tech_line_dict)
-            webbrowser.open(file_path)
+        # if orders:
+        #     orders_dict = {}
+        #     for order_data in orders:
+        #         orders_dict["name"] = order_data
+        #         orders_dict["type"] = order_data
+        #         orders_dict["valueIndex"] = order_data
+        #         orders_dict["valueDim"] = order_data
+        #         orders_dict["coord"] = [str(order_data.datetime), order_data.price]
+        #         orders_dict["x"] = order_data
+        #         orders_dict["y"] = order_data
+        #         orders_dict["value"] = f"{order_data.price}\n{order_data.offset.value}\n{order_data.status.value}"
+        #         orders_dict["symbol"] = order_data
+        #         orders_dict["symbolSize"] = order_data
+        #         orders_dict["itemStyle"] = order_data
+        #
+        # if results:
+        #     am = ArrayManagerWithDatetime(size=len(history))
+        #     [am.update_bar(bar) for bar in history]
+        #
+        #     tech_line_dict = {
+        #         "ma5": am.sma(5, array=True).tolist(),
+        #         "ma10": am.sma(10, array=True).tolist()
+        #     }
+        #     oclh_data_list = np.vstack((am.open, am.close, am.low, am.high)).T.tolist()
+        #     volume_list = am.volume.tolist()
+        #     x_axis_list = am.datetime_list
+        #     file_path = draw_charts(x_axis_list, oclh_data_list, volume_list, tech_line_dict)
+        webbrowser.open(file_path)
 
     def show_candle_chart(self):
         """"""
