@@ -15,9 +15,10 @@ from pyecharts.charts import Kline, Line, Bar, Grid
 
 from jnpy.utils.DataManager import ArrayManagerWithDatetime
 from vnpy.trader.utility import get_folder_path
+from vnpy.trader.constant import Status, Offset, Direction
 
 
-def gen_kline(xaxis_data_list, oclh_data_list):
+def gen_kline(xaxis_data_list, oclh_data_list, order_list):
     kline = Kline()
     kline.add_xaxis(xaxis_data=xaxis_data_list)
     kline.add_yaxis(
@@ -33,6 +34,7 @@ def gen_kline(xaxis_data_list, oclh_data_list):
             data=[
                 opts.MarkPointItem(type_="max", name="最大值"),
                 opts.MarkPointItem(type_="min", name="最小值"),
+                *order_list
             ]
         ),
         # markline_opts=opts.MarkLineOpts(
@@ -229,7 +231,67 @@ def gen_macd_bar_line(xaxis_data_list, macd_list, dif_list, deas_list):
     return overlap_bar_line
 
 
+def gen_order_list(orders):
+    order_list = []
+    if orders:
+        for order_data in orders:
+
+            if order_data.direction == Direction.LONG and order_data.offset == Offset.OPEN:
+                symbol = 'arrow'
+                symbol_size = 20
+                if order_data.status == Status.ALLTRADED:
+                    item_style = opts.ItemStyleOpts(color='rgb(0,0,255)')
+                else:
+                    item_style = opts.ItemStyleOpts(color='rgb(255,100,0)')  # orange
+
+            elif order_data.direction == Direction.LONG and (
+                    order_data.offset == Offset.CLOSE
+                    or order_data.offset == Offset.CLOSETODAY
+                    or order_data.offset == Offset.CLOSEYESTERDAY):
+                symbol = 'arrow'
+                symbol_size = 20
+                if order_data.status == Status.ALLTRADED:
+                    item_style = opts.ItemStyleOpts(color='rgb(0,0,0)')
+                else:
+                    item_style = opts.ItemStyleOpts(color='rgb(255,100,0)')  # orange
+
+            elif order_data.direction == Direction.SHORT and order_data.offset == Offset.OPEN:
+                symbol = 'pin'
+                symbol_size = 40
+                if order_data.status == Status.ALLTRADED:
+                    item_style = opts.ItemStyleOpts(color='rgb(0,0,255)')
+                else:
+                    item_style = opts.ItemStyleOpts(color='rgb(255,100,0)')  # orange
+
+            elif order_data.direction == Direction.SHORT and (
+                    order_data.offset == Offset.CLOSE
+                    or order_data.offset == Offset.CLOSETODAY
+                    or order_data.offset == Offset.CLOSEYESTERDAY):
+                symbol = 'pin'
+                symbol_size = 40
+                if order_data.status == Status.ALLTRADED:
+                    item_style = opts.ItemStyleOpts(color='rgb(0,0,0)')
+                else:
+                    item_style = opts.ItemStyleOpts(color='rgb(255,100,0)')  # orange
+
+            order_item = opts.MarkPointItem(
+                name=f"orderid_{order_data.orderid}",
+                coord=[str(order_data.datetime), order_data.price],
+                value=f"{order_data.price}\n{order_data.offset.value}\n{order_data.status.value}",
+                symbol=symbol,
+                symbol_size=symbol_size,
+                itemstyle_opts=item_style,
+            )
+
+            order_list.append(order_item)
+
+    return order_list
+
+
 def draw_chart(history, results, orders, strategy_tech_visual_list):
+
+    order_list = gen_order_list(orders)
+
     if history:
         am = ArrayManagerWithDatetime(size=len(history))
         [am.update_bar(bar) for bar in history]
@@ -237,7 +299,9 @@ def draw_chart(history, results, orders, strategy_tech_visual_list):
         volume_list = am.volume.tolist()
         x_axis_list = am.datetime_list
 
-    kline = gen_kline(xaxis_data_list=x_axis_list, oclh_data_list=oclh_data_list)
+        kline = gen_kline(xaxis_data_list=x_axis_list, oclh_data_list=oclh_data_list, order_list=order_list)
+    else:
+        kline = Kline()
 
     if strategy_tech_visual_list:
         tech_line = gen_tech_line(xaxis_data_list=x_axis_list)
