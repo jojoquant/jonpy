@@ -60,6 +60,7 @@ def gen_kline(xaxis_data_list, oclh_data_list, order_list):
             split_number=20,
             min_="dataMin",
             max_="dataMax",
+            axislabel_opts=opts.LabelOpts(is_show=True, rotate=-30),  # 旋转x轴标签一定角度
         ),
         yaxis_opts=opts.AxisOpts(
             is_scale=True, splitline_opts=opts.SplitLineOpts(is_show=True)
@@ -73,7 +74,9 @@ def gen_kline(xaxis_data_list, oclh_data_list, order_list):
                 is_show=True, xaxis_index=[0, 1], pos_top="97%", range_end=100
             ),
             opts.DataZoomOpts(is_show=False, xaxis_index=[0, 2], range_end=100),
+            opts.DataZoomOpts(is_show=False, xaxis_index=[0, 3], range_end=100),  # 连动第三个资金曲线轴
         ],
+
         # 三个图的 axis 连在一块
         # axispointer_opts=opts.AxisPointerOpts(
         #     is_show=True,
@@ -288,8 +291,39 @@ def gen_order_list(orders):
     return order_list
 
 
-def draw_chart(history, results, orders, strategy_tech_visual_list):
+def gen_balance_line(x_axis_list, result_df):
+    head_df = pd.DataFrame()
+    for _ in range(len(x_axis_list) - result_df.shape[0]):
+        head_df = head_df.append(result_df.iloc[0, :])
+    result_df = head_df.append(result_df)
+    yaxis_data_list = result_df['balance'].tolist()
 
+    balance_line = Line()
+    balance_line.add_xaxis(x_axis_list)
+    balance_line.add_yaxis(
+        "balance",
+        y_axis=yaxis_data_list,
+        xaxis_index=3,
+        yaxis_index=3,
+        label_opts=opts.LabelOpts(is_show=False),
+    )
+    balance_line.set_global_opts(
+        xaxis_opts=opts.AxisOpts(
+            grid_index=3,
+            name_rotate=60,
+        ),
+        yaxis_opts=opts.AxisOpts(
+            grid_index=3,
+            split_number=4,
+            is_scale=True,
+        ),
+        legend_opts=opts.LegendOpts(is_show=False)
+    )
+
+    return balance_line
+
+
+def draw_chart(history, results, orders, strategy_tech_visual_list, result_df):
     order_list = gen_order_list(orders)
 
     if history:
@@ -335,6 +369,8 @@ def draw_chart(history, results, orders, strategy_tech_visual_list):
         deas_list=hist.tolist()
     )
 
+    balance_line = gen_balance_line(x_axis_list, result_df)
+
     # 最后的 Grid
     grid_chart = Grid(init_opts=opts.InitOpts(width="1400px", height="800px"))
 
@@ -342,23 +378,38 @@ def draw_chart(history, results, orders, strategy_tech_visual_list):
     # demo 中的代码也是用全局变量传的
     grid_chart.add_js_funcs("var barData = {}".format(y_axis_list))
 
+    pos_left = '5%'
+    pos_right = '1%'
+    height = 10
+    interval = 3
+    kline_height = 40
     # K线图和 MA5 的折线图
     grid_chart.add(
         kline,
-        grid_opts=opts.GridOpts(pos_left="3%", pos_right="1%", height="60%"),
+        grid_opts=opts.GridOpts(pos_left=pos_left, pos_right=pos_right, height=f"{kline_height}%"),
     )
     # Volumn 柱状图
+    volume_pos_top = kline_height + 6*interval
     grid_chart.add(
         volumne_bar,
         grid_opts=opts.GridOpts(
-            pos_left="3%", pos_right="1%", pos_top="71%", height="10%"
+            pos_left=pos_left, pos_right=pos_right, pos_top=f"{volume_pos_top}%", height=f"{height}%"
         ),
     )
+    macd_pos_top = volume_pos_top + interval + height
     # MACD DIFS DEAS
     grid_chart.add(
         macd_bar_line,
         grid_opts=opts.GridOpts(
-            pos_left="3%", pos_right="1%", pos_top="82%", height="14%"
+            pos_left=pos_left, pos_right=pos_right, pos_top=f"{macd_pos_top}%", height=f"{height}%"
+        ),
+    )
+
+    balance_pos_top = macd_pos_top + interval + height
+    grid_chart.add(
+        balance_line,
+        grid_opts=opts.GridOpts(
+            pos_left=pos_left, pos_right=pos_right, pos_top=f"{balance_pos_top}%", height=f"{height}%"
         ),
     )
 

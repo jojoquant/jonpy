@@ -649,10 +649,13 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         # 策略实际产生的订单, 包括未成交订单
         orders = self.backtester_engine.get_all_orders()
 
+        statistics = self.backtester_engine.get_result_statistics()
+        result_df = self.backtester_engine.get_result_df()
+
         # TODO 从策略中获取使用的ta-lib技术指标信息
         strategy_tech_visual_list = self.backtester_engine.backtesting_engine.strategy.variables
         strategy_tech_visual_list = ["am.sma(n=5, array=True)", "am.sma(10, True)"]
-        file_path = draw_chart(history, results, orders, strategy_tech_visual_list)
+        file_path = draw_chart(history, results, orders, strategy_tech_visual_list, result_df)
 
         webbrowser.open(file_path)
 
