@@ -14,6 +14,7 @@ from pyecharts.commons.utils import JsCode
 from pyecharts.charts import Kline, Line, Bar, Grid
 
 from jnpy.utils.DataManager import ArrayManagerWithDatetime
+from jnpy.utils.logging.log import LogModule
 from vnpy.trader.utility import get_folder_path
 from vnpy.trader.constant import Status, Offset, Direction
 
@@ -324,18 +325,24 @@ def gen_balance_line(x_axis_list, result_df):
 
 
 def draw_chart(history, results, orders, strategy_tech_visual_list, result_df):
+    log_module = LogModule(name="pyecharts", level="info")
+    log_module.write_log("开始生成order_list...")
     order_list = gen_order_list(orders)
+    log_module.write_log("order_list生成完成")
 
     if history:
+        log_module.write_log("开始加载ArrayManager...")
         am = ArrayManagerWithDatetime(size=len(history))
         [am.update_bar(bar) for bar in history]
+        log_module.write_log("完成ArrayManager数据加载")
         oclh_data_list = np.vstack((am.open, am.close, am.low, am.high)).T.tolist()
         volume_list = am.volume.tolist()
         x_axis_list = am.datetime_list
-
+        log_module.write_log("开始Kline实例化...")
         kline = gen_kline(xaxis_data_list=x_axis_list, oclh_data_list=oclh_data_list, order_list=order_list)
     else:
         kline = Kline()
+    log_module.write_log("完成Kline实例化")
 
     if strategy_tech_visual_list:
         tech_line = gen_tech_line(xaxis_data_list=x_axis_list)
@@ -351,11 +358,13 @@ def draw_chart(history, results, orders, strategy_tech_visual_list, result_df):
                 linestyle_opts=opts.LineStyleOpts(opacity=0.5),
                 label_opts=opts.LabelOpts(is_show=False),
             )
-
+        log_module.write_log("完成Kline 技术指标line数据处理")
         # Overlap Kline + Line
         kline = kline.overlap(tech_line)
+    log_module.write_log("完成Kline + tech_line实例化")
 
-    volumne_bar = gen_volume_bar(xaxis_data_list=x_axis_list, volume_list=volume_list)
+    volume_bar = gen_volume_bar(xaxis_data_list=x_axis_list, volume_list=volume_list)
+    log_module.write_log("完成volume_bar实例化")
 
     macd, signal, hist = am.macd(12, 26, 9, True)
     macd[np.isnan(macd)] = 0
@@ -368,8 +377,10 @@ def draw_chart(history, results, orders, strategy_tech_visual_list, result_df):
         dif_list=signal.tolist(),
         deas_list=hist.tolist()
     )
+    log_module.write_log("完成macd_bar_line实例化")
 
     balance_line = gen_balance_line(x_axis_list, result_df)
+    log_module.write_log("完成balance_line实例化")
 
     # 最后的 Grid
     grid_chart = Grid(init_opts=opts.InitOpts(width="1400px", height="800px"))
@@ -391,7 +402,7 @@ def draw_chart(history, results, orders, strategy_tech_visual_list, result_df):
     # Volumn 柱状图
     volume_pos_top = kline_height + 6*interval
     grid_chart.add(
-        volumne_bar,
+        volume_bar,
         grid_opts=opts.GridOpts(
             pos_left=pos_left, pos_right=pos_right, pos_top=f"{volume_pos_top}%", height=f"{height}%"
         ),
@@ -415,8 +426,9 @@ def draw_chart(history, results, orders, strategy_tech_visual_list, result_df):
 
     folder_path = get_folder_path("backtesting_result_pyecharts")
     file_path = f"{folder_path}/render.html"
+    log_module.write_log("开始render保持网页...")
     grid_chart.render(path=file_path)
-
+    log_module.write_log("完成绘制!")
     return file_path
 
 

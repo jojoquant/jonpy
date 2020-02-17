@@ -12,6 +12,15 @@ from pyecharts import options as opts
 from vnpy.trader.utility import get_folder_path
 
 
+def gen_mark_points_data_list():
+    data_points_list = [
+        opts.MarkPointItem(type_="max", name="最大值"),
+        opts.MarkPointItem(type_="min", name="最小值"),
+    ]
+
+    return data_points_list
+
+
 def draw_charts(x_axis_list, oclh_data_list, volume_list, tech_line_dict):
     upColor = '#ec0000'
     downColor = '#00da3c'
@@ -21,7 +30,13 @@ def draw_charts(x_axis_list, oclh_data_list, volume_list, tech_line_dict):
     kline = (
         Kline()
             .add_xaxis(x_axis_list)
-            .add_yaxis("kline", oclh_data_list)
+            .add_yaxis(
+            series_name="kline",
+            y_axis=oclh_data_list,
+            markpoint_opts=opts.MarkPointOpts(
+                data=gen_mark_points_data_list()
+            )
+        )
             .set_series_opts(
             itemstyle_opts=opts.ItemStyleOpts(
                 color=upColor,
@@ -145,7 +160,7 @@ def draw_charts(x_axis_list, oclh_data_list, volume_list, tech_line_dict):
 
     grid_chart = Grid(
         init_opts=opts.InitOpts(
-            width="1000px",
+            width="2000px",
             height="800px",
             animation_opts=opts.AnimationOpts(animation=False),
         )
