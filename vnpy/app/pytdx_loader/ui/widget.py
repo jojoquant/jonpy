@@ -28,15 +28,19 @@ class PytdxLoaderWidget(QtWidgets.QWidget):
     def init_ui(self):
         """"""
         self.setWindowTitle("pytdx载入")
-        self.setFixedWidth(600)
+        # self.setFixedWidth(600)
 
         self.setWindowFlags(
             (self.windowFlags() | QtCore.Qt.CustomizeWindowHint)
             & ~QtCore.Qt.WindowMaximizeButtonHint)
 
-        load_button = QtWidgets.QPushButton("载入数据")
+        hbox_layout = QtWidgets.QHBoxLayout()
+
+        load_button = QtWidgets.QPushButton("载入数据.to_db")
         load_button.clicked.connect(self.load_data)
 
+        to_csv_button = QtWidgets.QPushButton("载入数据.to_csv")
+        to_csv_button.clicked.connect(self.load_data)
 
         self.symbol_type = QtWidgets.QLineEdit("L8")
 
@@ -76,31 +80,59 @@ class PytdxLoaderWidget(QtWidgets.QWidget):
         save_progress_bar.setAlignment(QtCore.Qt.AlignCenter)
         self.progress_bar_dict['save_progress_bar'] = save_progress_bar
 
-        form = QtWidgets.QFormLayout()
-        form.addRow(QtWidgets.QLabel())
-        form.addRow(info_label)
-        form.addRow("交易所", self.exchange_combo)
-        form.addRow("代码", self.symbol_combo)
-        form.addRow("类型\n(L8主连/L9指数/2006)", self.symbol_type)
-        form.addRow("周期", self.interval_combo)
-        form.addRow(QtWidgets.QLabel())
-        form.addRow(head_label)
-        form.addRow("时间戳", self.datetime_edit)
-        form.addRow("开盘价", self.open_edit)
-        form.addRow("最高价", self.high_edit)
-        form.addRow("最低价", self.low_edit)
-        form.addRow("收盘价", self.close_edit)
-        form.addRow("成交量", self.volume_edit)
-        form.addRow("持仓量", self.open_interest_edit)
-        form.addRow(QtWidgets.QLabel())
-        form.addRow(format_label)
-        form.addRow("时间格式", self.format_edit)
-        form.addRow(QtWidgets.QLabel())
-        form.addRow(save_progress_label)
-        form.addRow(save_progress_bar)
-        form.addRow(load_button)
+        form_left = QtWidgets.QFormLayout()
+        form_left.addRow(QtWidgets.QLabel())
+        form_left.addRow(info_label)
+        form_left.addRow("交易所", self.exchange_combo)
+        form_left.addRow("代码", self.symbol_combo)
+        form_left.addRow("类型\n(L8主连/L9指数/2006)", self.symbol_type)
+        form_left.addRow("周期", self.interval_combo)
+        form_left.addRow(QtWidgets.QLabel())
+        form_left.addRow(head_label)
+        form_left.addRow("时间戳", self.datetime_edit)
+        form_left.addRow("开盘价", self.open_edit)
+        form_left.addRow("最高价", self.high_edit)
+        form_left.addRow("最低价", self.low_edit)
+        form_left.addRow("收盘价", self.close_edit)
+        form_left.addRow("成交量", self.volume_edit)
+        form_left.addRow("持仓量", self.open_interest_edit)
+        form_left.addRow(QtWidgets.QLabel())
+        form_left.addRow(format_label)
+        form_left.addRow("时间格式", self.format_edit)
+        form_left.addRow(QtWidgets.QLabel())
+        form_left.addRow(save_progress_label)
+        form_left.addRow(save_progress_bar)
+        form_left.addRow(load_button)
+        form_left.addRow(to_csv_button)
+        form_left_widget = QtWidgets.QWidget()
+        form_left_widget.setLayout(form_left)
 
-        self.setLayout(form)
+        form_right_layout = QtWidgets.QFormLayout()
+        # form_right_layout.addRow(QtWidgets.QLabel())
+        # form_right_layout.addRow(info_label)
+        # form_right_layout.addRow("交易所", self.exchange_combo)
+        # form_right_layout.addRow("代码", self.symbol_combo)
+        # form_right_layout.addRow("类型\n(L8主连/L9指数/2006)", self.symbol_type)
+        # form_right_layout.addRow("周期", self.interval_combo)
+        # form_right_layout.addRow(QtWidgets.QLabel())
+        # form_right_layout.addRow(head_label)
+        # form_right_layout.addRow("时间戳", self.datetime_edit)
+        # form_right_layout.addRow("开盘价", self.open_edit)
+        # form_right_layout.addRow("最高价", self.high_edit)
+        # form_right_layout.addRow("最低价", self.low_edit)
+        # form_right_layout.addRow("收盘价", self.close_edit)
+        # form_right_layout.addRow("成交量", self.volume_edit)
+        # form_right_layout.addRow("持仓量", self.open_interest_edit)
+        form_right_widget = QtWidgets.QWidget()
+        form_right_widget.setLayout(form_right_layout)
+
+        hbox_layout.addStretch(1)
+        hbox_layout.addWidget(form_left_widget)
+        hbox_layout.addWidget(form_right_widget)
+
+        self.setLayout(hbox_layout)
+
+        # self.setLayout(form)
 
     def onExchangeActivated(self, exchange_str):
         self.symbol_combo.clear()
@@ -139,6 +171,9 @@ class PytdxLoaderWidget(QtWidgets.QWidget):
         open_interest_head = self.open_interest_edit.text()
         datetime_format = self.format_edit.text()
 
+        # to_db / to_csv
+        click_button_text = self.sender().text().split('.')[1]
+
         symbol = symbol_code + symbol_type
         start, end, count = self.engine.load(
             symbol,
@@ -152,11 +187,12 @@ class PytdxLoaderWidget(QtWidgets.QWidget):
             volume_head,
             open_interest_head,
             datetime_format,
-            progress_bar_dict=self.progress_bar_dict
+            progress_bar_dict=self.progress_bar_dict,
+            opt_str=click_button_text
         )
 
         msg = f"\
-        CSV载入成功\n\
+        执行成功\n\
         代码：{symbol}\n\
         交易所：{exchange.value}\n\
         周期：{interval.value}\n\

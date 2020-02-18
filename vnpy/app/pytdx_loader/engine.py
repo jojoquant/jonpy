@@ -1,16 +1,16 @@
-import csv
-import os
+
 import time
+from pathlib import Path
 
 import pandas as pd
 from datetime import datetime
-from typing import TextIO
 
 from vnpy.event import EventEngine
 from vnpy.trader.constant import Exchange, Interval
 from vnpy.trader.database import database_manager
 from vnpy.trader.engine import BaseEngine, MainEngine
 from vnpy.trader.object import BarData
+from vnpy.trader.utility import get_folder_path
 
 from jnpy.DataSource.pytdx import ExhqAPI, IPsSource, FutureMarketCode, KBarType
 
@@ -77,41 +77,50 @@ class PytdxLoaderEngine(BaseEngine):
             volume_head: str,
             open_interest_head: str,
             datetime_format: str,
-            progress_bar_dict
+            progress_bar_dict:dict,
+            opt_str: str
     ):
         start_time = time.time()
         if isinstance(data[datetime_head][0], str):
             data[datetime_head] = data[datetime_head].apply(
                 lambda x: datetime.strptime(x, datetime_format) if datetime_format else datetime.fromisoformat(x))
         elif isinstance(data[datetime_head][0], pd.Timestamp):
-            print("datetime 格式为 pd.Timestamp, 不用处理.")
+            self.main_engine.write_log("datetime 格式为 pd.Timestamp, 不用处理.")
         else:
-            print("未知datetime类型, 请检查")
-        print(f'df apply 处理日期时间 cost {time.time() - start_time:.2f}s')
+            self.main_engine.write_log("未知datetime类型, 请检查")
+        self.main_engine.write_log(f'df apply 处理日期时间 cost {time.time() - start_time:.2f}s')
 
-        start_time = time.time()
-        bars = data.apply(
-            self.to_bar_data,
-            args=(
-                symbol,
-                exchange,
-                interval,
-                datetime_head,
-                open_head,
-                high_head,
-                low_head,
-                close_head,
-                volume_head,
-                open_interest_head
-            ),
-            axis=1).tolist()
-        print(f'df apply 处理bars时间 cost {time.time() - start_time:.2f}s')
+        if opt_str == "to_db":
+            start_time = time.time()
+            bars = data.apply(
+                self.to_bar_data,
+                args=(
+                    symbol,
+                    exchange,
+                    interval,
+                    datetime_head,
+                    open_head,
+                    high_head,
+                    low_head,
+                    close_head,
+                    volume_head,
+                    open_interest_head
+                ),
+                axis=1).tolist()
+            self.main_engine.write_log(f'df apply 处理bars时间 cost {time.time() - start_time:.2f}s')
+
+            # insert into database
+            database_manager.save_bar_data(bars, progress_bar_dict)
+
+        elif opt_str == "to_csv":
+
+            csv_file_dir = get_folder_path("csv_files")
+            data.to_csv(f'{csv_file_dir}/{exchange.value}_{symbol}.csv', index=False)
 
         start = data[datetime_head].iloc[0]
         end = data[datetime_head].iloc[-1]
         count = len(data)
-        # insert into database
-        database_manager.save_bar_data(bars, progress_bar_dict)
+
         return start, end, count
 
     def load(
@@ -127,8 +136,8 @@ class PytdxLoaderEngine(BaseEngine):
             volume_head: str,
             open_interest_head: str,
             datetime_format: str,
-            progress_bar_dict
-
+            progress_bar_dict: dict,
+            opt_str: str,
     ):
         """
         load by filename   %m/%d/%Y
@@ -171,5 +180,6 @@ class PytdxLoaderEngine(BaseEngine):
             volume_head=volume_head,
             open_interest_head=open_interest_head,
             datetime_format=datetime_format,
-            progress_bar_dict=progress_bar_dict
+            progress_bar_dict=progress_bar_dict,
+            opt_str=opt_str
         )
