@@ -1,6 +1,7 @@
 """
 Author: Zehua Wei (nanoric)
 """
+import os
 
 from vnpy.event import EventEngine
 from vnpy.trader.constant import Exchange, Interval
@@ -8,7 +9,6 @@ from vnpy.trader.engine import MainEngine
 from vnpy.trader.ui import QtCore, QtWidgets
 
 from ..fengchen_engine import APP_NAME
-# from ..engine import APP_NAME
 
 
 class CsvLoaderWidget(QtWidgets.QWidget):
@@ -34,6 +34,9 @@ class CsvLoaderWidget(QtWidgets.QWidget):
 
         file_button = QtWidgets.QPushButton("选择文件")
         file_button.clicked.connect(self.select_file)
+
+        file_dir_button = QtWidgets.QPushButton("选择文件夹")
+        file_dir_button.clicked.connect(self.select_file_dir)
 
         load_button = QtWidgets.QPushButton("载入数据")
         load_button.clicked.connect(self.load_data)
@@ -77,6 +80,7 @@ class CsvLoaderWidget(QtWidgets.QWidget):
 
         form = QtWidgets.QFormLayout()
         form.addRow(file_button, self.file_edit)
+        form.addRow(file_dir_button, self.file_edit)
         form.addRow(QtWidgets.QLabel())
         form.addRow(info_label)
         form.addRow("代码", self.symbol_edit)
@@ -108,6 +112,13 @@ class CsvLoaderWidget(QtWidgets.QWidget):
         filename = result[0]
         if filename:
             self.file_edit.setText(filename)
+
+    def select_file_dir(self):
+        """"""
+        dir_path: str = QtWidgets.QFileDialog.getExistingDirectory(
+            self, "选择文件夹", os.getcwd())
+        if dir_path:
+            self.file_edit.setText(dir_path)
 
     def load_data(self):
         """"""
@@ -149,4 +160,5 @@ class CsvLoaderWidget(QtWidgets.QWidget):
         结束：{end}\n\
         总数量：{count}\n\
         "
+        # 交易所类型：{exchange_type}\n\
         QtWidgets.QMessageBox.information(self, "载入成功！", msg)
