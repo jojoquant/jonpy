@@ -13,7 +13,8 @@ p = subprocess.Popen(
      "Datetime", "2019-12-18",
      "Time", "00:00:00",
      "period", "1MIN",
-     "currencyPair", "BTC_CNY"
+     "currencyPair", "BTC_CNY",
+     "dir", "./data"
      ], shell=True
 )
 

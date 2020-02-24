@@ -5,7 +5,7 @@ from vnpy.trader.app import BaseApp
 from .engine import BacktesterEngine, APP_NAME
 
 
-class CtaBacktesterApp(BaseApp):
+class CtaBacktesterJnpyApp(BaseApp):
     """"""
 
     app_name = APP_NAME

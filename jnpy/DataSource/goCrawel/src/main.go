@@ -19,6 +19,7 @@ var (
 	beginTime    = time.Date(2017, 12, 18, 0, 0, 0, 0, time.Local) //开始时间2019年8月18日,需自行修改
 	klinePeriod  = goex.KLINE_PERIOD_1MIN                         //see: github.com/nntaoli-project/GoEx/Const.go
 	currencyPair = goex.LTC_USDT
+	fileDir string
 
 	csvWriterM map[string]*csv.Writer
 	fileM      map[string]*os.File
@@ -46,7 +47,13 @@ func csvWriter(timestamp int64) *csv.Writer {
 	case goex.KLINE_PERIOD_1DAY:
 		p = "1day"
 	}
-	fileName := fmt.Sprintf("binance_kline_%s_%s_%s.csv", currencyPair.ToLower().ToSymbol(""), p, t)
+
+	err := os.MkdirAll(fileDir,os.ModePerm)
+	if err!=nil{
+		fmt.Println(err)
+	}
+
+	fileName := fmt.Sprintf("%s/binance_kline_%s_%s_%s.csv", fileDir, currencyPair.ToLower().ToSymbol(""), p, t)
 
 	w := csvWriterM[fileName]
 	if w != nil {
@@ -68,12 +75,12 @@ func csvWriter(timestamp int64) *csv.Writer {
 
 func main() {
 
-	// cmd>./main Date 2019-12-20 Time 00:00:00 period 1MIN currencyPair BTC_CNY
+	// cmd>./main date 2019-12-20 time 00:00:00 period 1MIN currencyPair BTC_CNY dir
 
 	beginDate_str := flag.String(
-		"Date", "2019-12-18", "enter date format: 2017-12-18")
+		"date", "2019-12-18", "enter date format: 2017-12-18")
 	beginTime_str := flag.String(
-		"Time", "00:00:00", "enter time format: 00:00:00")
+		"time", "00:00:00", "enter time format: 00:00:00")
 	beginDateTime_str := fmt.Sprintf("%s %s", *beginDate_str, *beginTime_str)
 	log.Println(beginDateTime_str)
 	local, _ := time.LoadLocation("Local")
@@ -91,6 +98,9 @@ func main() {
 	//klinePeriod  = goex.KLINE_PERIOD_1MIN                         //see: github.com/nntaoli-project/GoEx/Const.go
 	klinePeriod  = KlinePeriodM[*periodArgStr]                      //see: github.com/nntaoli-project/GoEx/Const.go
 	currencyPair = CurrencyPairM[*currencyPairArgStr]
+
+	dirStr := flag.String("dir","./data", "enter fileDir format: ./xxx")
+	fileDir = *dirStr
 
 	log.Println("begin download kline")
 
