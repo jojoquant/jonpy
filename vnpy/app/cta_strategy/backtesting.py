@@ -546,7 +546,7 @@ class BacktestingEngine:
         plt.figure(figsize=(10, 16))
 
         balance_plot = plt.subplot(4, 1, 1)
-        balance_plot.set_title("Balance")
+        balance_plot.set_title(f"{self.strategy_class.__name__}Balance")
         df["balance"].plot(legend=True)
 
         drawdown_plot = plt.subplot(4, 1, 2)

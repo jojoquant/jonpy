@@ -20,7 +20,7 @@ from vnpy.app.cta_backtester_jnpy.db_operation import DBOperation
 from vnpy.app.cta_backtester_jnpy.ui.KLine_pyecharts import draw_charts
 
 from jnpy.DataSource.pytdx.contracts import read_contracts_json_dict
-from jnpy.utils.DataManager import ArrayManagerWithDatetime
+from jnpy.DataSource.pyccxt.contracts import Exchange
 from .KLine_pro_pyecharts import draw_chart
 
 from ..engine import (
@@ -54,6 +54,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         self.db_instance = DBOperation(get_settings("database."))
         self.dbbardata_groupby_df = pd.DataFrame()
         self.pytdx_contracts_dict = read_contracts_json_dict()
+        self.pyccxt_exchange = Exchange()
 
         self.target_display = ""
 
@@ -340,9 +341,16 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
 
         if current_exchange and current_symbol and current_interval:
             symbol_de_L8_str = current_symbol[:-2]
-            self.symbol_label.setText(f"{self.pytdx_contracts_dict[symbol_de_L8_str]['name']}")
-            self.size_line.setText(f"{self.pytdx_contracts_dict[symbol_de_L8_str]['size']}")
-            self.pricetick_line.setText(f"{self.pytdx_contracts_dict[symbol_de_L8_str]['pricetick']}")
+            if symbol_de_L8_str in self.pytdx_contracts_dict:
+                self.symbol_label.setText(f"{self.pytdx_contracts_dict[symbol_de_L8_str]['name']}")
+                self.size_line.setText(f"{self.pytdx_contracts_dict[symbol_de_L8_str]['size']}")
+                self.pricetick_line.setText(f"{self.pytdx_contracts_dict[symbol_de_L8_str]['pricetick']}")
+            elif current_exchange.lower() in self.pyccxt_exchange.exchange_list:
+                self.symbol_label.setText(f"{current_symbol}")
+                self.pyccxt_exchange.init_exchange(current_exchange)
+                market_info = self.pyccxt_exchange.get_market_symbol_info(current_symbol.replace("_", "/").upper())
+                self.size_line.setText(f"{1}")
+                self.pricetick_line.setText(f"{market_info['limits']['price']['min']}")
 
             # TODO 增加重置日期后统计数据数目
             # 重置日期
