@@ -75,7 +75,7 @@ def gen_kline(xaxis_data_list, oclh_data_list, order_list):
                 is_show=True, xaxis_index=[0, 1], pos_top="97%", range_end=100
             ),
             opts.DataZoomOpts(is_show=False, xaxis_index=[0, 2], range_end=100),
-            opts.DataZoomOpts(is_show=False, xaxis_index=[0, 3], range_end=100),  # 连动第三个资金曲线轴
+            # opts.DataZoomOpts(is_show=False, xaxis_index=[0, 3], range_end=100),  # 连动第三个资金曲线轴
         ],
 
         # 三个图的 axis 连在一块
@@ -292,15 +292,23 @@ def gen_order_list(orders):
     return order_list
 
 
-def gen_balance_line(x_axis_list, result_df):
-    head_df = pd.DataFrame()
-    for _ in range(len(x_axis_list) - result_df.shape[0]):
-        head_df = head_df.append(result_df.iloc[0, :])
-    result_df = head_df.append(result_df)
-    yaxis_data_list = result_df['balance'].tolist()
+def gen_balance_line(result_df):
+    # head_df = pd.DataFrame()
+    # # TODO 这个循环需要优化速度
+    # iter_nums = len(x_axis_list) - result_df.shape[0]
+    # print(f"iter_nums: {iter_nums}")
+    # for i in range(iter_nums):
+    #     print(i)
+    #     head_df = head_df.append(result_df.iloc[0, :])
+    # result_df = head_df.append(result_df)
 
     balance_line = Line()
-    balance_line.add_xaxis(x_axis_list)
+
+    if not isinstance(result_df, pd.DataFrame):
+        return balance_line
+
+    balance_line.add_xaxis(list(result_df.index))
+    yaxis_data_list = result_df['balance'].round().tolist()
     balance_line.add_yaxis(
         "balance",
         y_axis=yaxis_data_list,
@@ -318,7 +326,10 @@ def gen_balance_line(x_axis_list, result_df):
             split_number=4,
             is_scale=True,
         ),
-        legend_opts=opts.LegendOpts(is_show=False)
+        legend_opts=opts.LegendOpts(is_show=False),
+        # 未生效?!
+        datazoom_opts=opts.DataZoomOpts(
+                is_show=True, type_="inside"),
     )
 
     return balance_line
@@ -378,8 +389,8 @@ def draw_chart(history, results, orders, strategy_tech_visual_list, result_df):
         deas_list=hist.tolist()
     )
     log_module.write_log("完成macd_bar_line实例化")
-
-    balance_line = gen_balance_line(x_axis_list, result_df)
+    # TODO 日线和分钟级别回测做区分, 资金曲线需要有不同的表示形式
+    balance_line = gen_balance_line(result_df)
     log_module.write_log("完成balance_line实例化")
 
     # 最后的 Grid
@@ -389,7 +400,7 @@ def draw_chart(history, results, orders, strategy_tech_visual_list, result_df):
     # demo 中的代码也是用全局变量传的
     grid_chart.add_js_funcs("var barData = {}".format(y_axis_list))
 
-    pos_left = '5%'
+    pos_left = '10%'
     pos_right = '1%'
     height = 10
     interval = 3
@@ -400,7 +411,7 @@ def draw_chart(history, results, orders, strategy_tech_visual_list, result_df):
         grid_opts=opts.GridOpts(pos_left=pos_left, pos_right=pos_right, height=f"{kline_height}%"),
     )
     # Volumn 柱状图
-    volume_pos_top = kline_height + 6*interval
+    volume_pos_top = kline_height + 6 * interval
     grid_chart.add(
         volume_bar,
         grid_opts=opts.GridOpts(
