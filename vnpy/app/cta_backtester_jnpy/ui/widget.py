@@ -347,10 +347,16 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
                 self.pricetick_line.setText(f"{self.pytdx_contracts_dict[symbol_de_L8_str]['pricetick']}")
             elif current_exchange.lower() in self.pyccxt_exchange.exchange_list:
                 self.symbol_label.setText(f"{current_symbol}")
-                self.pyccxt_exchange.init_exchange(current_exchange)
-                market_info = self.pyccxt_exchange.get_market_symbol_info(current_symbol.replace("_", "/").upper())
+                cur_exchange_market_info_dict = self.pyccxt_exchange.read_local_market_info_json_file(
+                    current_exchange.lower()
+                )
+                if cur_exchange_market_info_dict \
+                        and (current_symbol.replace("_", "/").upper() in cur_exchange_market_info_dict):
+                    market_info = cur_exchange_market_info_dict[current_symbol.replace("_", "/").upper()]
+                    self.pricetick_line.setText(f"{market_info['limits']['price']['min']}")
+                else:
+                    self.pricetick_line.setText(f"999")
                 self.size_line.setText(f"{1}")
-                self.pricetick_line.setText(f"{market_info['limits']['price']['min']}")
 
             # TODO 增加重置日期后统计数据数目
             # 重置日期
