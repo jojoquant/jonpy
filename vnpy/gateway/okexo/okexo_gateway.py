@@ -1,5 +1,5 @@
 """
-Author: qqqlyx
+Author: KeKe
 """
 
 import hashlib
@@ -13,10 +13,11 @@ from copy import copy
 from datetime import datetime, timedelta
 from threading import Lock
 from urllib.parse import urlencode
-from typing import Dict
+from typing import Dict, List
 
 from requests import ConnectionError
 
+from vnpy.event.engine import EventEngine
 from vnpy.api.rest import Request, RestClient
 from vnpy.api.websocket import WebsocketClient
 from vnpy.trader.constant import (
@@ -25,7 +26,6 @@ from vnpy.trader.constant import (
     OrderType,
     Product,
     Status,
-    Offset,
     Interval
 )
 from vnpy.trader.gateway import BaseGateway
@@ -42,41 +42,40 @@ from vnpy.trader.object import (
     SubscribeRequest,
     HistoryRequest
 )
-REST_HOST = "https://www.okex.com"
-WEBSOCKET_HOST = "wss://real.okex.com:8443/ws/v3"
+REST_HOST: str = "https://www.okex.com"
+WEBSOCKET_HOST: str = "wss://real.okex.com:8443/ws/v3"
 
-STATUS_OKEXF2VT = {
+STATE_OKEXO2VT: Dict[str, Status] = {
     "0": Status.NOTTRADED,
+    "-2": Status.NOTTRADED,
     "1": Status.PARTTRADED,
     "2": Status.ALLTRADED,
     "-1": Status.CANCELLED,
 }
 
-ORDERTYPE_OKEXF2VT = {
+ORDERTYPE_OKEXO2VT: Dict[str, OrderType] = {
     "0": OrderType.LIMIT,
     "1": OrderType.MARKET,
 }
 
-TYPE_OKEXF2VT = {
-    "1": (Offset.OPEN, Direction.LONG),
-    "2": (Offset.OPEN, Direction.SHORT),
-    "3": (Offset.CLOSE, Direction.SHORT),
-    "4": (Offset.CLOSE, Direction.LONG),
+SIDE_OKEXO2VT: Dict[str, Direction] = {
+    "buy": Direction.LONG,
+    "sell": Direction.SHORT,
 }
-TYPE_VT2OKEXF = {v: k for k, v in TYPE_OKEXF2VT.items()}
-
-INTERVAL_VT2OKEXF = {
+SIDE_VT2OKEXO: Dict[Direction, str] = {
+    Direction.LONG: "buy",
+    Direction.SHORT: "sell",
+}
+INTERVAL_VT2OKEXO: Dict[Interval, str] = {
     Interval.MINUTE: "60",
     Interval.HOUR: "3600",
     Interval.DAILY: "86400",
 }
 
-
-instruments = set()
-currencies = set()
+underlyings: set = set()
 
 
-class OkexfGateway(BaseGateway):
+class OkexoGateway(BaseGateway):
     """
     VN Trader Gateway for OKEX connection.
     """
@@ -85,30 +84,28 @@ class OkexfGateway(BaseGateway):
         "API Key": "",
         "Secret Key": "",
         "Passphrase": "",
-        "Leverage": 10,
         "会话数": 3,
         "代理地址": "",
         "代理端口": "",
     }
 
-    exchanges = [Exchange.OKEX]
+    exchanges: List[Exchange] = [Exchange.OKEX]
 
-    def __init__(self, event_engine):
+    def __init__(self, event_engine: EventEngine):
         """Constructor"""
-        super(OkexfGateway, self).__init__(event_engine, "OKEXF")
+        super().__init__(event_engine, "OKEXO")
 
-        self.rest_api = OkexfRestApi(self)
-        self.ws_api = OkexfWebsocketApi(self)
+        self.rest_api = OkexoRestApi(self)
+        self.ws_api = OkexoWebsocketApi(self)
 
-        self.orders = {}
+        self.orders: Dict[str, OrderData] = {}
 
-    def connect(self, setting: dict):
+    def connect(self, setting: dict) -> None:
         """"""
         key = setting["API Key"]
         secret = setting["Secret Key"]
         passphrase = setting["Passphrase"]
         session_number = setting["会话数"]
-        leverage = setting["Leverage"]
         proxy_host = setting["代理地址"]
         proxy_port = setting["代理端口"]
 
@@ -117,40 +114,40 @@ class OkexfGateway(BaseGateway):
         else:
             proxy_port = 0
 
-        self.rest_api.connect(key, secret, passphrase, leverage,
+        self.rest_api.connect(key, secret, passphrase,
                               session_number, proxy_host, proxy_port)
         self.ws_api.connect(key, secret, passphrase, proxy_host, proxy_port)
 
-    def subscribe(self, req: SubscribeRequest):
+    def subscribe(self, req: SubscribeRequest) -> None:
         """"""
         self.ws_api.subscribe(req)
 
-    def send_order(self, req: OrderRequest):
+    def send_order(self, req: OrderRequest) -> str:
         """"""
         return self.rest_api.send_order(req)
 
-    def cancel_order(self, req: CancelRequest):
+    def cancel_order(self, req: CancelRequest) -> Request:
         """"""
         self.rest_api.cancel_order(req)
 
-    def query_account(self):
+    def query_account(self) -> None:
         """"""
         pass
 
-    def query_position(self):
+    def query_position(self) -> None:
         """"""
         pass
 
-    def query_history(self, req: HistoryRequest):
+    def query_history(self, req: HistoryRequest) -> List[BarData]:
         """"""
         return self.rest_api.query_history(req)
 
-    def close(self):
+    def close(self) -> None:
         """"""
         self.rest_api.stop()
         self.ws_api.stop()
 
-    def on_order(self, order: OrderData):
+    def on_order(self, order: OrderData) -> None:
         """"""
         self.orders[order.orderid] = order
         super().on_order(order)
@@ -160,31 +157,30 @@ class OkexfGateway(BaseGateway):
         return self.orders.get(orderid, None)
 
 
-class OkexfRestApi(RestClient):
+class OkexoRestApi(RestClient):
     """
-    OKEXF REST API
+    OKEXO REST API
     """
 
-    def __init__(self, gateway: "OkexfGateway"):
+    def __init__(self, gateway: "OkexoGateway"):
         """"""
-        super(OkexfRestApi, self).__init__()
+        super().__init__()
 
-        self.gateway = gateway
-        self.gateway_name = gateway.gateway_name
+        self.gateway: OkexoGateway = gateway
+        self.gateway_name: str = gateway.gateway_name
 
-        self.key = ""
-        self.secret = ""
-        self.passphrase = ""
-        self.leverage = 0
+        self.key: str = ""
+        self.secret: str = ""
+        self.passphrase: str = ""
 
-        self.order_count = 10000
-        self.order_count_lock = Lock()
+        self.order_count: int = 10000
+        self.order_count_lock: Lock = Lock()
 
-        self.connect_time = 0
+        self.connect_time: int = 0
 
-    def sign(self, request):
+    def sign(self, request: Request) -> Request:
         """
-        Generate OKEXF signature.
+        Generate OKEXo signature.
         """
         # Sign
         timestamp = get_timestamp()
@@ -213,18 +209,16 @@ class OkexfRestApi(RestClient):
         key: str,
         secret: str,
         passphrase: str,
-        leverage: int,
         session_number: int,
         proxy_host: str,
         proxy_port: int,
-    ):
+    ) -> None:
         """
         Initialize connection to REST server.
         """
         self.key = key
         self.secret = secret.encode()
         self.passphrase = passphrase
-        self.leverage = leverage
 
         self.connect_time = int(datetime.now().strftime("%y%m%d%H%M%S"))
 
@@ -233,30 +227,30 @@ class OkexfRestApi(RestClient):
         self.gateway.write_log("REST API启动成功")
 
         self.query_time()
-        self.query_contract()
-        self.query_account()
-        self.query_position()
+        self.query_underlying()
 
-    def _new_order_id(self):
+    def _new_order_id(self) -> int:
         with self.order_count_lock:
             self.order_count += 1
             return self.order_count
 
-    def send_order(self, req: OrderRequest):
+    def send_order(self, req: OrderRequest) -> str:
         """"""
         # Need both offset and direction for sending order.
-        if (req.offset, req.direction) not in TYPE_VT2OKEXF:
-            return ""
 
         orderid = f"a{self.connect_time}{self._new_order_id()}"
 
+        if req.direction == Direction.LONG:
+            side = "buy"
+        else:
+            side = "sell"
+
         data = {
             "client_oid": orderid,
-            "type": TYPE_VT2OKEXF[(req.offset, req.direction)],
             "instrument_id": req.symbol,
             "price": str(req.price),
             "size": str(int(req.volume)),
-            "leverage": self.leverage,
+            "side": side,
         }
 
         if req.type == OrderType.MARKET:
@@ -268,7 +262,7 @@ class OkexfRestApi(RestClient):
 
         self.add_request(
             "POST",
-            "/api/futures/v3/order",
+            "/api/option/v3/order",
             callback=self.on_send_order,
             data=data,
             extra=order,
@@ -279,9 +273,12 @@ class OkexfRestApi(RestClient):
         self.gateway.on_order(order)
         return order.vt_orderid
 
-    def cancel_order(self, req: CancelRequest):
+    def cancel_order(self, req: CancelRequest) -> Request:
         """"""
-        path = "/api/futures/v3/cancel_order/%s/%s" % (req.symbol, req.orderid)
+        item = req.symbol.split("-")
+        underlying = f"{item[0]}-{item[1]}"
+
+        path = f"/api/option/v3/cancel_order/{underlying}/{req.orderid}"
         self.add_request(
             "POST",
             path,
@@ -291,49 +288,60 @@ class OkexfRestApi(RestClient):
             extra=req
         )
 
-    def query_contract(self):
+    def query_underlying(self) -> Request:
         """"""
         self.add_request(
             "GET",
-            "/api/futures/v3/instruments",
-            callback=self.on_query_contract
+            "/api/option/v3/underlying",
+            callback=self.on_query_underlying
         )
 
-    def query_account(self):
+    def query_contract(self) -> Request:
         """"""
-        self.add_request(
-            "GET",
-            "/api/futures/v3/accounts",
-            callback=self.on_query_account
-        )
+        for underlying in underlyings:
+            self.add_request(
+                "GET",
+                f"/api/option/v3/instruments/{underlying}",
+                callback=self.on_query_contract
+            )
 
-    def query_order(self):
+    def query_account(self) -> Request:
         """"""
-        for code in instruments:
+        for underlying in underlyings:
+            self.add_request(
+                "GET",
+                f"/api/option/v3/accounts/{underlying}",
+                callback=self.on_query_account
+            )
+
+    def query_order(self) -> Request:
+        """"""
+        for underlying in underlyings:
 
             # get waiting orders
             self.add_request(
                 "GET",
-                "/api/futures/v3/orders/%s?status=0" % (code),
+                f"/api/option/v3/orders/{underlying}?state=0",
                 callback=self.on_query_order
             )
 
             # get part traded orders
             self.add_request(
                 "GET",
-                "/api/futures/v3/orders/%s?status=1" % (code),
+                f"/api/option/v3/orders/{underlying}?state=1",
                 callback=self.on_query_order
             )
 
-    def query_position(self):
+    def query_position(self) -> Request:
         """"""
-        self.add_request(
-            "GET",
-            "/api/futures/v3/position",
-            callback=self.on_query_position
-        )
+        for underlying in underlyings:
+            self.add_request(
+                "GET",
+                f"/api/option/v3/{underlying}/position",
+                callback=self.on_query_position
+            )
 
-    def query_time(self):
+    def query_time(self) -> Request:
         """"""
         self.add_request(
             "GET",
@@ -341,110 +349,110 @@ class OkexfRestApi(RestClient):
             callback=self.on_query_time
         )
 
-    def on_query_contract(self, data, request):
+    def on_query_underlying(self, data: List[str], request: Request) -> None:
         """"""
+        for underlying in data:
+            underlyings.add(underlying)
+
+        self.gateway.write_log("期权标的信息查询成功")
+        self.query_contract()
+
+    def on_query_contract(self, data: List, request: Request) -> None:
+        """"""
+        if not data:
+            return
+
         for instrument_data in data:
             symbol = instrument_data["instrument_id"]
             contract = ContractData(
                 symbol=symbol,
                 exchange=Exchange.OKEX,
                 name=symbol,
-                product=Product.FUTURES,
-                size=int(instrument_data["trade_increment"]),
+                product=Product.OPTION,
+                size=float(instrument_data["lot_size"]),
                 pricetick=float(instrument_data["tick_size"]),
+                option_strike=int(instrument_data["strike"]),
+                option_underlying=instrument_data["underlying"],
+                option_type=instrument_data["option_type"],
+                option_expiry=datetime.strptime(instrument_data["delivery"], "%Y-%m-%dT%H:%M:%S.%fZ"),
+                option_portfolio=instrument_data["underlying"] + "_O",
+                option_index=instrument_data["strike"],
                 history_data=True,
                 gateway_name=self.gateway_name,
             )
             self.gateway.on_contract(contract)
 
-            instruments.add(instrument_data["instrument_id"])
-            currencies.add(instrument_data["underlying_index"])
-            currencies.add(instrument_data["quote_currency"])
-
-        self.gateway.write_log("合约信息查询成功")
-
+        self.gateway.write_log("期权合约信息查询成功")
         # Start websocket api after instruments data collected
         self.gateway.ws_api.start()
 
         # and query pending orders
+        self.query_account()
+        self.query_position()
         self.query_order()
 
-    def on_query_account(self, data, request):
+    def on_query_account(self, data: dict, request: Request) -> None:
         """"""
-        for currency, d in data["info"].items():
+        equity = float(data["equity"])
+        if equity:
             account = AccountData(
-                accountid=currency.upper(),
-                balance=float(d["equity"]),
-                frozen=float(d.get("margin_for_unfilled", 0)),
+                accountid=data["underlying"],
+                balance=float(data["equity"]),
+                frozen=float(data.get("margin_for_unfilled", 0)),
                 gateway_name=self.gateway_name,
             )
             self.gateway.on_account(account)
-        self.gateway.write_log("账户资金查询成功")
 
-    def on_query_position(self, data, request):
+            self.gateway.write_log(f"{account.accountid}账户资金查询成功")
+
+    def on_query_position(self, data: dict, request: Request) -> None:
         """"""
         if not data["holding"]:
             return
 
-        for pos_data in data["holding"][0]:
-            if int(pos_data["long_qty"]) > 0:
-                pos = PositionData(
-                    symbol=pos_data["instrument_id"].upper(),
-                    exchange=Exchange.OKEX,
-                    direction=Direction.LONG,
-                    volume=int(pos_data["long_qty"]),
-                    frozen=float(pos_data["long_qty"]) - float(pos_data["long_avail_qty"]),
-                    price=float(pos_data["long_avg_cost"]),
-                    pnl=float(pos_data["realised_pnl"]),
-                    gateway_name=self.gateway_name,
-                )
-                self.gateway.on_position(pos)
+        for pos_data in data["holding"]:
+            pos = PositionData(
+                symbol=pos_data["instrument_id"],
+                exchange=Exchange.OKEX,
+                direction=Direction.NET,
+                volume=int(pos_data["position"]),
+                frozen=float(pos_data["avail_position"]) - float(pos_data["avail_position"]),
+                price=float(pos_data["avg_cost"]),
+                pnl=float(pos_data["realized_pnl"]),
+                gateway_name=self.gateway_name,
+            )
+            self.gateway.on_position(pos)
 
-            if int(pos_data["short_qty"]) > 0:
-                pos = PositionData(
-                    symbol=pos_data["instrument_id"],
-                    exchange=Exchange.OKEX,
-                    direction=Direction.SHORT,
-                    volume=int(pos_data["short_qty"]),
-                    frozen=float(pos_data["short_qty"]) - float(pos_data["short_avail_qty"]),
-                    price=float(pos_data["short_avg_cost"]),
-                    pnl=float(pos_data["realised_pnl"]),
-                    gateway_name=self.gateway_name,
-                )
-                self.gateway.on_position(pos)
-
-    def on_query_order(self, data, request):
+    def on_query_order(self, data: dict, request: Request) -> None:
         """"""
         for order_data in data["order_info"]:
-            offset, direction = TYPE_OKEXF2VT[order_data["type"]]
+            direction = SIDE_OKEXO2VT[order_data["side"]]
             order = OrderData(
                 symbol=order_data["instrument_id"],
                 exchange=Exchange.OKEX,
-                type=ORDERTYPE_OKEXF2VT[order_data["order_type"]],
+                type=ORDERTYPE_OKEXO2VT[order_data["order_type"]],
                 orderid=order_data["client_oid"],
                 direction=direction,
-                offset=offset,
                 traded=int(order_data["filled_qty"]),
                 price=float(order_data["price"]),
                 volume=float(order_data["size"]),
                 time=utc_to_local(order_data["timestamp"]).strftime("%H:%M:%S"),
-                status=STATUS_OKEXF2VT[order_data["status"]],
+                status=STATE_OKEXO2VT[order_data["state"]],
                 gateway_name=self.gateway_name,
             )
             self.gateway.on_order(order)
 
-    def on_query_time(self, data, request):
+    def on_query_time(self, data: dict, request: Request) -> None:
         """"""
         server_time = data["iso"]
         local_time = datetime.utcnow().isoformat()
         msg = f"服务器时间：{server_time}，本机时间：{local_time}"
         self.gateway.write_log(msg)
 
-    def on_send_order_failed(self, status_code: str, request: Request):
+    def on_send_order_failed(self, status_code: str, request: Request) -> None:
         """
         Callback when sending order failed on server.
         """
-
         order = request.extra
         order.status = Status.REJECTED
         order.time = datetime.now().strftime("%H:%M:%S.%f")
@@ -454,11 +462,10 @@ class OkexfRestApi(RestClient):
 
     def on_send_order_error(
         self, exception_type: type, exception_value: Exception, tb, request: Request
-    ):
+    ) -> None:
         """
         Callback when sending order caused exception.
         """
-
         order = request.extra
         order.status = Status.REJECTED
         self.gateway.on_order(order)
@@ -467,7 +474,7 @@ class OkexfRestApi(RestClient):
         if not issubclass(exception_type, ConnectionError):
             self.on_error(exception_type, exception_value, tb, request)
 
-    def on_send_order(self, data, request):
+    def on_send_order(self, data: dict, request: Request) -> None:
         """
         Websocket will push a new order status
         """
@@ -481,7 +488,7 @@ class OkexfRestApi(RestClient):
 
     def on_cancel_order_error(
         self, exception_type: type, exception_value: Exception, tb, request: Request
-    ):
+    ) -> None:
         """
         Callback when cancelling order failed on server.
         """
@@ -489,13 +496,13 @@ class OkexfRestApi(RestClient):
         if not issubclass(exception_type, ConnectionError):
             self.on_error(exception_type, exception_value, tb, request)
 
-    def on_cancel_order(self, data, request):
+    def on_cancel_order(self, data, request) -> None:
         """
         Websocket will push a new order status
         """
         pass
 
-    def on_cancel_order_failed(self, status_code: int, request: Request):
+    def on_cancel_order_failed(self, status_code: int, request: Request) -> None:
         """
         If cancel failed, mark order status to be rejected.
         """
@@ -505,7 +512,7 @@ class OkexfRestApi(RestClient):
             order.status = Status.REJECTED
             self.gateway.on_order(order)
 
-    def on_failed(self, status_code: int, request: Request):
+    def on_failed(self, status_code: int, request: Request) -> None:
         """
         Callback to handle request failed.
         """
@@ -514,7 +521,7 @@ class OkexfRestApi(RestClient):
 
     def on_error(
         self, exception_type: type, exception_value: Exception, tb, request: Request
-    ):
+    ) -> None:
         """
         Callback to handler request exception.
         """
@@ -525,17 +532,17 @@ class OkexfRestApi(RestClient):
             self.exception_detail(exception_type, exception_value, tb, request)
         )
 
-    def query_history(self, req: HistoryRequest):
+    def query_history(self, req: HistoryRequest) -> List[BarData]:
         """"""
         buf = {}
         end_time = None
 
         for i in range(10):
-            path = f"/api/futures/v3/instruments/{req.symbol}/candles"
+            path = f"/api/option/v3/instruments/{req.symbol}/candles"
 
             # Create query params
             params = {
-                "granularity": INTERVAL_VT2OKEXF[req.interval]
+                "granularity": INTERVAL_VT2OKEXO[req.interval]
             }
 
             if end_time:
@@ -591,27 +598,27 @@ class OkexfRestApi(RestClient):
         return history
 
 
-class OkexfWebsocketApi(WebsocketClient):
+class OkexoWebsocketApi(WebsocketClient):
     """"""
 
     def __init__(self, gateway):
         """"""
         super().__init__()
-        self.ping_interval = 20     # OKEX use 30 seconds for ping
 
-        self.gateway = gateway
-        self.gateway_name = gateway.gateway_name
+        self.ping_interval: int = 20     # OKEX use 30 seconds for ping
 
-        self.key = ""
-        self.secret = ""
-        self.passphrase = ""
+        self.gateway: OkexoGateway = gateway
+        self.gateway_name: str = gateway.gateway_name
 
-        self.trade_count = 10000
-        self.connect_time = 0
+        self.key: str = ""
+        self.secret: str = ""
+        self.passphrase: str = ""
 
-        self.subscribed: Dict[str, SubscribeRequest] = {}
-        self.callbacks = {}
-        self.ticks = {}
+        self.trade_count: int = 10000
+        self.connect_time: int = 0
+
+        self.callbacks: Dict[str, callable] = {}
+        self.ticks: Dict[str, TickData] = {}
 
     def connect(
         self,
@@ -620,7 +627,7 @@ class OkexfWebsocketApi(WebsocketClient):
         passphrase: str,
         proxy_host: str,
         proxy_port: int
-    ):
+    ) -> None:
         """"""
         self.key = key
         self.secret = secret.encode()
@@ -630,16 +637,14 @@ class OkexfWebsocketApi(WebsocketClient):
 
         self.init(WEBSOCKET_HOST, proxy_host, proxy_port)
 
-    def unpack_data(self, data):
+    def unpack_data(self, data) -> json.JSONDecoder:
         """"""
         return json.loads(zlib.decompress(data, -zlib.MAX_WBITS))
 
-    def subscribe(self, req: SubscribeRequest):
+    def subscribe(self, req: SubscribeRequest) -> None:
         """
         Subscribe to tick data upate.
         """
-        self.subscribed[req.vt_symbol] = req
-
         tick = TickData(
             symbol=req.symbol,
             exchange=req.exchange,
@@ -649,8 +654,8 @@ class OkexfWebsocketApi(WebsocketClient):
         )
         self.ticks[req.symbol] = tick
 
-        channel_ticker = f"futures/ticker:{req.symbol}"
-        channel_depth = f"futures/depth5:{req.symbol}"
+        channel_ticker = f"option/ticker:{req.symbol}"
+        channel_depth = f"option/depth5:{req.symbol}"
 
         self.callbacks[channel_ticker] = self.on_ticker
         self.callbacks[channel_depth] = self.on_depth
@@ -661,16 +666,16 @@ class OkexfWebsocketApi(WebsocketClient):
         }
         self.send_packet(req)
 
-    def on_connected(self):
+    def on_connected(self) -> None:
         """"""
         self.gateway.write_log("Websocket API连接成功")
         self.login()
 
-    def on_disconnected(self):
+    def on_disconnected(self) -> None:
         """"""
         self.gateway.write_log("Websocket API连接断开")
 
-    def on_packet(self, packet: dict):
+    def on_packet(self, packet: dict) -> None:
         """"""
         if "event" in packet:
             event = packet["event"]
@@ -690,14 +695,14 @@ class OkexfWebsocketApi(WebsocketClient):
                 for d in data:
                     callback(d)
 
-    def on_error(self, exception_type: type, exception_value: Exception, tb):
+    def on_error(self, exception_type: type, exception_value: Exception, tb) -> None:
         """"""
         msg = f"触发异常，状态码：{exception_type}，信息：{exception_value}"
         self.gateway.write_log(msg)
 
         sys.stderr.write(self.exception_detail(exception_type, exception_value, tb))
 
-    def login(self):
+    def login(self) -> None:
         """
         Need to login befores subscribe to websocket topic.
         """
@@ -718,20 +723,20 @@ class OkexfWebsocketApi(WebsocketClient):
         self.send_packet(req)
         self.callbacks["login"] = self.on_login
 
-    def subscribe_topic(self):
+    def subscribe_topic(self) -> None:
         """
         Subscribe to all private topics.
         """
-        self.callbacks["futures/ticker"] = self.on_ticker
-        self.callbacks["futures/depth5"] = self.on_depth
-        self.callbacks["futures/account"] = self.on_account
-        self.callbacks["futures/order"] = self.on_order
-        self.callbacks["futures/position"] = self.on_position
+        self.callbacks["option/ticker"] = self.on_ticker
+        self.callbacks["option/depth5"] = self.on_depth
+        self.callbacks["option/account"] = self.on_account
+        self.callbacks["option/order"] = self.on_order
+        self.callbacks["option/position"] = self.on_position
 
         # Subscribe to order update
         channels = []
-        for instrument_id in instruments:
-            channel = f"futures/order:{instrument_id}"
+        for underlying in underlyings:
+            channel = f"option/order:{underlying}"
             channels.append(channel)
 
         req = {
@@ -742,10 +747,9 @@ class OkexfWebsocketApi(WebsocketClient):
 
         # Subscribe to account update
         channels = []
-        for currency in currencies:
-            if currency not in ["USD", "USDT"]:
-                channel = f"futures/account:{currency}"
-                channels.append(channel)
+        for underlying in underlyings:
+            channel = f"option/account:{underlying}"
+            channels.append(channel)
 
         req = {
             "op": "subscribe",
@@ -755,91 +759,83 @@ class OkexfWebsocketApi(WebsocketClient):
 
         # Subscribe to position update
         channels = []
-        for instrument_id in instruments:
-            channel = f"futures/position:{instrument_id}"
+        for underlying in underlyings:
+            channel = f"option/position:{underlying}"
             channels.append(channel)
 
         req = {
             "op": "subscribe",
             "args": channels
         }
+
         self.send_packet(req)
 
-    def on_login(self, data: dict):
+    def on_login(self, data: dict) -> None:
         """"""
         success = data.get("success", False)
 
         if success:
             self.gateway.write_log("Websocket API登录成功")
             self.subscribe_topic()
-
-            for req in list(self.subscribed.values()):
-                self.subscribe(req)
         else:
             self.gateway.write_log("Websocket API登录失败")
 
-    def on_ticker(self, d):
+    def on_ticker(self, data: dict) -> None:
         """"""
-        symbol = d["instrument_id"]
+        symbol = data["instrument_id"]
         tick = self.ticks.get(symbol, None)
         if not tick:
             return
 
-        # Filter last price with 0 value
-        last_price = float(d["last"])
-        if not last_price:
-            return
-
-        tick.last_price = last_price
-        tick.high_price = float(d["high_24h"])
-        tick.low_price = float(d["low_24h"])
-        tick.volume = float(d["volume_24h"])
-        tick.datetime = utc_to_local(d["timestamp"])
+        tick.last_price = float(data["last"])
+        tick.high_price = float(data["high_24h"])
+        tick.low_price = float(data["low_24h"])
+        tick.volume = float(data["volume_24h"])
+        tick.datetime = utc_to_local(data["timestamp"])
 
         self.gateway.on_tick(copy(tick))
 
-    def on_depth(self, d):
+    def on_depth(self, data: dict) -> None:
         """"""
-        symbol = d["instrument_id"]
+        symbol = data["instrument_id"]
         tick = self.ticks.get(symbol, None)
         if not tick:
             return
 
-        bids = d["bids"]
-        asks = d["asks"]
+        bids = data["bids"]
+        asks = data["asks"]
         for n, buf in enumerate(bids):
             price, volume, _, __ = buf
-            tick.__setattr__("bid_price_%s" % (n + 1), float(price))
-            tick.__setattr__("bid_volume_%s" % (n + 1), int(volume))
+            tick.__setattr__("bid_price_%s" % (n + 1), price)
+            tick.__setattr__("bid_volume_%s" % (n + 1), volume)
 
         for n, buf in enumerate(asks):
             price, volume, _, __ = buf
-            tick.__setattr__("ask_price_%s" % (n + 1), float(price))
-            tick.__setattr__("ask_volume_%s" % (n + 1), int(volume))
+            tick.__setattr__("ask_price_%s" % (n + 1), price)
+            tick.__setattr__("ask_volume_%s" % (n + 1), volume)
 
-        tick.datetime = utc_to_local(d["timestamp"])
+        tick.datetime = utc_to_local(data["timestamp"])
         self.gateway.on_tick(copy(tick))
 
-    def on_order(self, d):
+    def on_order(self, data: dict) -> None:
         """"""
-        offset, direction = TYPE_OKEXF2VT[d["type"]]
+        direction = SIDE_OKEXO2VT[data["side"]]
         order = OrderData(
-            symbol=d["instrument_id"],
+            symbol=data["instrument_id"],
             exchange=Exchange.OKEX,
-            type=ORDERTYPE_OKEXF2VT[d["order_type"]],
-            orderid=d["client_oid"],
-            offset=offset,
+            type=ORDERTYPE_OKEXO2VT[data["order_type"]],
+            orderid=data["client_oid"],
             direction=direction,
-            price=float(d["price"]),
-            volume=float(d["size"]),
-            traded=float(d["filled_qty"]),
-            time=utc_to_local(d["timestamp"]).strftime("%H:%M:%S"),
-            status=STATUS_OKEXF2VT[d["status"]],
+            price=float(data["price"]),
+            volume=float(data["size"]),
+            traded=float(data["filled_qty"]),
+            time=utc_to_local(data["timestamp"]).strftime("%H:%M:%S"),
+            status=STATE_OKEXO2VT[data["state"]],
             gateway_name=self.gateway_name,
         )
         self.gateway.on_order(copy(order))
 
-        trade_volume = d.get("last_fill_qty", 0)
+        trade_volume = data.get("last_fill_qty", 0)
         if not trade_volume or float(trade_volume) == 0:
             return
 
@@ -853,65 +849,51 @@ class OkexfWebsocketApi(WebsocketClient):
             tradeid=tradeid,
             direction=order.direction,
             offset=order.offset,
-            price=float(d["last_fill_px"]),
+            price=float(data["last_fill_px"]),
             volume=float(trade_volume),
             time=order.time,
             gateway_name=self.gateway_name,
         )
         self.gateway.on_trade(trade)
 
-    def on_account(self, d):
+    def on_account(self, data: dict) -> None:
         """"""
-        for key in d:
-            account_data = d[key]
-            account = AccountData(
-                accountid=key,
-                balance=float(account_data["equity"]),
-                frozen=float(d.get("margin_for_unfilled", 0)),
-                gateway_name=self.gateway_name
-            )
-            self.gateway.on_account(account)
-
-    def on_position(self, d):
-        """"""
-        pos = PositionData(
-            symbol=d["instrument_id"],
-            exchange=Exchange.OKEX,
-            direction=Direction.LONG,
-            volume=int(d["long_qty"]),
-            frozen=float(d["long_qty"]) - float(d["long_avail_qty"]),
-            price=float(d["long_avg_cost"]),
-            pnl=float(d["realised_pnl"]),
-            gateway_name=self.gateway_name,
+        account = AccountData(
+            accountid=data["underlying"],
+            balance=float(data["equity"]),
+            frozen=float(data.get("margin_for_unfilled", 0)),
+            gateway_name=self.gateway_name
         )
-        self.gateway.on_position(pos)
+        self.gateway.on_account(account)
 
+    def on_position(self, data: dict) -> None:
+        """"""
         pos = PositionData(
-            symbol=d["instrument_id"],
+            symbol=data["instrument_id"],
             exchange=Exchange.OKEX,
-            direction=Direction.SHORT,
-            volume=int(d["short_qty"]),
-            frozen=float(d["short_qty"]) - float(d["short_avail_qty"]),
-            price=float(d["short_avg_cost"]),
-            pnl=float(d["realised_pnl"]),
+            direction=Direction.NET,
+            volume=int(data["position"]),
+            frozen=float(data["avail_position"]) - float(data["avail_position"]),
+            price=float(data["avg_cost"]),
+            pnl=float(data["realized_pnl"]),
             gateway_name=self.gateway_name,
         )
         self.gateway.on_position(pos)
 
 
-def generate_signature(msg: str, secret_key: str):
+def generate_signature(msg: str, secret_key: str) -> bytes:
     """OKEX V3 signature"""
     return base64.b64encode(hmac.new(secret_key, msg.encode(), hashlib.sha256).digest())
 
 
-def get_timestamp():
+def get_timestamp() -> str:
     """"""
     now = datetime.utcnow()
     timestamp = now.isoformat("T", "milliseconds")
     return timestamp + "Z"
 
 
-def utc_to_local(timestamp):
+def utc_to_local(timestamp) -> datetime:
     time = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%fZ")
     utc_time = time + timedelta(hours=8)
     return utc_time
