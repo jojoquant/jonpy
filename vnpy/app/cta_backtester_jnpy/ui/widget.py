@@ -14,10 +14,10 @@ from vnpy.trader.ui.editor import CodeEditor
 from vnpy.trader.utility import load_json, save_json
 
 from vnpy.event import Event, EventEngine
-from vnpy.chart import ChartWidget, CandleItem, VolumeItem, TechIndexItem
+from vnpy.chart import ChartWidget, CandleItem, VolumeItem
+# from vnpy.chart import TechIndexItem
 
 from vnpy.app.cta_backtester_jnpy.db_operation import DBOperation
-from vnpy.app.cta_backtester_jnpy.ui.KLine_pyecharts import draw_charts
 
 from jnpy.DataSource.pytdx.contracts import read_contracts_json_dict
 from jnpy.DataSource.pyccxt.contracts import Exchange
@@ -1330,10 +1330,10 @@ class CandleChartDialog(QtWidgets.QDialog):
         # Create chart widget
         self.chart = ChartWidget()
         self.chart.add_plot("candle", hide_x_axis=True)
-        self.chart.add_plot("tech_chart", maximum_height=200)
+        # self.chart.add_plot("tech_chart", maximum_height=200)
         self.chart.add_plot("volume", maximum_height=200)
         self.chart.add_item(CandleItem, "candle", "candle")
-        self.chart.add_item(TechIndexItem, "tech_chart", "tech_chart")
+        # self.chart.add_item(TechIndexItem, "tech_chart", "tech_chart")
         self.chart.add_item(VolumeItem, "volume", "volume")
         self.chart.add_cursor()
 
