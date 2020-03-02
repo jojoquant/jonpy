@@ -22,12 +22,12 @@ from vnpy.app.cta_backtester_jnpy.DRL.main import accept_bars_data_list
 
 APP_NAME = "CtaBacktester_jnpy"
 
-EVENT_BACKTESTER_LOG = "eBacktesterLog"
-EVENT_BACKTESTER_BACKTESTING_FINISHED = "eBacktesterBacktestingFinished"
-EVENT_BACKTESTER_OPTIMIZATION_FINISHED = "eBacktesterOptimizationFinished"
+EVENT_BACKTESTER_LOG = "eBacktesterLog_jnpy"
+EVENT_BACKTESTER_BACKTESTING_FINISHED = "eBacktesterBacktestingFinished_jnpy"
+EVENT_BACKTESTER_OPTIMIZATION_FINISHED = "eBacktesterOptimizationFinished_jnpy"
 
 
-class BacktesterEngine(BaseEngine):
+class BacktesterEngineJnpy(BaseEngine):
     """
     For running CTA strategy backtesting.
     """

@@ -2,7 +2,7 @@ from pathlib import Path
 
 from vnpy.trader.app import BaseApp
 
-from .engine import BacktesterEngine, APP_NAME
+from .engine import BacktesterEngineJnpy, APP_NAME
 
 
 class CtaBacktesterJnpyApp(BaseApp):
@@ -12,6 +12,6 @@ class CtaBacktesterJnpyApp(BaseApp):
     app_module = __module__
     app_path = Path(__file__).parent
     display_name = "CTA回测"
-    engine_class = BacktesterEngine
+    engine_class = BacktesterEngineJnpy
     widget_name = "JnpyBacktesterManager"
     icon_name = "Meowth.svg"
