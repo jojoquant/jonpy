@@ -35,3 +35,6 @@ _templates
 
 # Misc
 .DS_Store
+
+# Jnpy
+jnpy/DataSource/goCrawel/data/*

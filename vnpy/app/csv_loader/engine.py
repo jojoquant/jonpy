@@ -53,18 +53,20 @@ class CsvLoaderEngine(BaseEngine):
         self.volume_head: str = ""
 
     def load_by_handle(
-        self,
-        f: TextIO,
-        symbol: str,
-        exchange: Exchange,
-        interval: Interval,
-        datetime_head: str,
-        open_head: str,
-        high_head: str,
-        low_head: str,
-        close_head: str,
-        volume_head: str,
-        datetime_format: str,
+            self,
+            f: TextIO,
+            symbol: str,
+            exchange: Exchange,
+            interval: Interval,
+            datetime_head: str,
+            open_head: str,
+            high_head: str,
+            low_head: str,
+            close_head: str,
+            volume_head: str,
+            open_interest_head: str,
+            datetime_format: str,
+            progress_bar_dict
     ):
         """
         load by text mode file handle
@@ -87,6 +89,7 @@ class CsvLoaderEngine(BaseEngine):
                 datetime=dt,
                 interval=interval,
                 volume=item[volume_head],
+                open_interest=item[open_interest_head],
                 open_price=item[open_head],
                 high_price=item[high_head],
                 low_price=item[low_head],
@@ -103,22 +106,24 @@ class CsvLoaderEngine(BaseEngine):
         end = bar.datetime
 
         # insert into database
-        database_manager.save_bar_data(bars)
+        database_manager.save_bar_data(bars, progress_bar_dict)
         return start, end, count
 
     def load(
-        self,
-        file_path: str,
-        symbol: str,
-        exchange: Exchange,
-        interval: Interval,
-        datetime_head: str,
-        open_head: str,
-        high_head: str,
-        low_head: str,
-        close_head: str,
-        volume_head: str,
-        datetime_format: str,
+            self,
+            file_path: str,
+            symbol: str,
+            exchange: Exchange,
+            interval: Interval,
+            datetime_head: str,
+            open_head: str,
+            high_head: str,
+            low_head: str,
+            close_head: str,
+            volume_head: str,
+            open_interest_head: str,
+            datetime_format: str,
+            progress_bar_dict
     ):
         """
         load by filename
@@ -135,5 +140,7 @@ class CsvLoaderEngine(BaseEngine):
                 low_head=low_head,
                 close_head=close_head,
                 volume_head=volume_head,
+                open_interest_head=open_interest_head,
                 datetime_format=datetime_format,
+                progress_bar_dict=progress_bar_dict
             )

@@ -1,6 +1,9 @@
 from typing import Dict, List, Tuple
 from datetime import datetime
+import pandas as pd
+from dataclasses import fields
 
+from pandas.api.types import is_object_dtype, is_datetime64_any_dtype
 from vnpy.trader.object import BarData
 
 from .base import to_int
@@ -17,6 +20,9 @@ class BarManager:
 
         self._price_ranges: Dict[Tuple[int, int], Tuple[float, float]] = {}
         self._volume_ranges: Dict[Tuple[int, int], Tuple[float, float]] = {}
+
+        self.df: pd.DataFrame = None
+        self.gen_df_flag: bool = False
 
     def update_history(self, history: List[BarData]) -> None:
         """
@@ -81,6 +87,13 @@ class BarManager:
         dt = self._index_datetime_map.get(ix, None)
         if not dt:
             return None
+
+        # bar = self._bars[dt]
+        # if self.gen_df_flag:
+        #     dd = self.df.iloc[ix]
+        #     aaa = set(dd.index) - {i.name for i in fields(bar)}
+        #     [setattr(bar, i, dd[i]) for i in aaa]
+        # return bar
 
         return self._bars[dt]
 
@@ -152,12 +165,49 @@ class BarManager:
         self._volume_ranges[(min_ix, max_ix)] = (min_volume, max_volume)
         return min_volume, max_volume
 
+    def get_tech_index_range(self, min_ix: float = None, max_ix: float = None) -> Tuple[float, float]:
+        """
+        Get technique-index range to show within given index range.
+        """
+        # if not self._bars:
+        #     return 0, 1
+        #
+        # if not min_ix:
+        #     min_ix = 0
+        #     max_ix = len(self._bars) - 1
+        # else:
+        #     min_ix = to_int(min_ix)
+        #     max_ix = to_int(max_ix)
+        #     max_ix = min(max_ix, self.get_count())
+        #
+        # buf = self._volume_ranges.get((min_ix, max_ix), None)
+        # if buf:
+        #     return buf
+        #
+        # bar_list = list(self._bars.values())[min_ix:max_ix + 1]
+        #
+        # first_bar = bar_list[0]
+        # max_volume = first_bar.volume
+        # min_volume = 0
+        #
+        # for bar in bar_list[1:]:
+        #     max_volume = max(max_volume, bar.volume)
+        #
+        # self._volume_ranges[(min_ix, max_ix)] = (min_volume, max_volume)
+
+        #TODO 这里设置图的上下限
+        min_volume, max_volume = -10, 10
+
+        return min_volume, max_volume
+
     def _clear_cache(self) -> None:
         """
         Clear cached range data.
         """
         self._price_ranges.clear()
         self._volume_ranges.clear()
+        self.df = None
+        self.gen_df_flag = False
 
     def clear_all(self) -> None:
         """
@@ -168,3 +218,60 @@ class BarManager:
         self._index_datetime_map.clear()
 
         self._clear_cache()
+
+    def _gen_df(self):
+        '''
+        generate BarManager pd.DataFrame
+        '''
+
+        all_bars = self.get_all_bars()
+        self.gen_df_flag = True
+
+        if all_bars:
+            self.df = pd.DataFrame(all_bars, columns=['all_bars'])
+            for field in fields(all_bars[0]):
+                attr = field.name
+                self.df[attr] = self.df['all_bars'].apply(lambda x: getattr(x, attr))
+            self.df.drop(labels=['all_bars'], axis=1, inplace=True)
+        else:
+            self.df = None
+
+    def get_df(self):
+        '''
+        get generated BarManager pd.DataFrame
+        '''
+        #############################################################
+        # all_bars = self._manager.get_all_bars()
+        ########################################################################
+        ### ArrayManager 读入23000条数据, 耗时 0.9s
+        # start_time = time.time()
+        # am = ArrayManager(size=len(all_bars))
+        # for bar in all_bars:
+        #     am.update_bar(bar)
+        #     if not am.inited:
+        #         continue
+        # print(f'ArrayManager load all bars cost: {time.time()-start_time:.2f}s')
+        ########################################################################
+
+        ##################################################
+        ### Pandas 读入23000条数据并进行处理, 耗时 0.28s
+        # start_time = time.time()
+        # df = pd.DataFrame(all_bars, columns=['all_bars'])
+        # for field in fields(all_bars[0]):
+        #     attr = field.name
+        #     df[attr] = df['all_bars'].apply(lambda x: getattr(x, attr))
+        # df.drop(labels=['all_bars'], axis=1, inplace=True)
+        # print(f'Pandas load all bars cost: {time.time() - start_time:.2f}s')
+        ######################################################
+        if self.gen_df_flag:
+            return self.df
+        else:
+            self._gen_df()
+            return self.df
+
+    def get_df_num_type_columns_list(self):
+        return [col for col in self.df.columns if
+                not (
+                        is_object_dtype(self.df[col].dtype)
+                        or is_datetime64_any_dtype(self.df[col].dtype)
+                )] if self.gen_df_flag else self.df

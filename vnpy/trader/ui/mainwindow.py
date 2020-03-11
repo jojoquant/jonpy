@@ -108,6 +108,7 @@ class MainWindow(QtWidgets.QMainWindow):
         all_apps = self.main_engine.get_all_apps()
         for app in all_apps:
             ui_module = import_module(app.app_module + ".ui")
+            # fangyang 获得CtaManager的值，是class vnpy.app.cta_strategy.ui.widget.CtaManager
             widget_class = getattr(ui_module, app.widget_name)
 
             func = partial(self.open_widget, widget_class, app.app_name)
@@ -120,9 +121,11 @@ class MainWindow(QtWidgets.QMainWindow):
             )
 
         # Global setting editor
+        edit_menu = bar.addMenu('&Edit')
         action = QtWidgets.QAction("配置", self)
         action.triggered.connect(self.edit_global_setting)
-        bar.addAction(action)
+        # bar.addAction(action)
+        edit_menu.addAction(action)
 
         # Help menu
         help_menu = bar.addMenu("帮助")
@@ -201,7 +204,7 @@ class MainWindow(QtWidgets.QMainWindow):
         icon = QtGui.QIcon(get_icon_path(__file__, icon_name))
 
         action = QtWidgets.QAction(action_name, self)
-        action.triggered.connect(func)
+        action.triggered.connect(func)  # fangyang 在激活的时候，实例化app.widget class
         action.setIcon(icon)
 
         menu.addAction(action)
