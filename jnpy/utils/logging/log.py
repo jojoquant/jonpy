@@ -8,6 +8,7 @@
 
 import logging
 
+
 class LogModule:
 
     def __init__(self, name: str, level: str):
@@ -38,6 +39,7 @@ class LogModule:
 
     def write_log(self, msg: str):
         self.levelname_dict[self.level](msg)
+        self.logger.removeHandler(self.console)
 
 
 if __name__ == '__main__':

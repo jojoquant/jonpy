@@ -19,10 +19,4 @@ tornado.ioloop.IOLoop.current().start()
 
 
 if __name__ == "__main__":
-    # from jnpy.DataSource.pytdx.contracts import read_contracts_json_dict
-    #
-    # class MainHandler(BaseRestfulHandler):
-    #     def get(self):
-    #         r_dict = read_contracts_json_dict()
-    #         self.write(r_dict)
     pass
