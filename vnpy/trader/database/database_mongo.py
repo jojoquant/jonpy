@@ -334,9 +334,13 @@ class MongoManager(BaseDatabaseManager):
             self, symbol: str, exchange: "Exchange", interval: "Interval"
     ) -> Optional["BarData"]:
         s = (
-            DbBarData.objects(symbol=symbol, exchange=exchange.value)
-                .order_by("-datetime")
-                .first()
+            DbBarData.objects(
+                symbol=symbol,
+                exchange=exchange.value,
+                interval=Interval.Value
+            )
+            .order_by("-datetime")
+            .first()
         )
         if s:
             return s.to_bar()
@@ -346,7 +350,11 @@ class MongoManager(BaseDatabaseManager):
         self, symbol: str, exchange: "Exchange", interval: "Interval"
     ) -> Optional["BarData"]:
         s = (
-            DbBarData.objects(symbol=symbol, exchange=exchange.value)
+            DbBarData.objects(
+                symbol=symbol,
+                exchange=exchange.value,
+                interval=Interval.Value
+            )
             .order_by("+datetime")
             .first()
         )
