@@ -415,6 +415,7 @@ class BinancefRestApi(RestClient):
         self.keep_alive_count += 1
         if self.keep_alive_count < 600:
             return
+        self.keep_alive_count = 0
 
         data = {
             "security": Security.API_KEY
@@ -576,7 +577,7 @@ class BinancefRestApi(RestClient):
         """"""
         pass
 
-    def query_history(self, req: HistoryRequest) -> List[OrderData]:
+    def query_history(self, req: HistoryRequest) -> List[BarData]:
         """"""
         history = []
         limit = 1000
