@@ -337,7 +337,7 @@ class MongoManager(BaseDatabaseManager):
             DbBarData.objects(
                 symbol=symbol,
                 exchange=exchange.value,
-                interval=Interval.Value
+                interval=interval.value
             )
             .order_by("-datetime")
             .first()
@@ -353,7 +353,7 @@ class MongoManager(BaseDatabaseManager):
             DbBarData.objects(
                 symbol=symbol,
                 exchange=exchange.value,
-                interval=Interval.Value
+                interval=interval.value
             )
             .order_by("+datetime")
             .first()
