@@ -334,9 +334,13 @@ class MongoManager(BaseDatabaseManager):
             self, symbol: str, exchange: "Exchange", interval: "Interval"
     ) -> Optional["BarData"]:
         s = (
-            DbBarData.objects(symbol=symbol, exchange=exchange.value)
-                .order_by("-datetime")
-                .first()
+            DbBarData.objects(
+                symbol=symbol,
+                exchange=exchange.value,
+                interval=interval.value
+            )
+            .order_by("-datetime")
+            .first()
         )
         if s:
             return s.to_bar()
@@ -346,7 +350,11 @@ class MongoManager(BaseDatabaseManager):
         self, symbol: str, exchange: "Exchange", interval: "Interval"
     ) -> Optional["BarData"]:
         s = (
-            DbBarData.objects(symbol=symbol, exchange=exchange.value)
+            DbBarData.objects(
+                symbol=symbol,
+                exchange=exchange.value,
+                interval=interval.value
+            )
             .order_by("+datetime")
             .first()
         )
@@ -389,6 +397,23 @@ class MongoManager(BaseDatabaseManager):
             result.append(data)
 
         return result
+
+    def delete_bar_data(
+        self,
+        symbol: str,
+        exchange: "Exchange",
+        interval: "Interval"
+    ) -> int:
+        """
+        Delete all bar data with given symbol + exchange + interval.
+        """
+        count = DbBarData.objects(
+            symbol=symbol,
+            exchange=exchange.value,
+            interval=interval.value
+        ).delete()
+
+        return count
 
     def clean(self, symbol: str):
         DbTickData.objects(symbol=symbol).delete()

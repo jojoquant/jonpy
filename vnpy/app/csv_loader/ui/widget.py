@@ -1,14 +1,13 @@
 """
 Author: Zehua Wei (nanoric)
 """
-import os
 
 from vnpy.event import EventEngine
 from vnpy.trader.constant import Exchange, Interval
 from vnpy.trader.engine import MainEngine
 from vnpy.trader.ui import QtCore, QtWidgets
 
-from ..fengchen_engine import APP_NAME
+from ..engine import APP_NAME
 
 
 class CsvLoaderWidget(QtWidgets.QWidget):
@@ -20,7 +19,6 @@ class CsvLoaderWidget(QtWidgets.QWidget):
 
         self.engine = main_engine.get_engine(APP_NAME)
 
-        self.progress_bar_dict = {}
         self.init_ui()
 
     def init_ui(self):
@@ -34,9 +32,6 @@ class CsvLoaderWidget(QtWidgets.QWidget):
 
         file_button = QtWidgets.QPushButton("选择文件")
         file_button.clicked.connect(self.select_file)
-
-        file_dir_button = QtWidgets.QPushButton("选择文件夹")
-        file_dir_button.clicked.connect(self.select_file_dir)
 
         load_button = QtWidgets.QPushButton("载入数据")
         load_button.clicked.connect(self.load_data)
@@ -58,7 +53,6 @@ class CsvLoaderWidget(QtWidgets.QWidget):
         self.low_edit = QtWidgets.QLineEdit("Low")
         self.close_edit = QtWidgets.QLineEdit("Close")
         self.volume_edit = QtWidgets.QLineEdit("Volume")
-        self.open_interest_edit = QtWidgets.QLineEdit("OpenInterest")
 
         self.format_edit = QtWidgets.QLineEdit("%Y-%m-%d %H:%M:%S")
 
@@ -71,16 +65,8 @@ class CsvLoaderWidget(QtWidgets.QWidget):
         format_label = QtWidgets.QLabel("格式信息")
         format_label.setAlignment(QtCore.Qt.AlignCenter)
 
-        save_progress_label = QtWidgets.QLabel("保存进度信息")
-        save_progress_label.setAlignment(QtCore.Qt.AlignCenter)
-
-        save_progress_bar = QtWidgets.QProgressBar()
-        save_progress_bar.setAlignment(QtCore.Qt.AlignCenter)
-        self.progress_bar_dict['save_progress_bar'] = save_progress_bar
-
         form = QtWidgets.QFormLayout()
         form.addRow(file_button, self.file_edit)
-        form.addRow(file_dir_button, self.file_edit)
         form.addRow(QtWidgets.QLabel())
         form.addRow(info_label)
         form.addRow("代码", self.symbol_edit)
@@ -94,13 +80,10 @@ class CsvLoaderWidget(QtWidgets.QWidget):
         form.addRow("最低价", self.low_edit)
         form.addRow("收盘价", self.close_edit)
         form.addRow("成交量", self.volume_edit)
-        form.addRow("持仓量", self.open_interest_edit)
         form.addRow(QtWidgets.QLabel())
         form.addRow(format_label)
         form.addRow("时间格式", self.format_edit)
         form.addRow(QtWidgets.QLabel())
-        form.addRow(save_progress_label)
-        form.addRow(save_progress_bar)
         form.addRow(load_button)
 
         self.setLayout(form)
@@ -112,13 +95,6 @@ class CsvLoaderWidget(QtWidgets.QWidget):
         filename = result[0]
         if filename:
             self.file_edit.setText(filename)
-
-    def select_file_dir(self):
-        """"""
-        dir_path: str = QtWidgets.QFileDialog.getExistingDirectory(
-            self, "选择文件夹", os.getcwd())
-        if dir_path:
-            self.file_edit.setText(dir_path)
 
     def load_data(self):
         """"""
@@ -132,7 +108,6 @@ class CsvLoaderWidget(QtWidgets.QWidget):
         high_head = self.high_edit.text()
         close_head = self.close_edit.text()
         volume_head = self.volume_edit.text()
-        open_interest_head = self.open_interest_edit.text()
         datetime_format = self.format_edit.text()
 
         start, end, count = self.engine.load(
@@ -146,9 +121,7 @@ class CsvLoaderWidget(QtWidgets.QWidget):
             low_head,
             close_head,
             volume_head,
-            open_interest_head,
-            datetime_format,
-            progress_bar_dict=self.progress_bar_dict
+            datetime_format
         )
 
         msg = f"\
@@ -160,5 +133,4 @@ class CsvLoaderWidget(QtWidgets.QWidget):
         结束：{end}\n\
         总数量：{count}\n\
         "
-        # 交易所类型：{exchange_type}\n\
         QtWidgets.QMessageBox.information(self, "载入成功！", msg)

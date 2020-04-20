@@ -390,6 +390,7 @@ class BinanceRestApi(RestClient):
         self.keep_alive_count += 1
         if self.keep_alive_count < 600:
             return
+        self.keep_alive_count = 0
 
         data = {
             "security": Security.API_KEY
@@ -650,7 +651,7 @@ class BinanceTradeWebsocketApi(WebsocketClient):
         dt = datetime.fromtimestamp(packet["O"] / 1000)
         time = dt.strftime("%Y-%m-%d %H:%M:%S")
 
-        if packet["C"] == "null":
+        if packet["C"] == "":
             orderid = packet["c"]
         else:
             orderid = packet["C"]
