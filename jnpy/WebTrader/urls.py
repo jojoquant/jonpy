@@ -6,9 +6,11 @@
 @Author   :   Fangyang
 """
 from jnpy.WebTrader.apps.login.urls import login_urls_tuple
+from jnpy.WebTrader.apps.dataloader.urls import ws_urls_tuple
 
 URL_TUPLE_List = []
 URL_TUPLE_List += login_urls_tuple
+URL_TUPLE_List += ws_urls_tuple
 
 if __name__ == "__main__":
     pass
