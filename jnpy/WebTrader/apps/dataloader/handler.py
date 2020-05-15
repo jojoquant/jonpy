@@ -10,9 +10,12 @@ from typing import Union, Optional, Awaitable
 
 from vnpy.trader.constant import Exchange, Interval
 
+
 from jnpy.WebTrader.base_handler import BaseWebSocketHandler
 from jnpy.WebTrader.settings import get_global_config_json_dict
 from jnpy.DataSource.pytdx.contracts import read_contracts_json_dict
+
+from jnpy.WebTrader.apps.dataloader.middleware import load_data
 
 symbols_dict = {}
 periods = [i.name for i in list(Interval)]
@@ -45,9 +48,16 @@ class Wss(BaseWebSocketHandler):
 
     def on_message(self, message: Union[str, bytes]) -> Optional[Awaitable[None]]:
         re_data_dict = json.loads(message)
-        symbols_list = symbols_dict[re_data_dict['exchanges']]
-        re_data = json.dumps({"symbols": symbols_list})
-        self.write_message(re_data)
+
+        if 'exchanges' in re_data_dict:
+            symbols_list = symbols_dict[re_data_dict['exchanges']]
+            re_data = json.dumps({"symbols": symbols_list})
+            self.write_message(re_data)
+
+        elif 'load_data' in re_data_dict:
+            load_data(self, re_data_dict['load_data'])
+            print('load_data')
+
         print(1)
 
 

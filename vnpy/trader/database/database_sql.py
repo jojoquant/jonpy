@@ -150,11 +150,18 @@ def init_models(db: Database, driver: Driver):
                     loaded = 0
                     for c in chunked(dicts, 50):
                         DbBarData.insert_many(c).on_conflict_replace().execute()
+
                         if 'save_progress_bar' in progress_bar_dict:
                             loaded += 50
                             percent_saved = min(round(100 * loaded / total_sz, 2), 100)
                             QApplication.processEvents()
                             progress_bar_dict['save_progress_bar'].setValue(percent_saved)
+
+                        elif 'web_progress' in progress_bar_dict:
+                            loaded += 50
+                            percent_saved = min(round(100 * loaded / total_sz, 2), 100)
+                            progress_bar_dict['web_progress'].write_message({'progress': percent_saved})
+                            print(f"web progress: {percent_saved}")
 
     class DbTickData(ModelBase):
         """
