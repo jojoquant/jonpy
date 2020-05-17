@@ -13,11 +13,8 @@ from vnpy.trader.utility import extract_vt_symbol
 from vnpy.trader.object import HistoryRequest
 from vnpy.trader.rqdata import rqdata_client
 from vnpy.trader.database import database_manager
-from vnpy.app.cta_strategy import (
-    CtaTemplate,
-    BacktestingEngine,
-    OptimizationSetting
-)
+from vnpy.app.cta_strategy import CtaTemplate
+from vnpy.app.cta_strategy.backtesting import BacktestingEngine, OptimizationSetting
 
 APP_NAME = "CtaBacktester"
 
@@ -108,6 +105,7 @@ class BacktesterEngine(BaseEngine):
         """
         try:
             module = importlib.import_module(module_name)
+            importlib.reload(module)
 
             for name in dir(module):
                 value = getattr(module, name)
@@ -358,7 +356,12 @@ class BacktesterEngine(BaseEngine):
         """
         self.write_log(f"{vt_symbol}-{interval}开始下载历史数据")
 
-        symbol, exchange = extract_vt_symbol(vt_symbol)
+        try:
+            symbol, exchange = extract_vt_symbol(vt_symbol)
+        except ValueError:
+            self.write_log(f"{vt_symbol}解析失败，请检查交易所后缀")
+            self.thread = None
+            return
 
         req = HistoryRequest(
             symbol=symbol,

@@ -1,6 +1,7 @@
 from datetime import datetime
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Dict
 from enum import Enum
+import pytz
 
 from vnpy.event import EventEngine
 from vnpy.trader.gateway import BaseGateway
@@ -33,6 +34,8 @@ VN_ENUMS = {
     "Direction": Direction,
     "Status": Status
 }
+
+CHINA_TZ = pytz.timezone("Asia/Shanghai")
 
 
 class ComstarGateway(BaseGateway):
@@ -78,12 +81,11 @@ class ComstarGateway(BaseGateway):
 
     def send_order(self, req: OrderRequest):
         """"""
+        # Offset is not supported for Comstar gateawy
+        req.offset = Offset.NONE
+
         if req.type not in {OrderType.LIMIT, OrderType.FAK}:
             self.write_log("仅支持限价单和FAK单")
-            return ""
-
-        if req.offset not in {Offset.NONE, Offset.OPEN}:
-            self.write_log("仅支持开仓")
             return ""
 
         symbol, settle_type, *_ = req.symbol.split("_") + [""]
@@ -139,6 +141,9 @@ class UserApi(TdApi):
         self.gateway = gateway
         self.gateway_name = gateway.gateway_name
 
+        self.trades: Dict[str, TradeData] = {}
+        self.orders: Dict[str, OrderData] = {}
+
     def on_tick(self, tick: dict):
         """"""
         data = parse_tick(tick)
@@ -147,11 +152,28 @@ class UserApi(TdApi):
     def on_order(self, order: dict):
         """"""
         data = parse_order(order)
+
+        # Filter duplicated order data push after reconnect
+        last_order = self.orders.get(data.vt_orderid, None)
+        if (
+            last_order
+            and data.traded == last_order.traded
+            and data.status == last_order.status
+        ):
+            return
+        self.orders[data.vt_orderid] = data
+
         self.gateway.on_order(data)
 
     def on_trade(self, trade: dict):
         """"""
         data = parse_trade(trade)
+
+        # Filter duplicated trade data push after reconnect
+        if data.vt_tradeid in self.trades:
+            return
+        self.trades[data.vt_tradeid] = data
+
         self.gateway.on_trade(data)
 
     def on_log(self, log: dict):
@@ -226,25 +248,25 @@ def parse_tick(data: dict) -> TickData:
         low_price=float(data["low_price"]),
         pre_close=float(data["pre_close"]),
         bid_price_1=float(data["bid_price_1"]),
-        bid_price_2=float(data["bid_price_2"]),
-        bid_price_3=float(data["bid_price_3"]),
-        bid_price_4=float(data["bid_price_4"]),
-        bid_price_5=float(data["bid_price_5"]),
+        bid_price_2=float(data["bid_price_3"]),
+        bid_price_3=float(data["bid_price_4"]),
+        bid_price_4=float(data["bid_price_5"]),
+        bid_price_5=float(data["bid_price_6"]),
         ask_price_1=float(data["ask_price_1"]),
-        ask_price_2=float(data["ask_price_2"]),
-        ask_price_3=float(data["ask_price_3"]),
-        ask_price_4=float(data["ask_price_4"]),
-        ask_price_5=float(data["ask_price_5"]),
+        ask_price_2=float(data["ask_price_3"]),
+        ask_price_3=float(data["ask_price_4"]),
+        ask_price_4=float(data["ask_price_5"]),
+        ask_price_5=float(data["ask_price_6"]),
         bid_volume_1=float(data["bid_volume_1"]),
-        bid_volume_2=float(data["bid_volume_2"]),
-        bid_volume_3=float(data["bid_volume_3"]),
-        bid_volume_4=float(data["bid_volume_4"]),
-        bid_volume_5=float(data["bid_volume_5"]),
+        bid_volume_2=float(data["bid_volume_3"]),
+        bid_volume_3=float(data["bid_volume_4"]),
+        bid_volume_4=float(data["bid_volume_5"]),
+        bid_volume_5=float(data["bid_volume_6"]),
         ask_volume_1=float(data["ask_volume_1"]),
-        ask_volume_2=float(data["ask_volume_2"]),
-        ask_volume_3=float(data["ask_volume_3"]),
-        ask_volume_4=float(data["ask_volume_4"]),
-        ask_volume_5=float(data["ask_volume_5"]),
+        ask_volume_2=float(data["ask_volume_3"]),
+        ask_volume_3=float(data["ask_volume_4"]),
+        ask_volume_4=float(data["ask_volume_5"]),
+        ask_volume_5=float(data["ask_volume_6"]),
         gateway_name=data["gateway_name"]
     )
     return tick
@@ -260,12 +282,12 @@ def parse_order(data: dict) -> OrderData:
         orderid=data["orderid"],
         type=enum_decode(data["type"]),
         direction=enum_decode(data["direction"]),
-        offset=enum_decode(data["offset"]),
+        offset=Offset.NONE,
         price=float(data["price"]),
         volume=float(data["volume"]),
         traded=float(data["traded"]),
         status=enum_decode(data["status"]),
-        time=data["time"],
+        datetime=generate_datetime(data["time"]),
         gateway_name=data["gateway_name"]
     )
     return order
@@ -281,10 +303,10 @@ def parse_trade(data: dict) -> TradeData:
         orderid=data["orderid"],
         tradeid=data["tradeid"],
         direction=enum_decode(data["direction"]),
-        offset=enum_decode(data["offset"]),
+        offset=Offset.NONE,
         price=float(data["price"]),
         volume=float(data["volume"]),
-        time=data["time"],
+        datetime=generate_datetime(data["time"]),
         gateway_name=data["gateway_name"]
     )
     return trade
@@ -322,11 +344,14 @@ def parse_log(data: dict) -> LogData:
 
 def parse_datetime(s: str) -> datetime:
     if "." in s:
-        return datetime.strptime(s, "%Y%m%d %H:%M:%S.%f")
+        dt = datetime.strptime(s, "%Y%m%d %H:%M:%S.%f")
     elif len(s) > 0:
-        return datetime.strptime(s, "%Y%m%d %H:%M:%S")
+        dt = datetime.strptime(s, "%Y%m%d %H:%M:%S")
     else:
-        return datetime.now()
+        dt = datetime.now()
+
+    dt = dt.replace(tzinfo=CHINA_TZ)
+    return dt
 
 
 def enum_decode(s: str) -> Optional[Enum]:
@@ -354,3 +379,11 @@ def vn_encode(obj: object) -> str or dict:
             else:
                 s[k] = str(v)
         return s
+
+
+def generate_datetime(time: str) -> datetime:
+    """"""
+    today = datetime.now().strftime("%Y%m%d")
+    timestamp = f"{today} {time}"
+    dt = parse_datetime(timestamp)
+    return dt

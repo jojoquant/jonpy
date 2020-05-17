@@ -14,6 +14,7 @@ from queue import Empty
 from threading import Thread, Condition
 from typing import Optional
 import shelve
+from tzlocal import get_localzone
 
 from ibapi import comm
 from ibapi.client import EClient
@@ -75,7 +76,9 @@ EXCHANGE_VT2IB = {
     Exchange.ICE: "ICE",
     Exchange.SEHK: "SEHK",
     Exchange.HKFE: "HKFE",
-    Exchange.CFE: "CFE"
+    Exchange.CFE: "CFE",
+    Exchange.NYSE: "NYSE",
+    Exchange.NASDAQ: "NASDAQ"
 }
 EXCHANGE_IB2VT = {v: k for k, v in EXCHANGE_VT2IB.items()}
 
@@ -213,6 +216,8 @@ class IbApi(EWrapper):
     data_filename = "ib_contract_data.db"
     data_filepath = str(get_file_path(data_filename))
 
+    local_tz = get_localzone()
+
     def __init__(self, gateway: BaseGateway):
         """"""
         super().__init__()
@@ -313,7 +318,7 @@ class IbApi(EWrapper):
         exchange = self.tick_exchange[reqId]
         if exchange is Exchange.IDEALPRO:
             tick.last_price = (tick.bid_price_1 + tick.ask_price_1) / 2
-            tick.datetime = datetime.now()
+            tick.datetime = datetime.now(self.local_tz)
         self.gateway.on_tick(copy(tick))
 
     def tickSize(
@@ -345,7 +350,8 @@ class IbApi(EWrapper):
             return
 
         tick = self.ticks[reqId]
-        tick.datetime = datetime.fromtimestamp(int(value))
+        dt = datetime.fromtimestamp(int(value))
+        tick.datetime = dt.replace(tzinfo=self.local_tz)
 
         self.gateway.on_tick(copy(tick))
 
@@ -483,13 +489,14 @@ class IbApi(EWrapper):
             self.gateway.write_log(msg)
             return
 
-        ib_size = contract.multiplier
-        if not ib_size:
+        try:
+            ib_size = int(contract.multiplier)
+        except ValueError:
             ib_size = 1
         price = averageCost / ib_size
 
         pos = PositionData(
-            symbol=contract.conId,
+            symbol=generate_symbol(contract),
             exchange=exchange,
             direction=Direction.NET,
             volume=position,
@@ -548,7 +555,9 @@ class IbApi(EWrapper):
         """
         super().execDetails(reqId, contract, execution)
 
-        # today_date = datetime.now().strftime("%Y%m%d")
+        dt = datetime.strptime(execution.time, "%Y%m%d  %H:%M:%S")
+        dt = dt.replace(tzinfo=self.local_tz)
+
         trade = TradeData(
             symbol=contract.conId,
             exchange=EXCHANGE_IB2VT.get(contract.exchange, contract.exchange),
@@ -557,7 +566,7 @@ class IbApi(EWrapper):
             direction=DIRECTION_IB2VT[execution.side],
             price=execution.price,
             volume=execution.shares,
-            time=datetime.strptime(execution.time, "%Y%m%d  %H:%M:%S"),
+            datetime=dt,
             gateway_name=self.gateway_name,
         )
 
@@ -581,6 +590,7 @@ class IbApi(EWrapper):
         Callback of history data update.
         """
         dt = datetime.strptime(ib_bar.date, "%Y%m%d %H:%M:%S")
+        dt = dt.replace(tzinfo=self.local_tz)
 
         bar = BarData(
             symbol=self.history_req.symbol,
@@ -657,7 +667,7 @@ class IbApi(EWrapper):
         tick = TickData(
             symbol=req.symbol,
             exchange=req.exchange,
-            datetime=datetime.now(),
+            datetime=datetime.now(self.local_tz),
             gateway_name=self.gateway_name,
         )
         self.ticks[self.reqid] = tick

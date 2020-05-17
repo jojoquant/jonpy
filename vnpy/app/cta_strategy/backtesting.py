@@ -840,10 +840,9 @@ class BacktestingEngine:
                 offset=order.offset,
                 price=trade_price,
                 volume=order.volume,
-                time=self.datetime.strftime("%H:%M:%S"),
+                datetime=self.datetime,
                 gateway_name=self.gateway_name,
             )
-            trade.datetime = self.datetime
 
             self.strategy.pos += pos_change
             self.strategy.on_trade(trade)
@@ -893,8 +892,8 @@ class BacktestingEngine:
                 volume=stop_order.volume,
                 status=Status.ALLTRADED,
                 gateway_name=self.gateway_name,
+                datetime=self.datetime
             )
-            order.datetime = self.datetime
 
             self.limit_orders[order.vt_orderid] = order
 
@@ -917,10 +916,9 @@ class BacktestingEngine:
                 offset=order.offset,
                 price=trade_price,
                 volume=order.volume,
-                time=self.datetime.strftime("%H:%M:%S"),
+                datetime=self.datetime,
                 gateway_name=self.gateway_name,
             )
-            trade.datetime = self.datetime
 
             self.trades[trade.vt_tradeid] = trade
 
@@ -1021,8 +1019,8 @@ class BacktestingEngine:
             volume=volume,
             status=Status.SUBMITTING,
             gateway_name=self.gateway_name,
+            datetime=self.datetime
         )
-        order.datetime = self.datetime
 
         self.active_limit_orders[order.vt_orderid] = order
         self.limit_orders[order.vt_orderid] = order

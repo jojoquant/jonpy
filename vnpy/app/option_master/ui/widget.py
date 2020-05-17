@@ -6,6 +6,7 @@ from vnpy.trader.ui import QtWidgets, QtCore, QtGui
 from vnpy.trader.constant import Direction, Offset, OrderType
 from vnpy.trader.object import OrderRequest, ContractData, TickData
 from vnpy.trader.event import EVENT_TICK
+from vnpy.trader.utility import get_digits
 
 from ..base import APP_NAME, EVENT_OPTION_NEW_PORTFOLIO
 from ..engine import OptionEngine, PRICING_MODELS
@@ -169,7 +170,7 @@ class OptionManager(QtWidgets.QWidget):
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         """"""
-        if self.portfolio_name:
+        if self.market_monitor:
             self.market_monitor.close()
             self.greeks_monitor.close()
             self.volatility_chart.close()
@@ -215,7 +216,7 @@ class PortfolioDialog(QtWidgets.QDialog):
                 self.model_name_combo.findText(model_name)
             )
 
-        form.addRow("模型", self.model_name_combo)
+        form.addRow("定价模型", self.model_name_combo)
 
         # Interest rate spin
         self.interest_rate_spin = QtWidgets.QDoubleSpinBox()
@@ -227,7 +228,7 @@ class PortfolioDialog(QtWidgets.QDialog):
         interest_rate = portfolio_setting.get("interest_rate", 0.02)
         self.interest_rate_spin.setValue(interest_rate * 100)
 
-        form.addRow("利率", self.interest_rate_spin)
+        form.addRow("年化利率", self.interest_rate_spin)
 
         # Inverse combo
         self.inverse_combo = QtWidgets.QComboBox()
@@ -239,7 +240,17 @@ class PortfolioDialog(QtWidgets.QDialog):
         else:
             self.inverse_combo.setCurrentIndex(0)
 
-        form.addRow("合约", self.inverse_combo)
+        form.addRow("合约模式", self.inverse_combo)
+
+        # Greeks decimals precision
+        self.precision_spin = QtWidgets.QSpinBox()
+        self.precision_spin.setMinimum(0)
+        self.precision_spin.setMaximum(10)
+
+        precision = portfolio_setting.get("precision", 0)
+        self.precision_spin.setValue(precision)
+
+        form.addRow("Greeks小数位", self.precision_spin)
 
         # Underlying for each chain
         self.combos: Dict[str, QtWidgets.QComboBox] = {}
@@ -283,6 +294,8 @@ class PortfolioDialog(QtWidgets.QDialog):
         else:
             inverse = True
 
+        precision = self.precision_spin.value()
+
         chain_underlying_map = {}
         for chain_symbol, combo in self.combos.items():
             underlying_symbol = combo.currentText()
@@ -295,7 +308,8 @@ class PortfolioDialog(QtWidgets.QDialog):
             model_name,
             interest_rate,
             chain_underlying_map,
-            inverse
+            inverse,
+            precision
         )
 
         result = self.option_engine.init_portfolio(self.portfolio_name)
@@ -319,10 +333,12 @@ class OptionManualTrader(QtWidgets.QWidget):
         self.event_engine: EventEngine = option_engine.event_engine
 
         self.contracts: Dict[str, ContractData] = {}
-        self.vt_symbol = ""
+        self.vt_symbol: str = ""
+        self.price_digits: int = 0
 
         self.init_ui()
         self.init_contracts()
+        self.connect_signal()
 
     def init_ui(self) -> None:
         """"""
@@ -507,12 +523,14 @@ class OptionManualTrader(QtWidgets.QWidget):
 
         vt_symbol = contract.vt_symbol
         self.vt_symbol = vt_symbol
+        self.price_digits = get_digits(contract.pricetick)
 
         tick = self.main_engine.get_tick(vt_symbol)
         if tick:
             self.update_tick(tick)
 
-        self.event_engine.unregister(EVENT_TICK + vt_symbol, self.process_tick_event)
+        print(EVENT_TICK + vt_symbol)
+        self.event_engine.register(EVENT_TICK + vt_symbol, self.process_tick_event)
 
     def create_label(
         self,
@@ -531,18 +549,18 @@ class OptionManualTrader(QtWidgets.QWidget):
     def process_tick_event(self, event: Event) -> None:
         """"""
         tick = event.data
-
         if tick.vt_symbol != self.vt_symbol:
             return
-
         self.signal_tick.emit(tick)
 
     def update_tick(self, tick: TickData) -> None:
         """"""
-        self.lp_label.setText(str(tick.last_price))
-        self.bp1_label.setText(str(tick.bid_price_1))
+        price_digits = self.price_digits
+
+        self.lp_label.setText(f"{tick.last_price:.{price_digits}f}")
+        self.bp1_label.setText(f"{tick.bid_price_1:.{price_digits}f}")
         self.bv1_label.setText(str(tick.bid_volume_1))
-        self.ap1_label.setText(str(tick.ask_price_1))
+        self.ap1_label.setText(f"{tick.ask_price_1:.{price_digits}f}")
         self.av1_label.setText(str(tick.ask_volume_1))
 
         if tick.pre_close:
@@ -550,24 +568,24 @@ class OptionManualTrader(QtWidgets.QWidget):
             self.return_label.setText(f"{r:.2f}%")
 
         if tick.bid_price_2:
-            self.bp2_label.setText(str(tick.bid_price_2))
+            self.bp2_label.setText(f"{tick.bid_price_2:.{price_digits}f}")
             self.bv2_label.setText(str(tick.bid_volume_2))
-            self.ap2_label.setText(str(tick.ask_price_2))
+            self.ap2_label.setText(f"{tick.ask_price_2:.{price_digits}f}")
             self.av2_label.setText(str(tick.ask_volume_2))
 
-            self.bp3_label.setText(str(tick.bid_price_3))
+            self.bp3_label.setText(f"{tick.bid_price_3:.{price_digits}f}")
             self.bv3_label.setText(str(tick.bid_volume_3))
-            self.ap3_label.setText(str(tick.ask_price_3))
+            self.ap3_label.setText(f"{tick.ask_price_3:.{price_digits}f}")
             self.av3_label.setText(str(tick.ask_volume_3))
 
-            self.bp4_label.setText(str(tick.bid_price_4))
+            self.bp4_label.setText(f"{tick.bid_price_4:.{price_digits}f}")
             self.bv4_label.setText(str(tick.bid_volume_4))
-            self.ap4_label.setText(str(tick.ask_price_4))
+            self.ap4_label.setText(f"{tick.ask_price_4:.{price_digits}f}")
             self.av4_label.setText(str(tick.ask_volume_4))
 
-            self.bp5_label.setText(str(tick.bid_price_5))
+            self.bp5_label.setText(f"{tick.bid_price_5:.{price_digits}f}")
             self.bv5_label.setText(str(tick.bid_volume_5))
-            self.ap5_label.setText(str(tick.ask_price_5))
+            self.ap5_label.setText(f"{tick.ask_price_5:.{price_digits}f}")
             self.av5_label.setText(str(tick.ask_volume_5))
 
     def clear_data(self) -> None:
@@ -682,7 +700,7 @@ class OptionHedgeWidget(QtWidgets.QWidget):
 
         # Check delta of underlying
         underlying = self.option_engine.get_instrument(vt_symbol)
-        min_range = int(underlying.theo_delta * 0.6)
+        min_range = int(underlying.cash_delta * 0.6)
         if delta_range < min_range:
             msg = f"Delta对冲阈值({delta_range})低于对冲合约"\
                 f"Delta值的60%({min_range})，可能导致来回频繁对冲！"
