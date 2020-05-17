@@ -10,7 +10,6 @@ from typing import Union, Optional, Awaitable
 
 from vnpy.trader.constant import Exchange, Interval
 
-
 from jnpy.WebTrader.base_handler import BaseWebSocketHandler
 from jnpy.WebTrader.settings import get_global_config_json_dict
 from jnpy.DataSource.pytdx.contracts import read_contracts_json_dict
@@ -23,7 +22,7 @@ time_format = "%Y-%m-%d %H:%M:%S"
 export_to = ["to_db", "to_csv"]
 
 
-class DataloaderWssHandler(BaseWebSocketHandler):
+class BacktesterWssHandler(BaseWebSocketHandler):
 
     def open(self, *args: str, **kwargs: str) -> Optional[Awaitable[None]]:
         contracts_dict = read_contracts_json_dict()
