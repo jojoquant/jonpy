@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Dict
 from enum import Enum
 
 from vnpy.event import EventEngine
@@ -78,12 +78,11 @@ class ComstarGateway(BaseGateway):
 
     def send_order(self, req: OrderRequest):
         """"""
+        # Offset is not supported for Comstar gateawy
+        req.offset = Offset.NONE
+
         if req.type not in {OrderType.LIMIT, OrderType.FAK}:
             self.write_log("仅支持限价单和FAK单")
-            return ""
-
-        if req.offset not in {Offset.NONE, Offset.OPEN}:
-            self.write_log("仅支持开仓")
             return ""
 
         symbol, settle_type, *_ = req.symbol.split("_") + [""]
@@ -139,6 +138,9 @@ class UserApi(TdApi):
         self.gateway = gateway
         self.gateway_name = gateway.gateway_name
 
+        self.trades: Dict[str, TradeData] = {}
+        self.orders: Dict[str, OrderData] = {}
+
     def on_tick(self, tick: dict):
         """"""
         data = parse_tick(tick)
@@ -147,11 +149,28 @@ class UserApi(TdApi):
     def on_order(self, order: dict):
         """"""
         data = parse_order(order)
+
+        # Filter duplicated order data push after reconnect
+        last_order = self.orders.get(data.vt_orderid, None)
+        if (
+            last_order
+            and data.traded == last_order.traded
+            and data.status == last_order.status
+        ):
+            return
+        self.orders[data.vt_orderid] = data
+
         self.gateway.on_order(data)
 
     def on_trade(self, trade: dict):
         """"""
         data = parse_trade(trade)
+
+        # Filter duplicated trade data push after reconnect
+        if data.vt_tradeid in self.trades:
+            return
+        self.trades[data.vt_tradeid] = data
+
         self.gateway.on_trade(data)
 
     def on_log(self, log: dict):
@@ -260,7 +279,7 @@ def parse_order(data: dict) -> OrderData:
         orderid=data["orderid"],
         type=enum_decode(data["type"]),
         direction=enum_decode(data["direction"]),
-        offset=enum_decode(data["offset"]),
+        offset=Offset.NONE,
         price=float(data["price"]),
         volume=float(data["volume"]),
         traded=float(data["traded"]),
@@ -281,7 +300,7 @@ def parse_trade(data: dict) -> TradeData:
         orderid=data["orderid"],
         tradeid=data["tradeid"],
         direction=enum_decode(data["direction"]),
-        offset=enum_decode(data["offset"]),
+        offset=Offset.NONE,
         price=float(data["price"]),
         volume=float(data["volume"]),
         time=data["time"],

@@ -12,6 +12,7 @@ from copy import copy
 from datetime import datetime, timedelta, timezone
 from threading import Lock
 from urllib.parse import urlencode
+from typing import Dict
 
 from requests import ConnectionError
 
@@ -562,6 +563,7 @@ class OkexWebsocketApi(WebsocketClient):
 
         self.callbacks = {}
         self.ticks = {}
+        self.subscribed: Dict[str, SubscribeRequest] = {}
 
     def connect(
         self,
@@ -589,6 +591,8 @@ class OkexWebsocketApi(WebsocketClient):
         """
         Subscribe to tick data upate.
         """
+        self.subscribed[req.vt_symbol] = req
+
         tick = TickData(
             symbol=req.symbol,
             exchange=req.exchange,
@@ -715,6 +719,9 @@ class OkexWebsocketApi(WebsocketClient):
         if success:
             self.gateway.write_log("Websocket API登录成功")
             self.subscribe_topic()
+
+            for req in list(self.subscribed.values()):
+                self.subscribe(req)
         else:
             self.gateway.write_log("Websocket API登录失败")
 
