@@ -6,7 +6,7 @@ from vnpy.trader.engine import MainEngine
 from jnpy.app.cta_backtester.DRL.main import accept_bars_data_list
 
 from vnpy.app.cta_backtester.engine import BacktesterEngine
-from vnpy.app.cta_strategy.backtesting import OptimizationSetting
+
 
 APP_NAME = "CtaBacktester_jnpy"
 

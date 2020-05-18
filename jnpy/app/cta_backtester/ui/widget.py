@@ -15,6 +15,7 @@ from vnpy.trader.utility import load_json, save_json
 
 from vnpy.event import Event, EventEngine
 from vnpy.chart import ChartWidget, CandleItem, VolumeItem
+from vnpy.app.cta_strategy.backtesting import OptimizationSetting
 # from vnpy.chart import TechIndexItem
 
 from jnpy.app.cta_backtester.db_operation import DBOperation
@@ -28,7 +29,6 @@ from ..engine import (
     EVENT_BACKTESTER_LOG,
     EVENT_BACKTESTER_BACKTESTING_FINISHED,
     EVENT_BACKTESTER_OPTIMIZATION_FINISHED,
-    OptimizationSetting
 )
 
 

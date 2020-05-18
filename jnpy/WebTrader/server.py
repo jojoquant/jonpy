@@ -7,9 +7,7 @@
 """
 
 import tornado.ioloop
-from jnpy.WebTrader.base_handler import BaseRestfulHandler
 from jnpy.WebTrader.urls import URL_TUPLE_List
-
 
 
 app = tornado.web.Application(URL_TUPLE_List, debug=True)
