@@ -8,7 +8,6 @@ from vnpy.trader.engine import MainEngine
 from vnpy.trader.ui import QtCore, QtWidgets
 
 from ..engine import APP_NAME
-# from ..engine import APP_NAME
 
 from jnpy.DataSource.pytdx.contracts import read_contracts_json_dict
 
