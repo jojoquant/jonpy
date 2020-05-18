@@ -41,15 +41,11 @@ from vnpy.app.algo_trading import AlgoTradingApp
 from vnpy.app.cta_backtester import CtaBacktesterApp
 from vnpy.app.data_recorder import DataRecorderApp
 from vnpy.app.risk_manager import RiskManagerApp
-from vnpy.app.script_trader import ScriptTraderApp
-from vnpy.app.rpc_service import RpcServiceApp
-from vnpy.app.spread_trading import SpreadTradingApp
-from vnpy.app.excel_rtd import ExcelRtdApp
 from vnpy.app.option_master import OptionMasterApp
 from vnpy.app.portfolio_manager import PortfolioManagerApp
 from vnpy.app.chart_wizard import ChartWizardApp
 
-from vnpy.app.pytdx_loader import PytdxLoaderApp
+from jnpy.app.pytdx_loader import PytdxLoaderApp
 from jnpy.app.cta_backtester import CtaBacktesterJnpyApp as CtaBacktesterApp_jnpy
 
 
