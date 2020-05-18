@@ -17,7 +17,7 @@ from vnpy.event import Event, EventEngine
 from vnpy.chart import ChartWidget, CandleItem, VolumeItem
 # from vnpy.chart import TechIndexItem
 
-from vnpy.app.cta_backtester_jnpy.db_operation import DBOperation
+from jnpy.app.cta_backtester.db_operation import DBOperation
 
 from jnpy.DataSource.pytdx.contracts import read_contracts_json_dict
 from jnpy.DataSource.pyccxt.contracts import Exchange
