@@ -24,16 +24,28 @@ from jnpy.DataSource.pyccxt.contracts import Exchange
 event_engine = EventEngine()
 main_engine = MainEngine(event_engine)
 backtester = BacktesterEngineJnpy(main_engine, event_engine)
-backtester.init_engine()
 
-strategy_array = backtester.get_strategy_class_names()
-strategy_setting_dict = {
-    strategy_class_name: backtester.get_default_setting(strategy_class_name)
-    for strategy_class_name in strategy_array
-}
+# backtester.init_engine()
+# strategy_array = backtester.get_strategy_class_names()
+# strategy_setting_dict = {
+#     strategy_class_name: backtester.get_default_setting(strategy_class_name)
+#     for strategy_class_name in strategy_array
+# }
+
+def getStrategySettingDict():
+    return {
+        strategy_class_name: backtester.get_default_setting(strategy_class_name)
+        for strategy_class_name in getStrategyArray()
+    }
+
+
+def getStrategyArray():
+    backtester.init_engine()
+    return backtester.get_strategy_class_names()
 
 
 def onStrategyActivated(current_strategy: str):
+    strategy_setting_dict = getStrategySettingDict()
     return strategy_setting_dict[current_strategy]
 
 
@@ -41,16 +53,24 @@ def onStrategyActivated(current_strategy: str):
 # DBOperation
 #############################################################
 db_instance = DBOperation(get_settings("database."))
-dbbardata_groupby_df = db_instance.get_groupby_data_from_sql_db()
-exchange_array = dbbardata_groupby_df['exchange'].drop_duplicates().to_list()
+# dbbardata_groupby_df = db_instance.get_groupby_data_from_sql_db()
+# exchange_array = dbbardata_groupby_df['exchange'].drop_duplicates().to_list()
 pytdx_contracts_dict = read_contracts_json_dict()
 pyccxt_exchange = Exchange()
+
+
+def getExchangeArray():
+    dbbardata_groupby_df = db_instance.get_groupby_data_from_sql_db()
+    return dbbardata_groupby_df['exchange'].drop_duplicates().to_list()
 
 
 def onExchangeActivated(current_exchange):
     '''
     exchange变化触发, 返回db中相应 symbol list
     '''
+
+    dbbardata_groupby_df = db_instance.get_groupby_data_from_sql_db()
+
     return dbbardata_groupby_df[
         dbbardata_groupby_df['exchange'] == current_exchange
         ]['symbol'].drop_duplicates().to_list()
@@ -69,6 +89,8 @@ def onSymbolActivated(current_symbol, current_exchange):
     else:
         symbol_name = current_symbol
 
+    dbbardata_groupby_df = db_instance.get_groupby_data_from_sql_db()
+
     period_array = dbbardata_groupby_df[
         (dbbardata_groupby_df['symbol'] == current_symbol)
         & (dbbardata_groupby_df['exchange'] == current_exchange)
@@ -81,6 +103,9 @@ def onIntervalActivated(current_symbol, current_exchange, current_interval):
     '''
     Period 变化触发, 重置 Period
     '''
+
+    dbbardata_groupby_df = db_instance.get_groupby_data_from_sql_db()
+
     count_series = dbbardata_groupby_df[
         (dbbardata_groupby_df['symbol'] == current_symbol)
         & (dbbardata_groupby_df['exchange'] == current_exchange)
@@ -180,7 +205,8 @@ def start_backtesting(handler, submit_data_dict):
     save_json(setting_filename, backtesting_setting)
 
     # Get strategy setting
-    old_setting = strategy_setting_dict[class_name]
+    # old_setting = strategy_setting_dict[class_name]
+    old_setting = getStrategySettingDict()[class_name]
     dialog = BacktestingSettingEditor(class_name, old_setting)
     i = dialog.exec()
     if i != dialog.Accepted:

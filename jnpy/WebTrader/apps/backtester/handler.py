@@ -27,8 +27,8 @@ class BacktesterWssHandler(BaseWebSocketHandler):
 
         re_data = json.dumps(
             {
-                "strategy_array": middleware.strategy_array,
-                "exchange_array": middleware.exchange_array,
+                "strategy_array": middleware.getStrategyArray(),
+                "exchange_array": middleware.getExchangeArray(),
                 "data_nums": 0,
                 "inverse_mode": ["正向", "反向"],
                 "backtest_mode": ["Thread回测", "Debug回测"],
