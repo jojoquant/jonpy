@@ -29,12 +29,9 @@ class BacktesterWssHandler(BaseWebSocketHandler):
             {
                 "strategy_array": middleware.strategy_array,
                 "exchange_array": middleware.exchange_array,
-                "symbol_array": ["AServer", "B", "RB"],
-                # "symbol_name": "金",
-                # "period_array": ["MIN", "HOUR"],
                 "data_nums": 0,
-                # "inverse_mode": ["正向", "反向"],
-                # "backtest_mode": ["Thread回测", "Debug回测"],
+                "inverse_mode": ["正向", "反向"],
+                "backtest_mode": ["Thread回测", "Debug回测"],
             }
         )
         self.write_message(re_data)
@@ -48,6 +45,11 @@ class BacktesterWssHandler(BaseWebSocketHandler):
                 current_exchange=re_data_dict['exchange']
             )
             re_data = json.dumps({"symbol_array": symbol_array})
+            self.write_message(re_data)
+
+        elif 'strategy' in re_data_dict:
+            strategy_setting = middleware.onStrategyActivated(re_data_dict['strategy'])
+            re_data = json.dumps({"strategy_setting": strategy_setting})
             self.write_message(re_data)
 
         elif 'symbol' in re_data_dict:
@@ -71,6 +73,10 @@ class BacktesterWssHandler(BaseWebSocketHandler):
             )
             re_data = json.dumps(re_data_dict)
             self.write_message(re_data)
+
+        elif 'run_backtest' in re_data_dict:
+            recv_dict = re_data_dict['run_backtest']
+            re_data_dict = middleware.onIntervalActivated(handler=self, submit_data_dict=recv_dict)
 
         print(re_data_dict)
 

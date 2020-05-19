@@ -11,6 +11,7 @@ from vnpy.event import EventEngine
 from vnpy.trader.engine import MainEngine
 from vnpy.trader.constant import Interval, Exchange
 from vnpy.trader.setting import get_settings
+from vnpy.trader.utility import load_json, save_json
 
 from jnpy.app.cta_backtester import BacktesterEngineJnpy
 from jnpy.app.cta_backtester.db_operation import DBOperation
@@ -30,6 +31,11 @@ strategy_setting_dict = {
     strategy_class_name: backtester.get_default_setting(strategy_class_name)
     for strategy_class_name in strategy_array
 }
+
+
+def onStrategyActivated(current_strategy: str):
+    return strategy_setting_dict[current_strategy]
+
 
 #############################################################
 # DBOperation
@@ -59,6 +65,8 @@ def onSymbolActivated(current_symbol, current_exchange):
     if symbol_de_L8_str in pytdx_contracts_dict:
         symbol_name = f"{pytdx_contracts_dict[symbol_de_L8_str]['name']}"
     elif current_exchange.lower() in pyccxt_exchange.exchange_list:
+        symbol_name = current_symbol
+    else:
         symbol_name = current_symbol
 
     period_array = dbbardata_groupby_df[
@@ -121,8 +129,8 @@ def onIntervalActivated(current_symbol, current_exchange, current_interval):
         'submit_data': {
             'size': size,
             'pricetick': pricetick,
-            'start_datetime': db_start_dt,
-            'end_datetime': db_end_dt,
+            'start_datetime': db_start_dt.split()[0],
+            'end_datetime': db_end_dt.split()[0],
         }
     }
 
@@ -130,55 +138,86 @@ def onIntervalActivated(current_symbol, current_exchange, current_interval):
 print(1)
 
 
-def load_data(handler, data_dict):
-    symbol_code_list = [symbol.split(".")[0] for symbol in data_dict['symbols_selected']]
-    symbol_type = data_dict['type']
-    exchange = data_dict['exchange_selected']
-    interval_list = [period for period in data_dict['periods_selected']]
-    datetime_head = "Datetime"
-    open_head = "Open"
-    low_head = "Low"
-    high_head = "High"
-    close_head = "Close"
-    volume_head = "Volume"
-    open_interest_head = "OpenInterest"
-    datetime_format = data_dict['time_format']
+def start_backtesting(handler, submit_data_dict):
+    """"""
+    setting_filename = "cta_backtester_setting.json"
 
-    # to_db / to_csv
-    click_button_text = data_dict['export_to_selected']
+    class_name = submit_data_dict['strategy']
+    vt_symbol = f"{submit_data_dict['symbol']}.{submit_data_dict['exchange']}"
+    interval = submit_data_dict['period']
+    start = datetime.strptime(submit_data_dict['start_datetime']).date().toPyDate()
+    end = datetime.strptime(submit_data_dict['end_datetime']).date().toPyDate()
+    rate = float(submit_data_dict['rate'])
+    slippage = float(submit_data_dict['slippage'])
+    size = float(submit_data_dict['size'])
+    pricetick = float(submit_data_dict['pricetick'])
+    capital = float(submit_data_dict['capital'])
 
-    progress_bar_dict = {"web_progress": handler}
+    if submit_data_dict['inverse_mode_selected'] == "正向":
+        inverse = False
+    else:
+        inverse = True
 
-    # for symbol_code in symbol_code_list:
-    #     for interval in interval_list:
-    #         symbol = symbol_code + symbol_type
-    #         start, end, count = datalaoder.load(
-    #             symbol,
-    #             Exchange[exchange],
-    #             Interval[interval],
-    #             datetime_head,
-    #             open_head,
-    #             high_head,
-    #             low_head,
-    #             close_head,
-    #             volume_head,
-    #             open_interest_head,
-    #             datetime_format,
-    #             progress_bar_dict=progress_bar_dict,
-    #             opt_str=click_button_text
-    #         )
+    # fangyang add
+    if submit_data_dict['backtest_mode_selected'] == "Thread 运行回测":  # "Debug 运行回测"
+        backtesting_debug_mode = False
+    else:
+        backtesting_debug_mode = True
+    #######################
+
+    # Save backtesting parameters
+    backtesting_setting = {
+        "class_name": class_name,
+        "vt_symbol": vt_symbol,
+        "interval": interval,
+        "rate": rate,
+        "slippage": slippage,
+        "size": size,
+        "pricetick": pricetick,
+        "capital": capital,
+        "inverse": inverse,
+    }
+    save_json(setting_filename, backtesting_setting)
+
+    # Get strategy setting
+    old_setting = strategy_setting_dict[class_name]
+    dialog = BacktestingSettingEditor(class_name, old_setting)
+    i = dialog.exec()
+    if i != dialog.Accepted:
+        return
+
+    new_setting = dialog.get_setting()
+    self.settings[class_name] = new_setting
+
+    result = backtester.start_backtesting(
+        class_name,
+        vt_symbol,
+        interval,
+        start,
+        end,
+        rate,
+        slippage,
+        size,
+        pricetick,
+        capital,
+        inverse,
+        backtesting_debug_mode,  # fangyang add
+        new_setting
+    )
+
+    # if result:
+    #     self.statistics_monitor.clear_data()
+    #     self.chart.clear_data()
     #
-    #         msg = f"\
-    #                 执行成功\n\
-    #                 代码：{symbol}\n\
-    #                 交易所：{Exchange[exchange].value}\n\
-    #                 周期：{Interval[interval].value}\n\
-    #                 起始：{start}\n\
-    #                 结束：{end}\n\
-    #                 总数量：{count}\n\
-    #                 "
-    #         handler.write_message({"save_result": msg})
-    # QtWidgets.QMessageBox.information(self, "载入成功！", msg)
+    #     self.trade_button.setEnabled(False)
+    #     self.order_button.setEnabled(False)
+    #     self.daily_button.setEnabled(False)
+    #     self.candle_button.setEnabled(False)
+    #
+    #     self.trade_dialog.clear_data()
+    #     self.order_dialog.clear_data()
+    #     self.daily_dialog.clear_data()
+    #     self.candle_dialog.clear_data()
 
 
 if __name__ == "__main__":
