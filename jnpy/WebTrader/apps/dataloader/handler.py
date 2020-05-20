@@ -14,12 +14,12 @@ from vnpy.trader.constant import Exchange, Interval
 from jnpy.WebTrader.base_handler import BaseWebSocketHandler
 from jnpy.WebTrader.settings import get_global_config_json_dict
 from jnpy.DataSource.pytdx.contracts import read_contracts_json_dict
-
+from jnpy.WebTrader.constant import DATETIME_FORMAT
 from jnpy.WebTrader.apps.dataloader.middleware import load_data
 
 symbols_dict = {}
 periods = [i.name for i in list(Interval)]
-time_format = "%Y-%m-%d %H:%M:%S"
+time_format = DATETIME_FORMAT
 export_to = ["to_db", "to_csv"]
 
 

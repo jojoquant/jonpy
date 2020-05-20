@@ -8,20 +8,16 @@
 import json
 from typing import Union, Optional, Awaitable
 
-from vnpy.trader.constant import Exchange, Interval
+from vnpy.trader.constant import Interval
 
 from jnpy.WebTrader.base_handler import BaseWebSocketHandler
-from jnpy.WebTrader.settings import get_global_config_json_dict
 from jnpy.WebTrader.apps.backtester import middleware
 
 
-# symbols_dict = {}
-# periods = [i.name for i in list(Interval)]
-# time_format = "%Y-%m-%d %H:%M:%S"
-# export_to = ["to_db", "to_csv"]
-
-
 class BacktesterWssHandler(BaseWebSocketHandler):
+
+    def initialize(self):
+        self.multi_strategy_settings = {}
 
     def open(self, *args: str, **kwargs: str) -> Optional[Awaitable[None]]:
 
@@ -31,7 +27,7 @@ class BacktesterWssHandler(BaseWebSocketHandler):
                 "exchange_array": middleware.getExchangeArray(),
                 "data_nums": 0,
                 "inverse_mode": ["正向", "反向"],
-                "backtest_mode": ["Thread回测", "Debug回测"],
+                "backtest_mode": ["Debug 运行回测", "Thread 运行回测"],
             }
         )
         self.write_message(re_data)
@@ -48,8 +44,10 @@ class BacktesterWssHandler(BaseWebSocketHandler):
             self.write_message(re_data)
 
         elif 'strategy' in re_data_dict:
-            strategy_setting = middleware.onStrategyActivated(re_data_dict['strategy'])
-            re_data = json.dumps({"strategy_setting": strategy_setting})
+            self.multi_strategy_settings = middleware.getStrategySettingDict()
+            re_data = json.dumps(
+                {"strategy_setting": self.multi_strategy_settings[re_data_dict['strategy']]}
+            )
             self.write_message(re_data)
 
         elif 'symbol' in re_data_dict:
@@ -76,7 +74,14 @@ class BacktesterWssHandler(BaseWebSocketHandler):
 
         elif 'run_backtest' in re_data_dict:
             recv_dict = re_data_dict['run_backtest']
-            re_data_dict = middleware.onIntervalActivated(handler=self, submit_data_dict=recv_dict)
+            re_data_dict = middleware.run_backtest(
+                handler=self,
+                submit_data_dict=recv_dict['submit_data'],
+                strategy_setting_dict=recv_dict['strategy_setting']
+            )
+            re_data = json.dumps({"backtest_statistics_result": re_data_dict})
+            self.write_message(re_data)
+            print(1)
 
         print(re_data_dict)
 

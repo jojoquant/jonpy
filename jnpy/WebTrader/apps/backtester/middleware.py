@@ -17,6 +17,7 @@ from jnpy.app.cta_backtester import BacktesterEngineJnpy
 from jnpy.app.cta_backtester.db_operation import DBOperation
 from jnpy.DataSource.pytdx.contracts import read_contracts_json_dict
 from jnpy.DataSource.pyccxt.contracts import Exchange
+from jnpy.WebTrader.constant import DATE_FORMAT, BACKTEST_STATISTICS_RESULT_MAP
 
 #############################################################
 # BacktesterEngine
@@ -24,6 +25,7 @@ from jnpy.DataSource.pyccxt.contracts import Exchange
 event_engine = EventEngine()
 main_engine = MainEngine(event_engine)
 backtester = BacktesterEngineJnpy(main_engine, event_engine)
+
 
 # backtester.init_engine()
 # strategy_array = backtester.get_strategy_class_names()
@@ -44,9 +46,9 @@ def getStrategyArray():
     return backtester.get_strategy_class_names()
 
 
-def onStrategyActivated(current_strategy: str):
-    strategy_setting_dict = getStrategySettingDict()
-    return strategy_setting_dict[current_strategy]
+# def onStrategyActivated(current_strategy: str):
+#     strategy_setting_dict = getStrategySettingDict()
+#     return strategy_setting_dict[current_strategy]
 
 
 #############################################################
@@ -160,18 +162,21 @@ def onIntervalActivated(current_symbol, current_exchange, current_interval):
     }
 
 
-print(1)
-
-
-def start_backtesting(handler, submit_data_dict):
+def run_backtest(handler, submit_data_dict, strategy_setting_dict):
     """"""
     setting_filename = "cta_backtester_setting.json"
 
     class_name = submit_data_dict['strategy']
     vt_symbol = f"{submit_data_dict['symbol']}.{submit_data_dict['exchange']}"
     interval = submit_data_dict['period']
-    start = datetime.strptime(submit_data_dict['start_datetime']).date().toPyDate()
-    end = datetime.strptime(submit_data_dict['end_datetime']).date().toPyDate()
+    start = datetime.strptime(
+        submit_data_dict['start_datetime'],
+        DATE_FORMAT
+    ).date()
+    end = datetime.strptime(
+        submit_data_dict['end_datetime'],
+        DATE_FORMAT
+    ).date()
     rate = float(submit_data_dict['rate'])
     slippage = float(submit_data_dict['slippage'])
     size = float(submit_data_dict['size'])
@@ -206,14 +211,14 @@ def start_backtesting(handler, submit_data_dict):
 
     # Get strategy setting
     # old_setting = strategy_setting_dict[class_name]
-    old_setting = getStrategySettingDict()[class_name]
-    dialog = BacktestingSettingEditor(class_name, old_setting)
-    i = dialog.exec()
-    if i != dialog.Accepted:
-        return
+    # old_setting = getStrategySettingDict()[class_name]
+    # dialog = BacktestingSettingEditor(class_name, old_setting)
+    # i = dialog.exec()
+    # if i != dialog.Accepted:
+    #     return
+    # new_setting = dialog.get_setting()
 
-    new_setting = dialog.get_setting()
-    self.settings[class_name] = new_setting
+    handler.multi_strategy_settings[class_name] = strategy_setting_dict
 
     result = backtester.start_backtesting(
         class_name,
@@ -228,9 +233,20 @@ def start_backtesting(handler, submit_data_dict):
         capital,
         inverse,
         backtesting_debug_mode,  # fangyang add
-        new_setting
+        strategy_setting_dict
     )
 
+    re_data_dict = {}
+    if result:
+        statistic_result_dict = set_data_to_str(backtester.get_result_statistics())
+        for k, v in statistic_result_dict.items():
+            if k in BACKTEST_STATISTICS_RESULT_MAP:
+                re_data_dict[BACKTEST_STATISTICS_RESULT_MAP[k]] = v
+            else:
+                re_data_dict[k] = v
+    else:
+        re_data_dict["backtest_result"] = "Backtest Error !"
+    return re_data_dict
     # if result:
     #     self.statistics_monitor.clear_data()
     #     self.chart.clear_data()
@@ -244,6 +260,27 @@ def start_backtesting(handler, submit_data_dict):
     #     self.order_dialog.clear_data()
     #     self.daily_dialog.clear_data()
     #     self.candle_dialog.clear_data()
+
+
+def set_data_to_str(data: dict):
+    """"""
+    keep_2_decimal_list = [
+        "capital", "end_balance", 'max_drawdown', 'total_net_pnl', 'total_commission',
+        'total_slippage', 'total_turnover', 'daily_net_pnl', 'daily_commission',
+        'daily_slippage', 'daily_turnover', 'sharpe_ratio', 'return_drawdown_ratio',
+        'daily_trade_count'
+    ]
+    keep_2_percent_list = ["total_return", 'annual_return', 'max_ddpercent', 'daily_return', 'return_std']
+
+    for k, v in data.items():
+        if k in keep_2_decimal_list:
+            data[k] = f"{v:,.2f}"
+        elif k in keep_2_percent_list:
+            data[k] = f"{v:,.2f}%"
+        else:
+            data[k] = f"{v}"
+
+    return data
 
 
 if __name__ == "__main__":
