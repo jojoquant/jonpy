@@ -296,7 +296,10 @@ def get_balance_curve_dict():
     df = backtester.get_result_df()
     y = df["balance"].tolist()
     x = [f"{i}" for i in df.index]
-    return {'balance_curve': {"x": x, "y": y}}
+    return {
+        'data': {"x": x, "y": y},
+        "type": "line"
+    }
 
 
 def get_drawdown_curve_dict():
