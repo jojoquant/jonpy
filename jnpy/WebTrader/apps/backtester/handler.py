@@ -79,7 +79,7 @@ class BacktesterWssHandler(BaseWebSocketHandler):
                 submit_data_dict=recv_dict['submit_data'],
                 strategy_setting_dict=recv_dict['strategy_setting']
             )
-            re_data = json.dumps({"backtest_statistics_result": re_data_dict})
+            re_data = json.dumps({"backtest_result": re_data_dict})
             self.write_message(re_data)
             print(1)
 

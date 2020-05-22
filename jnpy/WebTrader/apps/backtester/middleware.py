@@ -210,14 +210,6 @@ def run_backtest(handler, submit_data_dict, strategy_setting_dict):
     save_json(setting_filename, backtesting_setting)
 
     # Get strategy setting
-    # old_setting = strategy_setting_dict[class_name]
-    # old_setting = getStrategySettingDict()[class_name]
-    # dialog = BacktestingSettingEditor(class_name, old_setting)
-    # i = dialog.exec()
-    # if i != dialog.Accepted:
-    #     return
-    # new_setting = dialog.get_setting()
-
     handler.multi_strategy_settings[class_name] = strategy_setting_dict
 
     result = backtester.start_backtesting(
@@ -238,12 +230,12 @@ def run_backtest(handler, submit_data_dict, strategy_setting_dict):
 
     re_data_dict = {}
     if result:
-        statistic_result_dict = set_data_to_str(backtester.get_result_statistics())
-        for k, v in statistic_result_dict.items():
-            if k in BACKTEST_STATISTICS_RESULT_MAP:
-                re_data_dict[BACKTEST_STATISTICS_RESULT_MAP[k]] = v
-            else:
-                re_data_dict[k] = v
+        statistic_result_dict = get_statistic_result_dict()
+        balance_curve_dict = get_balance_curve_dict()
+        re_data_dict = {
+            "statistics": statistic_result_dict,
+            "balance": balance_curve_dict,
+        }
     else:
         re_data_dict["backtest_result"] = "Backtest Error !"
     return re_data_dict
@@ -260,6 +252,23 @@ def run_backtest(handler, submit_data_dict, strategy_setting_dict):
     #     self.order_dialog.clear_data()
     #     self.daily_dialog.clear_data()
     #     self.candle_dialog.clear_data()
+
+
+def get_statistic_result_dict():
+    statistic_result_dict = {}
+    data = backtester.get_result_statistics()
+
+    if data:
+        data = set_data_to_str(data)
+        for k, v in data.items():
+            if k in BACKTEST_STATISTICS_RESULT_MAP:
+                statistic_result_dict[BACKTEST_STATISTICS_RESULT_MAP[k]] = v
+            else:
+                statistic_result_dict[k] = v
+    else:
+        statistic_result_dict = {value: "" for value in BACKTEST_STATISTICS_RESULT_MAP.values()}
+
+    return statistic_result_dict
 
 
 def set_data_to_str(data: dict):
@@ -281,6 +290,29 @@ def set_data_to_str(data: dict):
             data[k] = f"{v}"
 
     return data
+
+
+def get_balance_curve_dict():
+    df = backtester.get_result_df()
+    y = df["balance"].tolist()
+    x = [f"{i}" for i in df.index]
+    return {'balance_curve': {"x": x, "y": y}}
+
+
+def get_drawdown_curve_dict():
+    pass
+
+
+def get_profit_pnl_bar_dict():
+    pass
+
+
+def get_loss_pnl_bar_dict():
+    pass
+
+
+def get_distribution_curve_dict():
+    pass
 
 
 if __name__ == "__main__":
