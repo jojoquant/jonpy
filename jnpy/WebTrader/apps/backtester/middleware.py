@@ -6,6 +6,7 @@
 @Author   :   Fangyang
 """
 from datetime import datetime
+from enum import Enum
 
 from vnpy.event import EventEngine
 from vnpy.trader.engine import MainEngine
@@ -230,31 +231,23 @@ def run_backtest(handler, submit_data_dict, strategy_setting_dict):
 
     re_data_dict = {}
     if result:
-        statistic_result_dict = get_statistic_result_dict()
+        statistic_table_dict = get_statistic_result_dict()
         balance_curve_dict = get_balance_curve_dict()
+        drawdown_curve_dict = get_drawdown_curve_dict()
+        trades_table_dict = get_backtesting_trades()
         re_data_dict = {
-            "statistics": statistic_result_dict,
+            "statistics": statistic_table_dict,
             "balance": balance_curve_dict,
+            "drawdown": drawdown_curve_dict,
+            "trade": trades_table_dict,
         }
     else:
         re_data_dict["backtest_result"] = "Backtest Error !"
     return re_data_dict
-    # if result:
-    #     self.statistics_monitor.clear_data()
-    #     self.chart.clear_data()
-    #
-    #     self.trade_button.setEnabled(False)
-    #     self.order_button.setEnabled(False)
-    #     self.daily_button.setEnabled(False)
-    #     self.candle_button.setEnabled(False)
-    #
-    #     self.trade_dialog.clear_data()
-    #     self.order_dialog.clear_data()
-    #     self.daily_dialog.clear_data()
-    #     self.candle_dialog.clear_data()
 
 
 def get_statistic_result_dict():
+    """获取 回测统计结果 表数据"""
     statistic_result_dict = {}
     data = backtester.get_result_statistics()
 
@@ -272,7 +265,7 @@ def get_statistic_result_dict():
 
 
 def set_data_to_str(data: dict):
-    """"""
+    """对 统计结果表数据 做保留小数等处理"""
     keep_2_decimal_list = [
         "capital", "end_balance", 'max_drawdown', 'total_net_pnl', 'total_commission',
         'total_slippage', 'total_turnover', 'daily_net_pnl', 'daily_commission',
@@ -293,6 +286,7 @@ def set_data_to_str(data: dict):
 
 
 def get_balance_curve_dict():
+    """获取 账户净值 图数据"""
     df = backtester.get_result_df()
     y = df["balance"].tolist()
     x = [f"{i}" for i in df.index]
@@ -303,7 +297,14 @@ def get_balance_curve_dict():
 
 
 def get_drawdown_curve_dict():
-    pass
+    """获取 净值回撤 图数据"""
+    df = backtester.get_result_df()
+    y = df["drawdown"].tolist()
+    x = [f"{i}" for i in df.index]
+    return {
+        'data': {"x": x, "y": y},
+        "type": "line"
+    }
 
 
 def get_profit_pnl_bar_dict():
@@ -316,6 +317,45 @@ def get_loss_pnl_bar_dict():
 
 def get_distribution_curve_dict():
     pass
+
+
+def get_backtesting_trades():
+    """获取 成交记录表 数据"""
+    trade_list = backtester.get_all_trades()
+    headers = [
+        {
+            "text": "成交号",
+            "align": "start",
+            "value": "tradeid"
+        },
+        {"text": "委托号", "value": "orderid"},
+        {"text": "代码", "value": "symbol"},
+        {"text": "交易所", "value": "exchange"},
+        {"text": "方向", "value": "direction"},
+        {"text": "开平", "value": "offset"},
+        {"text": "价格", "value": "price"},
+        {"text": "数量", "value": "volume"},
+        {"text": "时间", "value": "datetime"},
+        {"text": "接口", "value": "gateway_name"},
+    ]
+
+    content = []
+    item = {}
+    for elem in trade_list:
+        for header in headers:
+            value = getattr(elem, header['value'])
+            if isinstance(value, Enum):
+                item[header['value']] = value.value
+            elif isinstance(value, datetime):
+                item[header['value']] = str(value)
+            else:
+                item[header['value']] = value
+        content.append(item)
+
+    return {
+        "headers": headers,
+        "content": content
+    }
 
 
 if __name__ == "__main__":
