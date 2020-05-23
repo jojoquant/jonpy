@@ -234,12 +234,14 @@ def run_backtest(handler, submit_data_dict, strategy_setting_dict):
         statistic_table_dict = get_statistic_result_dict()
         balance_curve_dict = get_balance_curve_dict()
         drawdown_curve_dict = get_drawdown_curve_dict()
-        trades_table_dict = get_backtesting_trades()
+        trade_table_dict = get_backtesting_record_data(record_type="trade")
+        order_table_dict = get_backtesting_record_data(record_type="order")
         re_data_dict = {
             "statistics": statistic_table_dict,
             "balance": balance_curve_dict,
             "drawdown": drawdown_curve_dict,
-            "trade": trades_table_dict,
+            "trade": trade_table_dict,
+            "order": order_table_dict,
         }
     else:
         re_data_dict["backtest_result"] = "Backtest Error !"
@@ -319,29 +321,49 @@ def get_distribution_curve_dict():
     pass
 
 
-def get_backtesting_trades():
+def get_backtesting_record_data(record_type):
     """获取 成交记录表 数据"""
-    trade_list = backtester.get_all_trades()
-    headers = [
-        {
-            "text": "成交号",
-            "align": "start",
-            "value": "tradeid"
-        },
-        {"text": "委托号", "value": "orderid"},
-        {"text": "代码", "value": "symbol"},
-        {"text": "交易所", "value": "exchange"},
-        {"text": "方向", "value": "direction"},
-        {"text": "开平", "value": "offset"},
-        {"text": "价格", "value": "price"},
-        {"text": "数量", "value": "volume"},
-        {"text": "时间", "value": "datetime"},
-        {"text": "接口", "value": "gateway_name"},
-    ]
+    if record_type == "trade":
+        data_list = backtester.get_all_trades()
+        headers = [
+            {
+                "text": "成交号",
+                "align": "start",
+                "value": "tradeid"
+            },
+            {"text": "委托号", "value": "orderid"},
+            {"text": "代码", "value": "symbol"},
+            {"text": "交易所", "value": "exchange"},
+            {"text": "方向", "value": "direction"},
+            {"text": "开平", "value": "offset"},
+            {"text": "价格", "value": "price"},
+            {"text": "数量", "value": "volume"},
+            {"text": "时间", "value": "datetime"},
+            {"text": "接口", "value": "gateway_name"},
+        ]
+    elif record_type == "order":
+        data_list = backtester.get_all_orders()
+        headers = [
+            {
+                "text": "委托号",
+                "align": "start",
+                "value": "orderid"
+            },
+            {"text": "代码", "value": "symbol"},
+            {"text": "交易所", "value": "exchange"},
+            {"text": "类型", "value": "type"},
+            {"text": "方向", "value": "direction"},
+            {"text": "开平", "value": "offset"},
+            {"text": "价格", "value": "price"},
+            {"text": "总数量", "value": "volume"},
+            {"text": "已成交", "value": "status"},
+            {"text": "时间", "value": "datetime"},
+            {"text": "接口", "value": "gateway_name"},
+        ]
 
     content = []
-    item = {}
-    for elem in trade_list:
+    for elem in data_list:
+        item = {}
         for header in headers:
             value = getattr(elem, header['value'])
             if isinstance(value, Enum):
