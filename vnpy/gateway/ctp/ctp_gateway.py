@@ -227,6 +227,8 @@ class CtpGateway(BaseGateway):
         func()
         self.query_functions.append(func)
 
+        self.md_api.update_date()
+
     def init_query(self):
         """"""
         self.count = 0
@@ -253,6 +255,8 @@ class CtpMdApi(MdApi):
         self.userid = ""
         self.password = ""
         self.brokerid = ""
+
+        self.current_date = datetime.now().strftime("%Y%m%d")
 
     def onFrontConnected(self):
         """
@@ -303,7 +307,7 @@ class CtpMdApi(MdApi):
         if not exchange:
             return
 
-        timestamp = f"{data['ActionDay']} {data['UpdateTime']}.{int(data['UpdateMillisec']/100)}"
+        timestamp = f"{self.current_date} {data['UpdateTime']}.{int(data['UpdateMillisec']/100)}"
         dt = datetime.strptime(timestamp, "%Y%m%d %H:%M:%S.%f")
         dt = dt.replace(tzinfo=CHINA_TZ)
 
@@ -400,6 +404,10 @@ class CtpMdApi(MdApi):
         if self.connect_status:
             self.exit()
 
+    def update_date(self):
+        """"""
+        self.current_date = datetime.now().strftime("%Y%m%d")
+
 
 class CtpTdApi(TdApi):
     """"""
@@ -416,7 +424,7 @@ class CtpTdApi(TdApi):
 
         self.connect_status = False
         self.login_status = False
-        self.auth_staus = False
+        self.auth_status = False
         self.login_failed = False
 
         self.userid = ""
@@ -451,7 +459,7 @@ class CtpTdApi(TdApi):
     def onRspAuthenticate(self, data: dict, error: dict, reqid: int, last: bool):
         """"""
         if not error['ErrorID']:
-            self.auth_staus = True
+            self.auth_status = True
             self.gateway.write_log("交易服务器授权验证成功")
             self.login()
         else:
