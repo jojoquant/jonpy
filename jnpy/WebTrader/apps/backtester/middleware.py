@@ -5,7 +5,7 @@
 @Datetime :   15/05/2020 22:19
 @Author   :   Fangyang
 """
-from datetime import datetime
+from datetime import datetime, date
 from enum import Enum
 import numpy as np
 
@@ -237,6 +237,7 @@ def run_backtest(handler, submit_data_dict, strategy_setting_dict):
         drawdown_curve_dict = get_drawdown_curve_dict()
         pnl_bar_dict = get_pnl_bar_dict()
         distribution_curve_dict = get_distribution_curve_dict()
+        daily_table_dict = get_backtesting_record_data(record_type="daily")
         trade_table_dict = get_backtesting_record_data(record_type="trade")
         order_table_dict = get_backtesting_record_data(record_type="order")
         kline_dict = get_kline_dict()
@@ -247,6 +248,7 @@ def run_backtest(handler, submit_data_dict, strategy_setting_dict):
             "pnl": pnl_bar_dict,
             "pnl_dist": distribution_curve_dict,
             "kline": kline_dict,
+            "daily": daily_table_dict,
             "trade": trade_table_dict,
             "order": order_table_dict,
         }
@@ -335,9 +337,10 @@ def get_kline_dict():
     BarData_list = backtester.get_history_data()
     return {
         "ohlc": [
-            [i.datetime.timestamp(), i.open_price, i.high_price, i.low_price, i.close_price] for i in BarData_list
+            [int(i.datetime.timestamp()) * 1000, i.open_price, i.high_price, i.low_price, i.close_price] for i in
+            BarData_list
         ],
-        "volume": [[i.datetime.timestamp(), i.volume] for i in BarData_list]
+        "volume": [[int(i.datetime.timestamp()) * 1000, i.volume] for i in BarData_list]
     }
 
 
@@ -380,6 +383,21 @@ def get_backtesting_record_data(record_type):
             {"text": "时间", "value": "datetime"},
             {"text": "接口", "value": "gateway_name"},
         ]
+    elif record_type == "daily":
+        data_list = backtester.get_all_daily_results()
+        headers = [
+            {"text": "日期", "value": "date"},
+            {"text": "成交笔数", "value": "trade_count"},
+            {"text": "开盘持仓", "value": "start_pos"},
+            {"text": "收盘持仓", "value": "end_pos"},
+            {"text": "成交额", "value": "turnover"},
+            {"text": "手续费", "value": "commission"},
+            {"text": "滑点", "value": "slippage"},
+            {"text": "交易盈亏", "value": "trading_pnl"},
+            {"text": "持仓盈亏", "value": "holding_pnl"},
+            {"text": "总盈亏", "value": "total_pnl"},
+            {"text": "净盈亏", "value": "net_pnl"},
+        ]
 
     content = []
     for elem in data_list:
@@ -388,7 +406,7 @@ def get_backtesting_record_data(record_type):
             value = getattr(elem, header['value'])
             if isinstance(value, Enum):
                 item[header['value']] = value.value
-            elif isinstance(value, datetime):
+            elif isinstance(value, datetime) or isinstance(value, date):
                 item[header['value']] = str(value)
             else:
                 item[header['value']] = value
