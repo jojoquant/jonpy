@@ -7,6 +7,7 @@
 """
 from datetime import datetime
 from enum import Enum
+import numpy as np
 
 from vnpy.event import EventEngine
 from vnpy.trader.engine import MainEngine
@@ -234,12 +235,18 @@ def run_backtest(handler, submit_data_dict, strategy_setting_dict):
         statistic_table_dict = get_statistic_result_dict()
         balance_curve_dict = get_balance_curve_dict()
         drawdown_curve_dict = get_drawdown_curve_dict()
+        pnl_bar_dict = get_pnl_bar_dict()
+        distribution_curve_dict = get_distribution_curve_dict()
         trade_table_dict = get_backtesting_record_data(record_type="trade")
         order_table_dict = get_backtesting_record_data(record_type="order")
+        kline_dict = get_kline_dict()
         re_data_dict = {
             "statistics": statistic_table_dict,
             "balance": balance_curve_dict,
             "drawdown": drawdown_curve_dict,
+            "pnl": pnl_bar_dict,
+            "pnl_dist": distribution_curve_dict,
+            "kline": kline_dict,
             "trade": trade_table_dict,
             "order": order_table_dict,
         }
@@ -293,8 +300,7 @@ def get_balance_curve_dict():
     y = df["balance"].tolist()
     x = [f"{i}" for i in df.index]
     return {
-        'data': {"x": x, "y": y},
-        "type": "line"
+        'data': {"x": x, "y": y}
     }
 
 
@@ -302,23 +308,37 @@ def get_drawdown_curve_dict():
     """获取 净值回撤 图数据"""
     df = backtester.get_result_df()
     y = df["drawdown"].tolist()
-    x = [f"{i}" for i in df.index]
+    # x = [f"{i}" for i in df.index]
     return {
-        'data': {"x": x, "y": y},
-        "type": "line"
+        # 'data': {"x": x, "y": y}
+        'data': {"y": y}
     }
 
 
-def get_profit_pnl_bar_dict():
-    pass
-
-
-def get_loss_pnl_bar_dict():
-    pass
+def get_pnl_bar_dict():
+    df = backtester.get_result_df()
+    y = df["net_pnl"].tolist()
+    return {
+        'data': {"y": y}
+    }
 
 
 def get_distribution_curve_dict():
-    pass
+    df = backtester.get_result_df()
+    hist, x = np.histogram(df["net_pnl"], bins="auto")
+    return {
+        'data': {"x": x[:-1].tolist(), "y": hist.tolist()}
+    }
+
+
+def get_kline_dict():
+    BarData_list = backtester.get_history_data()
+    return {
+        "ohlc": [
+            [i.datetime.timestamp(), i.open_price, i.high_price, i.low_price, i.close_price] for i in BarData_list
+        ],
+        "volume": [[i.datetime.timestamp(), i.volume] for i in BarData_list]
+    }
 
 
 def get_backtesting_record_data(record_type):
