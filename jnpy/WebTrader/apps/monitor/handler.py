@@ -6,6 +6,7 @@
 @Author   :   Fangyang
 """
 import json
+import time
 from typing import Union, Optional, Awaitable
 
 from vnpy.trader.constant import Exchange, Interval
@@ -20,9 +21,11 @@ from jnpy.WebTrader.apps.monitor import middleware
 class MonitorWssHandler(BaseWebSocketHandler):
 
     def open(self, *args: str, **kwargs: str) -> Optional[Awaitable[None]]:
+        # in_client = ('192.168.0.108', 56986)
+        in_client = self.request.server_connection.context.address
         re_data = json.dumps(middleware.init_strategy())
         self.write_message(re_data)
-        print(1)
+        print(in_client)
 
     def on_message(self, message: Union[str, bytes]) -> Optional[Awaitable[None]]:
         re_data_dict = json.loads(message)
@@ -31,7 +34,19 @@ class MonitorWssHandler(BaseWebSocketHandler):
             re_data_dict = middleware.init_strategy()
             re_data = json.dumps(re_data_dict)
             self.write_message(re_data)
+
+        elif "gateway_connect" in re_data_dict:
+            # while True:
+            #     time.sleep(1)
+            #     print("sleep 1s", self.request.server_connection.context.address)
+
+            middleware.gateway_connect(re_data_dict['gateway_connect'])
+            re_data = json.dumps(middleware.gen_exchange_contract_info())
+            self.write_message(re_data)
+            print(1)
+
         print(1)
+
 
 
 if __name__ == "__main__":
