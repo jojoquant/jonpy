@@ -30,20 +30,10 @@ class MonitorWssHandler(BaseWebSocketHandler):
     def on_message(self, message: Union[str, bytes]) -> Optional[Awaitable[None]]:
         re_data_dict = json.loads(message)
 
-        if 'strategy' in re_data_dict:
-            re_data_dict = middleware.init_strategy()
-            re_data = json.dumps(re_data_dict)
-            self.write_message(re_data)
-
-        elif "gateway_connect" in re_data_dict:
-            # while True:
-            #     time.sleep(1)
-            #     print("sleep 1s", self.request.server_connection.context.address)
-
+        if "gateway_connect" in re_data_dict:
             middleware.gateway_connect(re_data_dict['gateway_connect'])
             re_data = json.dumps(middleware.gen_exchange_contract_info())
             self.write_message(re_data)
-            print(1)
 
         print(1)
 
