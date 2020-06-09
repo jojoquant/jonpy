@@ -23,9 +23,10 @@ class MonitorWssHandler(BaseWebSocketHandler):
     def open(self, *args: str, **kwargs: str) -> Optional[Awaitable[None]]:
         # in_client = ('192.168.0.108', 56986)
         in_client = self.request.server_connection.context.address
-        re_data = json.dumps(middleware.init_strategy())
+        middleware.main_engine.update_tornado_client(self)
+        re_data = json.dumps(middleware.init_engine())
         self.write_message(re_data)
-        print(in_client)
+        print("MonitorWssHandler", in_client)
 
     def on_message(self, message: Union[str, bytes]) -> Optional[Awaitable[None]]:
         re_data_dict = json.loads(message)
@@ -34,9 +35,30 @@ class MonitorWssHandler(BaseWebSocketHandler):
             middleware.gateway_connect(re_data_dict['gateway_connect'])
             re_data = json.dumps(middleware.gen_exchange_contract_info())
             self.write_message(re_data)
+        elif "" in re_data_dict:
+            middleware
 
         print(1)
 
+
+class MonitorSystemInfoWssHandler(BaseWebSocketHandler):
+
+    def open(self, *args: str, **kwargs: str) -> Optional[Awaitable[None]]:
+        # in_client = ('192.168.0.108', 56986)
+        in_client = self.request.server_connection.context.address
+        print("MonitorSystemInfoWssHandler", in_client)
+
+    def on_message(self, message: Union[str, bytes]) -> Optional[Awaitable[None]]:
+        re_data_dict = json.loads(message)
+
+        if "gateway_connect" in re_data_dict:
+            middleware.gateway_connect(re_data_dict['gateway_connect'])
+            re_data = json.dumps(middleware.gen_exchange_contract_info())
+            self.write_message(re_data)
+        elif "" in re_data_dict:
+            middleware
+
+        print(1)
 
 
 if __name__ == "__main__":

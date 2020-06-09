@@ -11,20 +11,22 @@ import time
 from vnpy.event import EventEngine
 
 from vnpy.gateway.ctp import CtpGateway
-from vnpy.app.cta_strategy import CtaEngine
 
-from vnpy.trader.engine import MainEngine
 from jnpy.WebTrader.constant import CTP_CONNECT_MAP
+from jnpy.WebTrader.apps.monitor.engine import MonitorMainEngine, MonitorCtaEngine
 
 event_engine = EventEngine()
-main_engine = MainEngine(event_engine)
+main_engine = MonitorMainEngine(event_engine)
+main_engine.write_log("主引擎创建成功")
+
 main_engine.add_gateway(CtpGateway)
-
-cta = main_engine.add_engine(CtaEngine)
-cta.init_engine()
+cta = main_engine.add_engine(MonitorCtaEngine)
 
 
-def init_strategy():
+def init_engine():
+    cta.init_engine()
+    main_engine.write_log("CTA策略初始化完成")
+
     engines_dict = {}
     for strategy_name, strategy_class in cta.strategies.items():
         if strategy_class.vt_symbol not in engines_dict:
@@ -59,6 +61,7 @@ def get_strategy_info(class_name):
 def gateway_connect(ctp_setting):
     # TODO 给前端发送连接成功的提示信息
     main_engine.connect({CTP_CONNECT_MAP[key]: value for key, value in ctp_setting.items()}, "CTP")
+    main_engine.write_log("连接CTP接口")
 
 
 def gen_exchange_contract_info():
@@ -80,6 +83,11 @@ def gen_exchange_contract_info():
             break
 
     return {"exchange_contract_obj": re_data_dict}
+
+
+def init_strategy(strategy_name):
+    """"""
+    cta.init_strategy(strategy_name)
 
 
 if __name__ == "__main__":
