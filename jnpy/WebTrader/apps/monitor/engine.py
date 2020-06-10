@@ -32,7 +32,7 @@ class MonitorMainEngine(MainEngine):
         event = Event(EVENT_LOG, log)
         self.event_engine.put(event)
         if self.tornado_client:
-            self.tornado_client.write_message({"dialog_msg": msg})
+            self.tornado_client.write_message({"dialog": {"msg": msg, "type": "info"}})
 
 
 class MonitorCtaEngine(CtaEngine):

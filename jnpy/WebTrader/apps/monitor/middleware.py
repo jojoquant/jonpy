@@ -9,7 +9,6 @@
 import time
 
 from vnpy.event import EventEngine
-
 from vnpy.gateway.ctp import CtpGateway
 
 from jnpy.WebTrader.constant import CTP_CONNECT_MAP
@@ -32,12 +31,12 @@ def init_engine():
         if strategy_class.vt_symbol not in engines_dict:
             engines_dict[strategy_class.vt_symbol] = {"strategy_arr": []}
 
-        expension_name = f"{strategy_name}_{strategy_class.__class__.__name__}"
         strategy_variables_dict = cta.get_strategy_parameters(strategy_name)
         strategy_parameters_dict = cta.strategy_data[strategy_name] if (strategy_name in cta.strategy_data) else {}
         engines_dict[strategy_class.vt_symbol]["strategy_arr"].append(
             {
-                "expension_name": expension_name,
+                "strategy_name": strategy_name,
+                "strategy_class": strategy_class.__class__.__name__,
                 "strategy_variables": transform_expansion_table_format(strategy_variables_dict),
                 "strategy_parameters": transform_expansion_table_format(strategy_parameters_dict)
             }
@@ -53,15 +52,16 @@ def transform_expansion_table_format(data_dict):
     return [{"name": key, "value": value} for key, value in data_dict.items()]
 
 
-def get_strategy_info(class_name):
+def get_strategy_info(class_name: str):
     variables = cta.get_strategy_class_parameters(class_name)
     return variables
 
 
 def gateway_connect(ctp_setting):
-    # TODO 给前端发送连接成功的提示信息
     main_engine.connect({CTP_CONNECT_MAP[key]: value for key, value in ctp_setting.items()}, "CTP")
     main_engine.write_log("连接CTP接口")
+
+    return gen_exchange_contract_info()
 
 
 def gen_exchange_contract_info():
@@ -85,9 +85,22 @@ def gen_exchange_contract_info():
     return {"exchange_contract_obj": re_data_dict}
 
 
-def init_strategy(strategy_name):
+def init_strategy(strategy_name: str):
     """"""
     cta.init_strategy(strategy_name)
+
+
+def edit_strategy(strategy_name: str, strategy_variables: dict):
+    setting = {item['name']: item['value'] for item in strategy_variables}
+    try:
+        cta.edit_strategy(strategy_name, setting)
+        return dialog_dict(type_str="success", msg="策略编辑成功")
+    except:
+        return dialog_dict(type_str="error", msg="策略编辑失败")
+
+
+def dialog_dict(type_str: str, msg: str):
+    return {"dialog": {"type": type_str, "msg": msg}}
 
 
 if __name__ == "__main__":
