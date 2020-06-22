@@ -6,6 +6,7 @@ from vnpy.trader.engine import MainEngine
 from jnpy.app.cta_backtester.DRL.main import accept_bars_data_list
 
 from vnpy.app.cta_backtester.engine import BacktesterEngine
+from vnpy.app.cta_strategy.backtesting import OptimizationSetting  # 给widget使用, 和vnpy widget尽量一致, 这里不要删除
 
 
 APP_NAME = "CtaBacktester_jnpy"
@@ -24,6 +25,12 @@ class BacktesterEngineJnpy(BacktesterEngine):
         """"""
         super().__init__(main_engine, event_engine)
         self.engine_name = APP_NAME
+
+    def write_log(self, msg: str):
+        """"""
+        event = Event(EVENT_BACKTESTER_LOG)
+        event.data = msg
+        self.event_engine.put(event)
 
     def rl_training(
             self, class_name: str,
@@ -175,3 +182,4 @@ class BacktesterEngineJnpy(BacktesterEngine):
             self.thread.start()
 
         return True
+

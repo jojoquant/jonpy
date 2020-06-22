@@ -1,5 +1,7 @@
-from datetime import datetime, timedelta
 import csv
+from datetime import datetime, timedelta
+from tzlocal import get_localzone
+
 import numpy as np
 import pyqtgraph as pg
 import pandas as pd
@@ -11,24 +13,20 @@ from vnpy.trader.engine import MainEngine
 from vnpy.trader.ui import QtCore, QtWidgets, QtGui
 from vnpy.trader.ui.widget import BaseMonitor, BaseCell, DirectionCell, EnumCell
 from vnpy.trader.ui.editor import CodeEditor
-from vnpy.trader.utility import load_json, save_json
-
 from vnpy.event import Event, EventEngine
 from vnpy.chart import ChartWidget, CandleItem, VolumeItem
-from vnpy.app.cta_strategy.backtesting import OptimizationSetting
-# from vnpy.chart import TechIndexItem
+from vnpy.trader.utility import load_json, save_json
 
 from jnpy.app.cta_backtester.db_operation import DBOperation
-
 from jnpy.DataSource.pytdx.contracts import read_contracts_json_dict
 from jnpy.DataSource.pyccxt.contracts import Exchange
 from .KLine_pro_pyecharts import draw_chart
-
 from ..engine import (
     APP_NAME,
     EVENT_BACKTESTER_LOG,
     EVENT_BACKTESTER_BACKTESTING_FINISHED,
     EVENT_BACKTESTER_OPTIMIZATION_FINISHED,
+    OptimizationSetting
 )
 
 
@@ -62,6 +60,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         self.register_event()
         self.backtester_engine.init_engine()
         self.init_strategy_settings()
+        self.load_backtesting_setting()
 
     def init_strategy_settings(self):
         """"""
@@ -80,8 +79,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         # Setting Part
         self.class_combo = QtWidgets.QComboBox()
 
-        # self.symbol_line = QtWidgets.QLineEdit("IF88.CFFEX")
-        self.symbol_line = ""
+        self.symbol_line = QtWidgets.QLineEdit("")
         self.symbol_label = QtWidgets.QLabel()
         self.data_counts_label = QtWidgets.QLabel()
 
@@ -101,8 +99,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         ##########################################
 
         end_dt = datetime.now()
-        # start_dt = end_dt - timedelta(days=3 * 365)  # debug 临时更改
-        start_dt = end_dt - timedelta(days=100)  # debug 临时更改
+        start_dt = end_dt - timedelta(days=3 * 365)
 
         self.start_date_edit = QtWidgets.QDateEdit(
             QtCore.QDate(
@@ -116,9 +113,9 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         )
 
         self.rate_line = QtWidgets.QLineEdit("0.000025")
-        self.slippage_line = QtWidgets.QLineEdit("1")
-        self.size_line = QtWidgets.QLineEdit("10")
-        self.pricetick_line = QtWidgets.QLineEdit("1")
+        self.slippage_line = QtWidgets.QLineEdit("0.2")
+        self.size_line = QtWidgets.QLineEdit("300")
+        self.pricetick_line = QtWidgets.QLineEdit("0.2")
         self.capital_line = QtWidgets.QLineEdit("1000000")
 
         self.inverse_combo = QtWidgets.QComboBox()
@@ -267,7 +264,8 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         # Code Editor
         self.editor = CodeEditor(self.main_engine, self.event_engine)
 
-        # Load setting
+    def load_backtesting_setting(self):
+        """"""
         setting = load_json(self.setting_filename)
         if not setting:
             return
@@ -275,6 +273,8 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         self.class_combo.setCurrentIndex(
             self.class_combo.findText(setting["class_name"])
         )
+
+        self.symbol_line.setText(setting["vt_symbol"])
 
         self.interval_combo.setCurrentIndex(
             self.interval_combo.findText(setting["interval"])
@@ -389,8 +389,6 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
 
     def register_event(self):
         """"""
-        # if self.debug_combo.currentText() == "Debug 运行回测":
-        #     self.signal_log.connect(self.write_log)
         self.signal_log.connect(self.process_log_event)
         self.signal_backtesting_finished.connect(
             self.process_backtesting_finished_event)
@@ -608,8 +606,22 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         start_date = self.start_date_edit.date()
         end_date = self.end_date_edit.date()
 
-        start = datetime(start_date.year(), start_date.month(), start_date.day())
-        end = datetime(end_date.year(), end_date.month(), end_date.day(), 23, 59, 59)
+        start = datetime(
+            start_date.year(),
+            start_date.month(),
+            start_date.day(),
+            tzinfo=get_localzone()
+        )
+
+        end = datetime(
+            end_date.year(),
+            end_date.month(),
+            end_date.day(),
+            23,
+            59,
+            59,
+            tzinfo=get_localzone()
+        )
 
         self.backtester_engine.start_downloading(
             vt_symbol,
@@ -802,7 +814,7 @@ class BacktestingSettingEditor(QtWidgets.QDialog):
     """
 
     def __init__(
-            self, class_name: str, parameters: dict
+        self, class_name: str, parameters: dict
     ):
         """"""
         super(BacktestingSettingEditor, self).__init__()
@@ -841,7 +853,16 @@ class BacktestingSettingEditor(QtWidgets.QDialog):
         button.clicked.connect(self.accept)
         form.addRow(button)
 
-        self.setLayout(form)
+        widget = QtWidgets.QWidget()
+        widget.setLayout(form)
+
+        scroll = QtWidgets.QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setWidget(widget)
+
+        vbox = QtWidgets.QVBoxLayout()
+        vbox.addWidget(scroll)
+        self.setLayout(vbox)
 
     def get_setting(self):
         """"""
@@ -1001,7 +1022,7 @@ class OptimizationSettingEditor(QtWidgets.QDialog):
     }
 
     def __init__(
-            self, class_name: str, parameters: dict
+        self, class_name: str, parameters: dict
     ):
         """"""
         super().__init__()
@@ -1071,7 +1092,16 @@ class OptimizationSettingEditor(QtWidgets.QDialog):
         ga_button.clicked.connect(self.generate_ga_setting)
         grid.addWidget(ga_button, row, 0, 1, 4)
 
-        self.setLayout(grid)
+        widget = QtWidgets.QWidget()
+        widget.setLayout(grid)
+
+        scroll = QtWidgets.QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setWidget(widget)
+
+        vbox = QtWidgets.QVBoxLayout()
+        vbox.addWidget(scroll)
+        self.setLayout(vbox)
 
     def generate_ga_setting(self):
         """"""
@@ -1120,7 +1150,7 @@ class OptimizationResultMonitor(QtWidgets.QDialog):
     """
 
     def __init__(
-            self, result_values: list, target_display: str
+        self, result_values: list, target_display: str
     ):
         """"""
         super().__init__()
@@ -1262,11 +1292,11 @@ class BacktestingResultDialog(QtWidgets.QDialog):
     """
 
     def __init__(
-            self,
-            main_engine: MainEngine,
-            event_engine: EventEngine,
-            title: str,
-            table_class: QtWidgets.QTableWidget
+        self,
+        main_engine: MainEngine,
+        event_engine: EventEngine,
+        title: str,
+        table_class: QtWidgets.QTableWidget
     ):
         """"""
         super().__init__()
@@ -1330,10 +1360,8 @@ class CandleChartDialog(QtWidgets.QDialog):
         # Create chart widget
         self.chart = ChartWidget()
         self.chart.add_plot("candle", hide_x_axis=True)
-        # self.chart.add_plot("tech_chart", maximum_height=200)
         self.chart.add_plot("volume", maximum_height=200)
         self.chart.add_item(CandleItem, "candle", "candle")
-        # self.chart.add_item(TechIndexItem, "tech_chart", "tech_chart")
         self.chart.add_item(VolumeItem, "volume", "volume")
         self.chart.add_cursor()
 
@@ -1370,14 +1398,14 @@ class CandleChartDialog(QtWidgets.QDialog):
             }
 
             if trade.direction == Direction.LONG:
-                scatter_symbol = "t1"  # Up arrow
+                scatter_symbol = "t1"   # Up arrow
             else:
-                scatter_symbol = "t"  # Down arrow
+                scatter_symbol = "t"    # Down arrow
 
             if trade.offset == Offset.OPEN:
-                scatter_brush = pg.mkBrush((255, 255, 0))  # Yellow
+                scatter_brush = pg.mkBrush((255, 255, 0))   # Yellow
             else:
-                scatter_brush = pg.mkBrush((0, 0, 255))  # Blue
+                scatter_brush = pg.mkBrush((0, 0, 255))     # Blue
 
             scatter["symbol"] = scatter_symbol
             scatter["brush"] = scatter_brush
