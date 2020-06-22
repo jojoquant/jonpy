@@ -7,11 +7,11 @@
 """
 
 from tornado.web import url
-from jnpy.WebTrader.apps.dataloader.handler import Wss
+from jnpy.WebTrader.apps.dataloader.handler import DataloaderWssHandler
 
 
-ws_urls_tuple = (
-    url('/dataloader', Wss),
+dataloader_urls_tuple = (
+    url('/dataloader', DataloaderWssHandler),
 )
 
 

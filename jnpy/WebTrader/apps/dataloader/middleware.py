@@ -9,7 +9,7 @@
 from vnpy.event import EventEngine
 from vnpy.trader.engine import MainEngine
 from vnpy.trader.constant import Interval, Exchange
-from vnpy.app.pytdx_loader.engine import PytdxLoaderEngine
+from jnpy.app.pytdx_loader import PytdxLoaderEngine
 
 event_engine = EventEngine()
 main_engine = MainEngine(event_engine)
