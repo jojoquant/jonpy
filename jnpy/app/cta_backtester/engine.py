@@ -26,6 +26,12 @@ class BacktesterEngineJnpy(BacktesterEngine):
         super().__init__(main_engine, event_engine)
         self.engine_name = APP_NAME
 
+    def write_log(self, msg: str):
+        """"""
+        event = Event(EVENT_BACKTESTER_LOG)
+        event.data = msg
+        self.event_engine.put(event)
+
     def rl_training(
             self, class_name: str,
             vt_symbol: str,
@@ -176,3 +182,4 @@ class BacktesterEngineJnpy(BacktesterEngine):
             self.thread.start()
 
         return True
+
