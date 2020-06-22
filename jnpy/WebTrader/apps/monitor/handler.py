@@ -31,7 +31,11 @@ class MonitorWssHandler(BaseWebSocketHandler):
     def on_message(self, message: Union[str, bytes]) -> Optional[Awaitable[None]]:
         re_data_dict = json.loads(message)
         # 业务函数名即字典的key, value为入参, 出参为反馈前端信息
-        [self.write_message(getattr(middleware, key)(**value)) for key, value in re_data_dict.items()]
+        # [self.write_message(getattr(middleware, key)(**value)) for key, value in re_data_dict.items()]
+        for key, value in re_data_dict.items():
+            re_data = getattr(middleware, key)(**value)
+            if re_data:
+                self.write_message(re_data)
 
 
 class MonitorSystemInfoWssHandler(BaseWebSocketHandler):

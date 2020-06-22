@@ -10,6 +10,7 @@ import time
 
 from vnpy.event import EventEngine
 from vnpy.gateway.ctp import CtpGateway
+from vnpy.app.cta_strategy.base import EVENT_CTA_LOG
 
 from jnpy.WebTrader.constant import CTP_CONNECT_MAP
 from jnpy.WebTrader.apps.monitor.engine import MonitorMainEngine, MonitorCtaEngine
@@ -20,6 +21,9 @@ main_engine.write_log("主引擎创建成功")
 
 main_engine.add_gateway(CtpGateway)
 cta = main_engine.add_engine(MonitorCtaEngine)
+log_engine = main_engine.get_engine("log")
+event_engine.register(EVENT_CTA_LOG, log_engine.process_log_event)
+main_engine.write_log("注册日志事件监听")
 
 
 def init_engine():
@@ -87,16 +91,30 @@ def gen_exchange_contract_info():
 
 def init_strategy(strategy_name: str):
     """"""
-    cta.init_strategy(strategy_name)
+    try:
+        print("init_strategy")
+        cta.init_strategy(strategy_name)
+        return None
+    except:
+        return dialog_dict(type_str="error", msg=f"策略({strategy_name})初始化遇到问题")
+
+
+def start_strategy(strategy_name: str):
+    """"""
+    try:
+        cta.start_strategy(strategy_name)
+        return None
+    except:
+        return dialog_dict(type_str="error", msg=f"策略({strategy_name})启动遇到问题")
 
 
 def edit_strategy(strategy_name: str, strategy_variables: dict):
     setting = {item['name']: item['value'] for item in strategy_variables}
     try:
         cta.edit_strategy(strategy_name, setting)
-        return dialog_dict(type_str="success", msg="策略编辑成功")
+        return dialog_dict(type_str="success", msg=f"策略({strategy_name})编辑成功")
     except:
-        return dialog_dict(type_str="error", msg="策略编辑失败")
+        return dialog_dict(type_str="error", msg=f"策略({strategy_name})编辑失败")
 
 
 def dialog_dict(type_str: str, msg: str):
