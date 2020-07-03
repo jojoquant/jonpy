@@ -49,7 +49,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         self.backtester_engine = main_engine.get_engine(APP_NAME)
         self.class_names = []
         self.settings = {}
-        self.db_instance = DBOperation(get_settings("database."))
+        self.db_instance = self.backtester_engine.db_instance
         self.dbbardata_groupby_df = pd.DataFrame()
         self.pytdx_contracts_dict = read_contracts_json_dict()
         self.pyccxt_exchange = Exchange()

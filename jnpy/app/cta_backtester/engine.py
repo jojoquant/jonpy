@@ -3,10 +3,14 @@ from threading import Thread
 
 from vnpy.event import Event, EventEngine
 from vnpy.trader.engine import MainEngine
-from jnpy.app.cta_backtester.DRL.main import accept_bars_data_list
 
 from vnpy.app.cta_backtester.engine import BacktesterEngine
 from vnpy.app.cta_strategy.backtesting import OptimizationSetting  # 给widget使用, 和vnpy widget尽量一致, 这里不要删除
+from vnpy.trader.setting import get_settings
+
+from jnpy.app.cta_backtester.DRL.main import accept_bars_data_list
+from jnpy.app.cta_backtester.backtesting import BacktestingEngineJnpy
+from jnpy.app.cta_backtester.db_operation import DBOperation
 
 
 APP_NAME = "CtaBacktester_jnpy"
@@ -25,6 +29,20 @@ class BacktesterEngineJnpy(BacktesterEngine):
         """"""
         super().__init__(main_engine, event_engine)
         self.engine_name = APP_NAME
+        self.db_instance = DBOperation(get_settings("database."))
+
+    def init_engine(self):
+        """"""
+        self.write_log("初始化CTA回测引擎")
+
+        self.backtesting_engine = BacktestingEngineJnpy(self.db_instance)
+        # Redirect log from backtesting engine outside.
+        self.backtesting_engine.output = self.write_log
+
+        self.load_strategy_class()
+        self.write_log("策略文件加载完成")
+
+        self.init_rqdata()
 
     def write_log(self, msg: str):
         """"""
