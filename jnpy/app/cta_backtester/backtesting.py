@@ -118,7 +118,7 @@ class BacktestingEngineJnpy(BacktestingEngine):
             bar = BarData(
                 symbol=x.loc['symbol'],
                 exchange=Exchange(x.loc['exchange']),
-                datetime=x.loc['datetime'].to_pydatetime().replace(tzinfo=DB_TZ),
+                datetime=self.datetime_set_timezone(x.loc['datetime'].to_pydatetime()),
                 interval=Interval(x.loc['interval']),
                 volume=x.loc['volume'],
                 open_price=x.loc['open_price'],
@@ -140,6 +140,9 @@ class BacktestingEngineJnpy(BacktestingEngine):
                 self.output(traceback.format_exc())
                 return
 
+    def datetime_set_timezone(self, pydatetime):
+        return pydatetime.astimezone(DB_TZ)
+
     def run_backtesting_for_df(self, func):
         # Use the rest of history data for running backtesting
         data_df = self.history_data[self.history_data['datetime'] > self.load_bar_end_timestamp]
@@ -149,7 +152,7 @@ class BacktestingEngineJnpy(BacktestingEngine):
             bar = BarData(
                 symbol=x.loc['symbol'],
                 exchange=Exchange(x.loc['exchange']),
-                datetime=x.loc['datetime'].to_pydatetime().replace(tzinfo=DB_TZ),
+                datetime=self.datetime_set_timezone(x.loc['datetime'].to_pydatetime()),
                 interval=Interval(x.loc['interval']),
                 volume=x.loc['volume'],
                 open_price=x.loc['open_price'],
