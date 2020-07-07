@@ -21,9 +21,6 @@ from vnpy.trader.setting import get_settings
 from vnpy.trader.utility import get_file_path
 
 from jnpy.utils import timeit_cls_method_wrapper
-from pandarallel import pandarallel
-
-pandarallel.initialize()
 
 
 class DBOperation:

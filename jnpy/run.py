@@ -48,6 +48,11 @@ from vnpy.app.chart_wizard import ChartWizardApp
 from jnpy.app.pytdx_loader import PytdxLoaderApp
 from jnpy.app.cta_backtester import CtaBacktesterJnpyApp as CtaBacktesterApp_jnpy
 
+from pandarallel import pandarallel
+
+
+pandarallel.initialize()
+
 
 def main():
     """"""
