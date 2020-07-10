@@ -9,6 +9,8 @@ import traceback
 from datetime import datetime, timedelta
 import time
 from functools import lru_cache
+from pathlib import Path
+
 from pandas.tseries.offsets import Day
 
 from vnpy.trader.object import BarData
@@ -27,6 +29,7 @@ class BacktestingEngineJnpy(BacktestingEngine):
         self.db_instance = db_instance
         self.cur_data_ix = 0
         self.load_bar_end_timestamp = ''
+        self.save_history_df_path = None
 
     def load_data(self):
         """"""
@@ -83,8 +86,12 @@ class BacktestingEngineJnpy(BacktestingEngine):
         self.output(f"backtesting load data cost:{time.time() - start_time:.2f}s")
         self.output(f"历史数据加载完成，数据量：{len(self.history_data)}")
 
-    def run_backtesting(self):
+    def run_backtesting(self, save_history_df_path=None):
         """"""
+        if save_history_df_path:
+            self.save_history_df_path = Path(save_history_df_path)
+            self.history_data.to_csv(self.save_history_df_path/'bk_history_data.csv', index=False)
+
         if self.mode == BacktestingMode.BAR:
             func = self.new_bar
             run_backtesting_load_data = self.run_backtesting_load_data_df

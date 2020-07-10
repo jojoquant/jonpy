@@ -1,4 +1,3 @@
-
 import pandas as pd
 import numpy as np
 import talib
@@ -10,7 +9,7 @@ from lnpy.objects import TalibFuns
 class PreProcessor(object):
 
     def __init__(
-            self, df: pd.DataFrame, not_used_func_lst: list=[],
+            self, df: pd.DataFrame, not_used_func_lst: list = [],
             alpha: float = 0.01, beta: float = 0.4,
             method: str = 'pearson'
     ):
@@ -30,7 +29,7 @@ class PreProcessor(object):
 
         self.logmodule = LogModule(name="Ta-lib相关性", level="info")
 
-    def extend_df_tech_cols(self):
+    def extend_df_tech_cols(self) -> pd.DataFrame:
         for tech_attr, param_dict in self.talib_funcs.__dict__.items():
             if tech_attr not in self.not_used_func_lst:
                 for TaIndicatorClassStr, args_output_dict in param_dict.items():
@@ -55,12 +54,13 @@ class PreProcessor(object):
                     #     print(1)
 
                     if not isinstance(ta_result_tuple, tuple):
-                        ta_result_tuple = (ta_result_tuple, )
+                        ta_result_tuple = (ta_result_tuple,)
                     for col, array in zip(col_list, ta_result_tuple):
                         self.df[col] = array
 
         self.df = self.df.fillna(method='bfill')
         self.df = self.df.replace([np.inf, -np.inf], np.nan).dropna(axis=1)
+        return self.df
 
     def high_correlation_filter(self, tech_features_df: pd.DataFrame) -> list:
         # 删除原始dataframe的列，防止这些列被删掉

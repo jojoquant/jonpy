@@ -20,6 +20,15 @@ def timeit_cls_method_wrapper(func):
         return result
     return clocked  # --> 3
 
+def timeit_function_wrapper(func):
+    @wraps(func)  # --> 4
+    def clocked(*args, **kwargs):  # -- 1
+        """this is inner clocked function"""
+        start_time = time.time()
+        result = func(*args, **kwargs)  # --> 2
+        print(func.__name__ + " func time_cost -> {:.2f}s".format(time.time() - start_time))
+        return result
+    return clocked  # --> 3
 
 if __name__ == "__main__":
     pass
