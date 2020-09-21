@@ -13,7 +13,7 @@ from pathlib import Path
 
 from pandas.tseries.offsets import Day
 
-from vnpy.trader.object import BarData
+from vnpy.trader.object import BarData, Exchange
 from vnpy.trader.constant import Exchange, Interval
 from vnpy.trader.database import database_manager
 from vnpy.trader.database.database import DB_TZ
@@ -30,6 +30,24 @@ class BacktestingEngineJnpy(BacktestingEngine):
         self.cur_data_ix = 0
         self.load_bar_end_timestamp = ''
         self.save_history_df_path = None
+        self.history_data_df = ''
+
+    def trans_history_data_df_to_list(self):
+        for index, row in self.history_data_df.iterrows():
+            data = BarData(
+                gateway_name='db',
+                symbol=row.symbol,
+                exchange=Exchange(row.exchange),
+                datetime=self.datetime_set_timezone(row.datetime.to_pydatetime()),
+                interval=row.interval,
+                volume=row.volume,
+                open_interest=row.open_interest,  # 持仓量
+                open_price=row.open_price,
+                high_price=row.high_price,
+                low_price=row.low_price,
+                close_price=row.close_price
+            )
+            self.history_data.append(data)
 
     def load_data(self):
         """"""
@@ -42,7 +60,8 @@ class BacktestingEngineJnpy(BacktestingEngine):
             self.output("起始日期必须小于结束日期")
             return
 
-        self.history_data = {}  # Clear previously loaded history data
+        self.history_data = []  # Clear previously loaded history data
+        self.history_data_df = ''  # Clear previously loaded history data df
         start_time = time.time()
         if self.mode == BacktestingMode.BAR:
             dbbardata_info_dict = {
@@ -54,7 +73,7 @@ class BacktestingEngineJnpy(BacktestingEngine):
             }
 
             # data = self.db_instance.get_bar_data(**dbbardata_info_dict)
-            self.history_data = self.db_instance.get_bar_data_df(**dbbardata_info_dict)
+            self.history_data_df = self.db_instance.get_bar_data_df(**dbbardata_info_dict)
         else:
             # TODO tick load data 还没有进行加速优化
             # Load 30 days of data each time and allow for progress update
@@ -73,7 +92,7 @@ class BacktestingEngineJnpy(BacktestingEngine):
                     self.start,
                     self.end
                 )
-                self.history_data.extend(data)  # fangyang 数据库中查询出来的结果放入self.history_data中
+                self.history_data.extend(data)  # fangyang 数据库中查询出来的结果放入self.history_data_df中
 
                 progress += progress_delta / total_delta
                 progress = min(progress, 1)
@@ -84,13 +103,13 @@ class BacktestingEngineJnpy(BacktestingEngine):
                 end += (progress_delta + interval_delta)
 
         self.output(f"backtesting load data cost:{time.time() - start_time:.2f}s")
-        self.output(f"历史数据加载完成，数据量：{len(self.history_data)}")
+        self.output(f"历史数据加载完成，数据量：{len(self.history_data_df)}")
 
     def run_backtesting(self, save_history_df_path=None):
         """"""
         if save_history_df_path:
             self.save_history_df_path = Path(save_history_df_path)
-            self.history_data.to_csv(self.save_history_df_path/'bk_history_data.csv', index=False)
+            self.history_data_df.to_csv(self.save_history_df_path / 'bk_history_data.csv', index=False)
 
         if self.mode == BacktestingMode.BAR:
             func = self.new_bar
@@ -118,8 +137,8 @@ class BacktestingEngineJnpy(BacktestingEngine):
 
     def run_backtesting_load_data_df(self):
         # Use the first [days] of history data for initializing strategy
-        self.load_bar_end_timestamp = self.history_data['datetime'].min() + Day(self.days)
-        load_bar_df = self.history_data[self.history_data['datetime'] <= self.load_bar_end_timestamp]
+        self.load_bar_end_timestamp = self.history_data_df['datetime'].min() + Day(self.days)
+        load_bar_df = self.history_data_df[self.history_data_df['datetime'] <= self.load_bar_end_timestamp]
         for ix in range(len(load_bar_df)):
             x = load_bar_df.iloc[ix, :]
             bar = BarData(
@@ -152,7 +171,7 @@ class BacktestingEngineJnpy(BacktestingEngine):
 
     def run_backtesting_for_df(self, func):
         # Use the rest of history data for running backtesting
-        data_df = self.history_data[self.history_data['datetime'] > self.load_bar_end_timestamp]
+        data_df = self.history_data_df[self.history_data_df['datetime'] > self.load_bar_end_timestamp]
         progress_count = 0
         for ix in range(len(data_df)):
             x = data_df.iloc[ix, :]
@@ -192,7 +211,7 @@ class BacktestingEngineJnpy(BacktestingEngine):
         # Use the first [days] of history data for initializing strategy
         day_count = 1
 
-        for ix, data in enumerate(self.history_data):
+        for ix, data in enumerate(self.history_data_df):
             if self.datetime and data.datetime.day != self.datetime.day:
                 day_count += 1
                 if day_count >= self.days:
@@ -214,8 +233,8 @@ class BacktestingEngineJnpy(BacktestingEngine):
     def run_backtesting_for_bd(self, func):
         # Use the rest of history data for running backtesting
         ix = self.cur_data_ix
-        history_data_length = len(self.history_data[ix:])
-        for index, data in enumerate(self.history_data[ix:]):
+        history_data_length = len(self.history_data_df[ix:])
+        for index, data in enumerate(self.history_data_df[ix:]):
             try:
                 func(data)
                 # fangyang 如果有设置这个属性, 那么就在这个属性打印回测进度的 log 信息

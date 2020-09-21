@@ -44,6 +44,7 @@ from vnpy.app.risk_manager import RiskManagerApp
 from vnpy.app.option_master import OptionMasterApp
 from vnpy.app.portfolio_manager import PortfolioManagerApp
 from vnpy.app.chart_wizard import ChartWizardApp
+from vnpy.app.paper_account import PaperAccountApp
 
 from jnpy.app.pytdx_loader import PytdxLoaderApp
 from jnpy.app.cta_backtester import CtaBacktesterJnpyApp as CtaBacktesterApp_jnpy
@@ -110,6 +111,7 @@ def main():
     # main_engine.add_app(ExcelRtdApp)
 
     main_engine.add_app(PytdxLoaderApp)
+    main_engine.add_app(PaperAccountApp)
 
     main_window = MainWindow(main_engine, event_engine)
     main_window.showMaximized()
