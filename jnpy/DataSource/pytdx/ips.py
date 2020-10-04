@@ -45,13 +45,17 @@ class IPsSource:
         fast_exhq_ip_dict = {}
         exhq_api = TdxExHq_API()
 
+
         for name, ip in self.exhq_ips_dict.items():
-            with exhq_api.connect(ip, self.exhq_port):
-                start_time = time.time()
-                instrument_count = exhq_api.get_instrument_count()
-                cost_time = time.time() - start_time
-                self.log.write_log(f"{name}({ip}), time: {cost_time:.3f}s, response: {instrument_count}")
-                fast_exhq_ip_dict[f"{ip}:{self.exhq_port}"] = cost_time
+            try:
+                with exhq_api.connect(ip, self.exhq_port):
+                    start_time = time.time()
+                    instrument_count = exhq_api.get_instrument_count()
+                    cost_time = time.time() - start_time
+                    self.log.write_log(f"{name}({ip}), time: {cost_time:.3f}s, response: {instrument_count}")
+                    fast_exhq_ip_dict[f"{ip}:{self.exhq_port}"] = cost_time
+            except:
+                print(f"高能预警 ! 异常捕获: {ip}:{self.exhq_port}可能宕机了报错了!")
 
         ip_str, port_str = min(fast_exhq_ip_dict, key=fast_exhq_ip_dict.get).split(":")
         self.log.write_log(f"-"*50)

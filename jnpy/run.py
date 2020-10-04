@@ -5,6 +5,12 @@ from vnpy.event import EventEngine
 from vnpy.trader.engine import MainEngine
 from vnpy.trader.ui import MainWindow, create_qapp
 
+
+
+
+
+
+
 # from vnpy.gateway.binance import BinanceGateway
 # from vnpy.gateway.bitmex import BitmexGateway
 # from vnpy.gateway.futu import FutuGateway
@@ -49,10 +55,8 @@ from vnpy.app.paper_account import PaperAccountApp
 from jnpy.app.pytdx_loader import PytdxLoaderApp
 from jnpy.app.cta_backtester import CtaBacktesterJnpyApp as CtaBacktesterApp_jnpy
 
-from pandarallel import pandarallel
-
-
-pandarallel.initialize()
+# from pandarallel import pandarallel
+# pandarallel.initialize()
 
 
 def main():
