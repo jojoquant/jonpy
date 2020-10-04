@@ -1,34 +1,31 @@
-from datetime import datetime, timedelta
 import csv
+from datetime import datetime, timedelta
+from tzlocal import get_localzone
+from copy import copy
+
 import numpy as np
 import pyqtgraph as pg
 import pandas as pd
 import webbrowser
 
-from vnpy.trader.setting import get_settings
-from vnpy.trader.constant import Interval, Direction, Offset
+from vnpy.trader.constant import Direction
 from vnpy.trader.engine import MainEngine
 from vnpy.trader.ui import QtCore, QtWidgets, QtGui
 from vnpy.trader.ui.widget import BaseMonitor, BaseCell, DirectionCell, EnumCell
 from vnpy.trader.ui.editor import CodeEditor
-from vnpy.trader.utility import load_json, save_json
-
 from vnpy.event import Event, EventEngine
 from vnpy.chart import ChartWidget, CandleItem, VolumeItem
-from vnpy.app.cta_strategy.backtesting import OptimizationSetting
-# from vnpy.chart import TechIndexItem
-
-from jnpy.app.cta_backtester.db_operation import DBOperation
+from vnpy.trader.utility import load_json, save_json
 
 from jnpy.DataSource.pytdx.contracts import read_contracts_json_dict
 from jnpy.DataSource.pyccxt.contracts import Exchange
 from .KLine_pro_pyecharts import draw_chart
-
 from ..engine import (
     APP_NAME,
     EVENT_BACKTESTER_LOG,
     EVENT_BACKTESTER_BACKTESTING_FINISHED,
     EVENT_BACKTESTER_OPTIMIZATION_FINISHED,
+    OptimizationSetting
 )
 
 
@@ -51,7 +48,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         self.backtester_engine = main_engine.get_engine(APP_NAME)
         self.class_names = []
         self.settings = {}
-        self.db_instance = DBOperation(get_settings("database."))
+        self.db_instance = self.backtester_engine.db_instance
         self.dbbardata_groupby_df = pd.DataFrame()
         self.pytdx_contracts_dict = read_contracts_json_dict()
         self.pyccxt_exchange = Exchange()
@@ -62,6 +59,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         self.register_event()
         self.backtester_engine.init_engine()
         self.init_strategy_settings()
+        self.load_backtesting_setting()
 
     def init_strategy_settings(self):
         """"""
@@ -80,8 +78,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         # Setting Part
         self.class_combo = QtWidgets.QComboBox()
 
-        # self.symbol_line = QtWidgets.QLineEdit("IF88.CFFEX")
-        self.symbol_line = ""
+        self.symbol_line = QtWidgets.QLineEdit("")
         self.symbol_label = QtWidgets.QLabel()
         self.data_counts_label = QtWidgets.QLabel()
 
@@ -101,8 +98,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         ##########################################
 
         end_dt = datetime.now()
-        # start_dt = end_dt - timedelta(days=3 * 365)  # debug 临时更改
-        start_dt = end_dt - timedelta(days=100)  # debug 临时更改
+        start_dt = end_dt - timedelta(days=3 * 365)
 
         self.start_date_edit = QtWidgets.QDateEdit(
             QtCore.QDate(
@@ -116,9 +112,9 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         )
 
         self.rate_line = QtWidgets.QLineEdit("0.000025")
-        self.slippage_line = QtWidgets.QLineEdit("1")
-        self.size_line = QtWidgets.QLineEdit("10")
-        self.pricetick_line = QtWidgets.QLineEdit("1")
+        self.slippage_line = QtWidgets.QLineEdit("0.2")
+        self.size_line = QtWidgets.QLineEdit("300")
+        self.pricetick_line = QtWidgets.QLineEdit("0.2")
         self.capital_line = QtWidgets.QLineEdit("1000000")
 
         self.inverse_combo = QtWidgets.QComboBox()
@@ -267,7 +263,8 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         # Code Editor
         self.editor = CodeEditor(self.main_engine, self.event_engine)
 
-        # Load setting
+    def load_backtesting_setting(self):
+        """"""
         setting = load_json(self.setting_filename)
         if not setting:
             return
@@ -275,6 +272,8 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         self.class_combo.setCurrentIndex(
             self.class_combo.findText(setting["class_name"])
         )
+
+        self.symbol_line.setText(setting["vt_symbol"])
 
         self.interval_combo.setCurrentIndex(
             self.interval_combo.findText(setting["interval"])
@@ -389,8 +388,6 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
 
     def register_event(self):
         """"""
-        # if self.debug_combo.currentText() == "Debug 运行回测":
-        #     self.signal_log.connect(self.write_log)
         self.signal_log.connect(self.process_log_event)
         self.signal_backtesting_finished.connect(
             self.process_backtesting_finished_event)
@@ -608,8 +605,22 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         start_date = self.start_date_edit.date()
         end_date = self.end_date_edit.date()
 
-        start = datetime(start_date.year(), start_date.month(), start_date.day())
-        end = datetime(end_date.year(), end_date.month(), end_date.day(), 23, 59, 59)
+        start = datetime(
+            start_date.year(),
+            start_date.month(),
+            start_date.day(),
+            tzinfo=get_localzone()
+        )
+
+        end = datetime(
+            end_date.year(),
+            end_date.month(),
+            end_date.day(),
+            23,
+            59,
+            59,
+            tzinfo=get_localzone()
+        )
 
         self.backtester_engine.start_downloading(
             vt_symbol,
@@ -676,7 +687,12 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
     def show_candle_chart(self):
         """"""
         if not self.candle_dialog.is_updated():
+            # TODO 这里增加一个中间层,
+            #  将 jonpy 中的 backtestingEngine 中的 self.history_data_df 转成 self.history_data
             history = self.backtester_engine.get_history_data()
+            if not history and len(self.backtester_engine.backtesting_engine.history_data_df) != 0:
+                self.backtester_engine.backtesting_engine.trans_history_data_df_to_list()
+                history = self.backtester_engine.get_history_data()
             self.candle_dialog.update_history(history)
 
             trades = self.backtester_engine.get_all_trades()
@@ -841,7 +857,16 @@ class BacktestingSettingEditor(QtWidgets.QDialog):
         button.clicked.connect(self.accept)
         form.addRow(button)
 
-        self.setLayout(form)
+        widget = QtWidgets.QWidget()
+        widget.setLayout(form)
+
+        scroll = QtWidgets.QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setWidget(widget)
+
+        vbox = QtWidgets.QVBoxLayout()
+        vbox.addWidget(scroll)
+        self.setLayout(vbox)
 
     def get_setting(self):
         """"""
@@ -1071,7 +1096,16 @@ class OptimizationSettingEditor(QtWidgets.QDialog):
         ga_button.clicked.connect(self.generate_ga_setting)
         grid.addWidget(ga_button, row, 0, 1, 4)
 
-        self.setLayout(grid)
+        widget = QtWidgets.QWidget()
+        widget.setLayout(grid)
+
+        scroll = QtWidgets.QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setWidget(widget)
+
+        vbox = QtWidgets.QVBoxLayout()
+        vbox.addWidget(scroll)
+        self.setLayout(vbox)
 
     def generate_ga_setting(self):
         """"""
@@ -1318,8 +1352,17 @@ class CandleChartDialog(QtWidgets.QDialog):
         """"""
         super().__init__()
 
-        self.dt_ix_map = {}
         self.updated = False
+
+        self.dt_ix_map = {}
+        self.ix_bar_map = {}
+
+        self.high_price = 0
+        self.low_price = 0
+        self.price_range = 0
+
+        self.items = []
+
         self.init_ui()
 
     def init_ui(self):
@@ -1330,21 +1373,63 @@ class CandleChartDialog(QtWidgets.QDialog):
         # Create chart widget
         self.chart = ChartWidget()
         self.chart.add_plot("candle", hide_x_axis=True)
-        # self.chart.add_plot("tech_chart", maximum_height=200)
         self.chart.add_plot("volume", maximum_height=200)
         self.chart.add_item(CandleItem, "candle", "candle")
-        # self.chart.add_item(TechIndexItem, "tech_chart", "tech_chart")
         self.chart.add_item(VolumeItem, "volume", "volume")
         self.chart.add_cursor()
 
-        # Add scatter item for showing tradings
-        self.trade_scatter = pg.ScatterPlotItem()
-        candle_plot = self.chart.get_plot("candle")
-        candle_plot.addItem(self.trade_scatter)
+        # Create help widget
+        text1 = "红色虚线 —— 盈利交易"
+        label1 = QtWidgets.QLabel(text1)
+        label1.setStyleSheet("color:red")
+
+        text2 = "绿色虚线 —— 亏损交易"
+        label2 = QtWidgets.QLabel(text2)
+        label2.setStyleSheet("color:#00FF00")
+
+        text3 = "黄色向上箭头 —— 买入开仓 Buy"
+        label3 = QtWidgets.QLabel(text3)
+        label3.setStyleSheet("color:yellow")
+
+        text4 = "黄色向下箭头 —— 卖出平仓 Sell"
+        label4 = QtWidgets.QLabel(text4)
+        label4.setStyleSheet("color:yellow")
+
+        text5 = "紫红向下箭头 —— 卖出开仓 Short"
+        label5 = QtWidgets.QLabel(text5)
+        label5.setStyleSheet("color:magenta")
+
+        text6 = "紫红向上箭头 —— 买入平仓 Cover"
+        label6 = QtWidgets.QLabel(text6)
+        label6.setStyleSheet("color:magenta")
+
+        hbox1 = QtWidgets.QHBoxLayout()
+        hbox1.addStretch()
+        hbox1.addWidget(label1)
+        hbox1.addStretch()
+        hbox1.addWidget(label2)
+        hbox1.addStretch()
+
+        hbox2 = QtWidgets.QHBoxLayout()
+        hbox2.addStretch()
+        hbox2.addWidget(label3)
+        hbox2.addStretch()
+        hbox2.addWidget(label4)
+        hbox2.addStretch()
+
+        hbox3 = QtWidgets.QHBoxLayout()
+        hbox3.addStretch()
+        hbox3.addWidget(label5)
+        hbox3.addStretch()
+        hbox3.addWidget(label6)
+        hbox3.addStretch()
 
         # Set layout
         vbox = QtWidgets.QVBoxLayout()
         vbox.addWidget(self.chart)
+        vbox.addLayout(hbox1)
+        vbox.addLayout(hbox2)
+        vbox.addLayout(hbox3)
         self.setLayout(vbox)
 
     def update_history(self, history: list):
@@ -1353,47 +1438,170 @@ class CandleChartDialog(QtWidgets.QDialog):
         self.chart.update_history(history)
 
         for ix, bar in enumerate(history):
+            self.ix_bar_map[ix] = bar
             self.dt_ix_map[bar.datetime] = ix
+
+            if not self.high_price:
+                self.high_price = bar.high_price
+                self.low_price = bar.low_price
+            else:
+                self.high_price = max(self.high_price, bar.high_price)
+                self.low_price = min(self.low_price, bar.low_price)
+
+        self.price_range = self.high_price - self.low_price
 
     def update_trades(self, trades: list):
         """"""
-        trade_data = []
+        trade_pairs = generate_trade_pairs(trades)
 
-        for trade in trades:
-            ix = self.dt_ix_map[trade.datetime]
+        candle_plot = self.chart.get_plot("candle")
 
-            scatter = {
-                "pos": (ix, trade.price),
-                "data": 1,
-                "size": 14,
-                "pen": pg.mkPen((255, 255, 255))
+        scatter_data = []
+
+        y_adjustment = self.price_range * 0.001
+
+        for d in trade_pairs:
+            open_ix = self.dt_ix_map[d["open_dt"]]
+            close_ix = self.dt_ix_map[d["close_dt"]]
+            open_price = d["open_price"]
+            close_price = d["close_price"]
+
+            # Trade Line
+            x = [open_ix, close_ix]
+            y = [open_price, close_price]
+
+            if d["direction"] == Direction.LONG and close_price >= open_price:
+                color = "r"
+            elif d["direction"] == Direction.SHORT and close_price <= open_price:
+                color = "r"
+            else:
+                color = "g"
+
+            pen = pg.mkPen(color, width=1.5, style=QtCore.Qt.DashLine)
+            item = pg.PlotCurveItem(x, y, pen=pen)
+
+            self.items.append(item)
+            candle_plot.addItem(item)
+
+            # Trade Scatter
+            open_bar = self.ix_bar_map[open_ix]
+            close_bar = self.ix_bar_map[close_ix]
+
+            if d["direction"] == Direction.LONG:
+                scatter_color = "yellow"
+                open_symbol = "t1"
+                close_symbol = "t"
+                open_side = 1
+                close_side = -1
+                open_y = open_bar.low_price
+                close_y = close_bar.high_price
+            else:
+                scatter_color = "magenta"
+                open_symbol = "t"
+                close_symbol = "t1"
+                open_side = -1
+                close_side = 1
+                open_y = open_bar.high_price
+                close_y = close_bar.low_price
+
+            pen = pg.mkPen(QtGui.QColor(scatter_color))
+            brush = pg.mkBrush(QtGui.QColor(scatter_color))
+            size = 10
+
+            open_scatter = {
+                "pos": (open_ix, open_y - open_side * y_adjustment),
+                "size": size,
+                "pen": pen,
+                "brush": brush,
+                "symbol": open_symbol
             }
 
-            if trade.direction == Direction.LONG:
-                scatter_symbol = "t1"  # Up arrow
-            else:
-                scatter_symbol = "t"  # Down arrow
+            close_scatter = {
+                "pos": (close_ix, close_y - close_side * y_adjustment),
+                "size": size,
+                "pen": pen,
+                "brush": brush,
+                "symbol": close_symbol
+            }
 
-            if trade.offset == Offset.OPEN:
-                scatter_brush = pg.mkBrush((255, 255, 0))  # Yellow
-            else:
-                scatter_brush = pg.mkBrush((0, 0, 255))  # Blue
+            scatter_data.append(open_scatter)
+            scatter_data.append(close_scatter)
 
-            scatter["symbol"] = scatter_symbol
-            scatter["brush"] = scatter_brush
+            # Trade text
+            volume = d["volume"]
+            text_color = QtGui.QColor(scatter_color)
+            open_text = pg.TextItem(f"[{volume}]", color=text_color, anchor=(0.5, 0.5))
+            close_text = pg.TextItem(f"[{volume}]", color=text_color, anchor=(0.5, 0.5))
 
-            trade_data.append(scatter)
+            open_text.setPos(open_ix, open_y - open_side * y_adjustment * 3)
+            close_text.setPos(close_ix, close_y - close_side * y_adjustment * 3)
 
-        self.trade_scatter.setData(trade_data)
+            self.items.append(open_text)
+            self.items.append(close_text)
+
+            candle_plot.addItem(open_text)
+            candle_plot.addItem(close_text)
+
+        trade_scatter = pg.ScatterPlotItem(scatter_data)
+        self.items.append(trade_scatter)
+        candle_plot.addItem(trade_scatter)
 
     def clear_data(self):
         """"""
         self.updated = False
+
+        candle_plot = self.chart.get_plot("candle")
+        for item in self.items:
+            candle_plot.removeItem(item)
+        self.items.clear()
+
         self.chart.clear_all()
 
         self.dt_ix_map.clear()
-        self.trade_scatter.clear()
+        self.ix_bar_map.clear()
 
     def is_updated(self):
         """"""
         return self.updated
+
+
+def generate_trade_pairs(trades: list) -> list:
+    """"""
+    long_trades = []
+    short_trades = []
+    trade_pairs = []
+
+    for trade in trades:
+        trade = copy(trade)
+
+        if trade.direction == Direction.LONG:
+            same_direction = long_trades
+            opposite_direction = short_trades
+        else:
+            same_direction = short_trades
+            opposite_direction = long_trades
+
+        while trade.volume and opposite_direction:
+            open_trade = opposite_direction[0]
+
+            close_volume = min(open_trade.volume, trade.volume)
+            d = {
+                "open_dt": open_trade.datetime,
+                "open_price": open_trade.price,
+                "close_dt": trade.datetime,
+                "close_price": trade.price,
+                "direction": open_trade.direction,
+                "volume": close_volume,
+            }
+            trade_pairs.append(d)
+
+            open_trade.volume -= close_volume
+            if not open_trade.volume:
+                opposite_direction.pop(0)
+
+            trade.volume -= close_volume
+
+        if trade.volume:
+            same_direction.append(trade)
+
+    return trade_pairs

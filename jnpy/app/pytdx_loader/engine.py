@@ -35,6 +35,9 @@ class PytdxLoaderEngine(BaseEngine):
         self.high_head: str = ""
         self.volume_head: str = ""
 
+        self.pytdx_ip_source = IPsSource()
+        self.ex_api = ExhqAPI()
+
     def to_bar_data(self, item,
                     symbol: str,
                     exchange: Exchange,
@@ -141,16 +144,14 @@ class PytdxLoaderEngine(BaseEngine):
         """
         load by filename   %m/%d/%Y
         """
-        # data = pd.read_csv(file_path)
-        ip, port = IPsSource().get_fast_exhq_ip()
-        ex_api = ExhqAPI()
-        with ex_api.connect(ip, port):
+        ip, port = self.pytdx_ip_source.get_fast_exhq_ip()
+        with self.ex_api.connect(ip, port):
             params_dict = {
                 "category": KBarType[interval.name].value,
                 "market": FutureMarketCode[exchange.value].value,
                 "code": symbol,
             }
-            data_df = ex_api.get_all_KBars_df(**params_dict)
+            data_df = self.ex_api.get_all_KBars_df(**params_dict)
 
             # transform column name to vnpy format
             data_df.rename(

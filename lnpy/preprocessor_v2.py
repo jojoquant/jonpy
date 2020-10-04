@@ -1,23 +1,19 @@
-
-
 import pandas as pd
+import numpy as np
 import talib
 
 from jnpy.utils.logging import LogModule
-from lnpy.objects import TalibFuns1Args, TalibFuns3Args, TalibFuns4Args_ohlc, TalibFuns4Args_hlcv
+from lnpy.objects import TalibFuns
 
 
 class PreProcessor(object):
 
     def __init__(
-            self, df: pd.DataFrame, not_used_func_lst: list,
+            self, df: pd.DataFrame, not_used_func_lst: list = [],
             alpha: float = 0.01, beta: float = 0.4,
             method: str = 'pearson'
     ):
-        self.talib_funcs_list = [
-            TalibFuns1Args(), TalibFuns3Args(),
-            TalibFuns4Args_ohlc(), TalibFuns4Args_hlcv()
-        ]
+        self.talib_funcs = TalibFuns()
         self.df = df.dropna()
         self.cols = self.df.columns.tolist()
         self.not_used_func_lst = not_used_func_lst
@@ -33,20 +29,38 @@ class PreProcessor(object):
 
         self.logmodule = LogModule(name="Ta-lib相关性", level="info")
 
-    def extend_df_tech_cols(self):
-        for talib_funs_instance in self.talib_funcs_list:
-            for tech_attr, funcs_list in talib_funs_instance.__dict__.items():
-                if tech_attr not in self.not_used_func_lst:
-                    for func in funcs_list:
-                        if talib_funs_instance.arg_str == "c":
-                            self.df[func] = getattr(talib, func)(self.close)
-                        elif talib_funs_instance.arg_str == "hlc":
-                            self.df[func] = getattr(talib, func)(self.high, self.low, self.close)
-                        elif talib_funs_instance.arg_str == "hlcv":
-                            self.df[func] = getattr(talib, func)(self.high, self.low, self.close, self.volume)
-                        elif talib_funs_instance.arg_str == "ohlc":
-                            self.df[func] = getattr(talib, func)(self.open, self.high, self.low, self.close)
+    def extend_df_tech_cols(self) -> pd.DataFrame:
+        for tech_attr, param_dict in self.talib_funcs.__dict__.items():
+            if tech_attr not in self.not_used_func_lst:
+                for TaIndicatorClassStr, args_output_dict in param_dict.items():
+                    args = {
+                        'close': self.close,
+                        'open': self.open,
+                        'high': self.high,
+                        'low': self.low,
+                        'volume': self.volume,
+                    }
+                    args_list = [args[key] for key in args_output_dict['args']]
+                    col_list = []
+                    for out in args_output_dict['output']:
+                        col_str = f"{TaIndicatorClassStr}_{out}"
+                        self.df[col_str] = pd.Series()
+                        col_list.append(col_str)
+                    ta_result_tuple = getattr(talib, TaIndicatorClassStr)(*args_list)
+
+                    # Debugger
+                    # if TaIndicatorClassStr == "DEMA":
+                    #     rrr = talib.EMA(self.close)
+                    #     print(1)
+
+                    if not isinstance(ta_result_tuple, tuple):
+                        ta_result_tuple = (ta_result_tuple,)
+                    for col, array in zip(col_list, ta_result_tuple):
+                        self.df[col] = array
+
         self.df = self.df.fillna(method='bfill')
+        self.df = self.df.replace([np.inf, -np.inf], np.nan).dropna(axis=1)
+        return self.df
 
     def high_correlation_filter(self, tech_features_df: pd.DataFrame) -> list:
         # 删除原始dataframe的列，防止这些列被删掉
@@ -82,8 +96,9 @@ class PreProcessor(object):
 
 
 if __name__ == "__main__":
-    df = pd.read_csv('/home/fangyang/桌面/python_project/vnpy/vnpy/app/cta_backtester_jnpy/DRL/data/RBL8.csv')
+    df = pd.read_csv('/home/fangyang/桌面/python_project/vnpy/vnpy/app/cta_strategy/strategies/rbl8_1m.csv')
     not_used_func_lst = ['pattern_recognition']
-    a = PreProcessor(df, not_used_func_lst=not_used_func_lst)
+    # a = PreProcessor(df, not_used_func_lst=not_used_func_lst)
+    a = PreProcessor(df)
     df = a.get_filtered_cols_df()
     print(1)

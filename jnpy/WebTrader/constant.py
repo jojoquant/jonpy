@@ -43,5 +43,18 @@ BACKTEST_STATISTICS_RESULT_MAP = {
     "sharpe_ratio": "夏普比率",
     "return_drawdown_ratio": "收益回撤比"
 }
+
+CTP_CONNECT_MAP = {
+    'account': '用户名',
+    'password': '密码',
+    'broker_id': '经纪商代码',
+    'author_code': '授权编码',
+    'td_address': '交易服务器',
+    'md_address': '行情服务器',
+    "appid": "产品名称",
+    "auth_code": "授权编码",
+    "product_info": "产品信息",
+}
+
 if __name__ == "__main__":
     pass
