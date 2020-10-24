@@ -6,5 +6,8 @@
 @Author   :   Fangyang
 """
 
+from .widget import CsvLoaderWidget
+
+
 if __name__ == "__main__":
     pass
