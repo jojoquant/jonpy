@@ -73,6 +73,9 @@ class PortfolioManager(QtWidgets.QWidget):
         self.tree.header().setDefaultAlignment(QtCore.Qt.AlignCenter)
         self.tree.header().setStretchLastSection(False)
 
+        delegate = TreeDelegate()
+        self.tree.setItemDelegate(delegate)
+
         self.monitor = PortfolioTradeMonitor()
 
         expand_button = QtWidgets.QPushButton("全部展开")
@@ -130,7 +133,9 @@ class PortfolioManager(QtWidgets.QWidget):
         """"""
         trades = self.main_engine.get_all_trades()
         for trade in trades:
-            self.monitor.update_trade(trade)
+            # Ignore trade with no order reference
+            if hasattr(trade, "reference"):
+                self.monitor.update_trade(trade)
 
     def get_portfolio_item(self, reference: str) -> QtWidgets.QTreeWidgetItem:
         """"""
@@ -310,3 +315,17 @@ class PortfolioTradeMonitor(QtWidgets.QTableWidget):
                     self.showRow(row)
                 else:
                     self.hideRow(row)
+
+
+class TreeDelegate(QtWidgets.QStyledItemDelegate):
+    """"""
+
+    def sizeHint(
+        self,
+        option: QtWidgets.QStyleOptionViewItem,
+        index: QtCore.QModelIndex
+    ) -> QtCore.QSize:
+        """"""
+        size = super().sizeHint(option, index)
+        size.setHeight(40)
+        return size
