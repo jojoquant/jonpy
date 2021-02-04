@@ -121,7 +121,7 @@ def init_models(db: Database, driver: Driver):
             bar = BarData(
                 symbol=self.symbol,
                 exchange=Exchange(self.exchange),
-                datetime=self.datetime.replace(tzinfo=DB_TZ),
+                datetime=DB_TZ.localize(self.datetime),
                 interval=Interval(self.interval),
                 volume=self.volume,
                 open_price=self.open_price,
@@ -285,7 +285,7 @@ def init_models(db: Database, driver: Driver):
             tick = TickData(
                 symbol=self.symbol,
                 exchange=Exchange(self.exchange),
-                datetime=self.datetime.replace(tzinfo=DB_TZ),
+                datetime=DB_TZ.localize(self.datetime),
                 name=self.name,
                 volume=self.volume,
                 open_interest=self.open_interest,
