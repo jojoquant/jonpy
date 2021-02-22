@@ -84,7 +84,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
 
         #############################################
         # fangyang add, 根据数据库内容进行选项显示
-        self.dbbardata_groupby_df = self.db_instance.get_groupby_data_from_sql_db()
+        self.dbbardata_groupby_df = self.db_instance.get_groupby_data()
 
         self.exchange_combo = QtWidgets.QComboBox()
         self.exchange_combo.addItems(self.dbbardata_groupby_df['exchange'].drop_duplicates().to_list())
@@ -359,13 +359,13 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
 
             # TODO 增加重置日期后统计数据数目
             # 重置日期
-            db_end_dt = self.db_instance.get_end_date_from_db(
+            db_end_dt = self.db_instance.get_end_date(
                 symbol=current_symbol,
                 exchange=current_exchange,
                 interval=current_interval
             )
             db_end_dt = datetime.strptime(db_end_dt, '%Y-%m-%d %H:%M:%S')
-            db_start_dt = self.db_instance.get_start_date_from_db(
+            db_start_dt = self.db_instance.get_start_date(
                 symbol=current_symbol,
                 exchange=current_exchange,
                 interval=current_interval

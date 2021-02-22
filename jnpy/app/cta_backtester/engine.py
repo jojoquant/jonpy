@@ -2,15 +2,15 @@ from datetime import datetime
 from threading import Thread
 
 from vnpy.event import Event, EventEngine
+from vnpy.trader.database import updated_settings
 from vnpy.trader.engine import MainEngine
 
 from vnpy.app.cta_backtester.engine import BacktesterEngine
 from vnpy.app.cta_strategy.backtesting import OptimizationSetting  # 给widget使用, 和vnpy widget尽量一致, 这里不要删除
-from vnpy.trader.setting import get_settings
 
 from jnpy.app.cta_backtester.DRL.main import accept_bars_data_list
 from jnpy.app.cta_backtester.backtesting import BacktestingEngineJnpy
-from jnpy.app.cta_backtester.db_operation import DBOperation
+from jnpy.app.pd_db_operator.db_operation import DBOperation
 
 
 APP_NAME = "CtaBacktester_jnpy"
@@ -29,7 +29,7 @@ class BacktesterEngineJnpy(BacktesterEngine):
         """"""
         super().__init__(main_engine, event_engine)
         self.engine_name = APP_NAME
-        self.db_instance = DBOperation(get_settings("database."))
+        self.db_instance = DBOperation(updated_settings)
 
     def init_engine(self):
         """"""
