@@ -15,8 +15,7 @@ from pandas.tseries.offsets import Day
 
 from vnpy.trader.object import BarData, Exchange
 from vnpy.trader.constant import Exchange, Interval
-from vnpy.trader.database import database_manager
-from vnpy.trader.database.database import DB_TZ
+from vnpy.trader.database import database_manager, DB_TZ
 
 from vnpy.app.cta_strategy.backtesting import BacktestingEngine
 from vnpy.app.cta_strategy.base import BacktestingMode, INTERVAL_DELTA_MAP

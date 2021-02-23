@@ -11,20 +11,17 @@ from functools import lru_cache
 
 from vnpy.trader.object import BarData
 from vnpy.trader.constant import Exchange, Interval
-from vnpy.trader.database.database import DB_TZ
+
 from vnpy.trader.utility import get_file_path
 from jnpy.utils import timeit_cls_method_wrapper
 
 
 class DBOperation:
     def __init__(self, settings_dict):
-        self.DBOCls_init_dict = {
-            "settings_dict": settings_dict,
-            "file_path_str": get_file_path(settings_dict['database'])
-        }
-        Pd_DB_str = f"Pd{self.DBOCls_init_dict['settings_dict']['driver'].capitalize()}"
+        self.settings_dict = settings_dict
+        Pd_DB_str = f"Pd{self.settings_dict['database.driver'].capitalize()}"
         PdDBClsPkg = importlib.import_module(f"jnpy.app.pd_db_operator.db_classes.{Pd_DB_str}")
-        self.pd_dbo = PdDBClsPkg.DBOCls(self.DBOCls_init_dict)
+        self.pd_dbo = PdDBClsPkg.DBOCls(self.settings_dict)
 
     def get_groupby_data(self):
         return self.pd_dbo.get_groupby_data()
@@ -77,9 +74,10 @@ if __name__ == "__main__":
         "interval": "d"
     }
 
-    from vnpy.trader.database import updated_settings
+    from vnpy.trader.database import SETTINGS
+
     # settings = get_settings("database.")
-    dbo = DBOperation(updated_settings)
+    dbo = DBOperation(SETTINGS)
     rr1 = dbo.get_groupby_data()
     rr2 = dbo.get_end_date(**dbbardata_info_dict)
     rr3 = dbo.get_start_date(**dbbardata_info_dict)

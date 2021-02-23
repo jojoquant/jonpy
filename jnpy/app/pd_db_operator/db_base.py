@@ -9,9 +9,8 @@ from vnpy.trader.utility import get_file_path
 
 class PdBase(ABC):
 
-    def __init__(self, DBOCls_init_dict):
-        self.settings_dict = DBOCls_init_dict["settings_dict"]
-        self.file_path_str = DBOCls_init_dict["file_path_str"]
+    def __init__(self, settings_dict):
+        self.settings_dict = settings_dict
         self.sqlite_os = ""
         self.os_str = platform.system()
 

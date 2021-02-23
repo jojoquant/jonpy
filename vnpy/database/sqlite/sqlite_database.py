@@ -2,6 +2,7 @@
 from datetime import datetime
 from typing import List
 
+from PyQt5.QtWidgets import QApplication
 from peewee import (
     AutoField,
     CharField,
@@ -129,7 +130,7 @@ class SqliteDatabase(BaseDatabase):
         self.db.connect()
         self.db.create_tables([DbBarData, DbTickData, DbBarOverview])
 
-    def save_bar_data(self, bars: List[BarData]) -> bool:
+    def save_bar_data(self, bars: List[BarData], progress_bar_dict=None) -> bool:
         """"""
         # Store key parameters
         bar = bars[0]
@@ -152,8 +153,22 @@ class SqliteDatabase(BaseDatabase):
 
         # Upsert data into database
         with self.db.atomic():
+            total_sz = len(data)
+            loaded = 0
             for c in chunked(data, 50):
                 DbBarData.insert_many(c).on_conflict_replace().execute()
+
+                if 'save_progress_bar' in progress_bar_dict:
+                    loaded += 50
+                    percent_saved = min(round(100 * loaded / total_sz, 2), 100)
+                    QApplication.processEvents()
+                    progress_bar_dict['save_progress_bar'].setValue(percent_saved)
+
+                elif 'web_progress' in progress_bar_dict:
+                    loaded += 50
+                    percent_saved = min(round(100 * loaded / total_sz, 2), 100)
+                    progress_bar_dict['web_progress'].write_message({'progress': percent_saved})
+                    print(f"web progress: {percent_saved}")
 
         # Update bar overview
         overview: DbBarOverview = DbBarOverview.get_or_none(

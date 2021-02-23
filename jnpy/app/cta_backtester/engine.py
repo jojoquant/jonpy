@@ -2,7 +2,7 @@ from datetime import datetime
 from threading import Thread
 
 from vnpy.event import Event, EventEngine
-from vnpy.trader.database import updated_settings
+from vnpy.trader.setting import SETTINGS
 from vnpy.trader.engine import MainEngine
 
 from vnpy.app.cta_backtester.engine import BacktesterEngine
@@ -29,7 +29,7 @@ class BacktesterEngineJnpy(BacktesterEngine):
         """"""
         super().__init__(main_engine, event_engine)
         self.engine_name = APP_NAME
-        self.db_instance = DBOperation(updated_settings)
+        self.db_instance = DBOperation(SETTINGS)
 
     def init_engine(self):
         """"""

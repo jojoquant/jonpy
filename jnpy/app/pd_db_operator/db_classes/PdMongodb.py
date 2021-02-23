@@ -1,11 +1,8 @@
 import pandas as pd
 
 from datetime import datetime
-from functools import lru_cache
-
 from pymongo import MongoClient
 
-from jnpy.utils import timeit_cls_method_wrapper
 from jnpy.app.pd_db_operator.db_base import PdBase
 from vnpy.trader.constant import Exchange, Interval
 from vnpy.trader.object import BarData
@@ -13,20 +10,20 @@ from vnpy.trader.object import BarData
 
 class DBOCls(PdBase):
 
-    def __init__(self, DBOCls_init_dict):
-        super(DBOCls, self).__init__(DBOCls_init_dict)
+    def __init__(self, settings_dict):
+        super(DBOCls, self).__init__(settings_dict)
         self.client = self.new_engine()
 
     def new_engine(self):
         return MongoClient(
-            host=self.settings_dict['host'],
-            port=self.settings_dict['port'],
-            # username=self.settings_dict['user'],
-            # password=self.settings_dict['password']
+            host=self.settings_dict['database.host'],
+            port=self.settings_dict['database.port'],
+            # username=self.settings_dict['database.user'],
+            # password=self.settings_dict['database.password']
         )
 
     def get_groupby_data(self):
-        db = self.client[self.settings_dict["database"]]
+        db = self.client[self.settings_dict["database.database"]]
         collection = db["db_bar_data"]
         query = [
             {
@@ -54,7 +51,7 @@ class DBOCls(PdBase):
         #  order by datetime desc limit 1;
         #  '''
 
-        db = self.client[self.settings_dict["database"]]
+        db = self.client[self.settings_dict["database.database"]]
         collection = db["db_bar_data"]
         query = (
             {"symbol": symbol, "exchange": exchange, "interval": interval},
@@ -74,7 +71,7 @@ class DBOCls(PdBase):
          order by datetime asc limit 1;
          '''
 
-        db = self.client[self.settings_dict["database"]]
+        db = self.client[self.settings_dict["database.database"]]
         collection = db["db_bar_data"]
         query = (
             {"symbol": symbol, "exchange": exchange, "interval": interval},
@@ -87,15 +84,13 @@ class DBOCls(PdBase):
         )
         return df['datetime'].astype(str).values[0]
 
-    @lru_cache(maxsize=999)
-    @timeit_cls_method_wrapper
     def get_bar_data_df(
             self, symbol: str, exchange: str, interval: str,
             start: datetime.date = None, end: datetime.date = None) -> pd.DataFrame:
         datetime_start = {"$gte": datetime(start.year, start.month, start.day)} if start else {}
         datetime_end = {"$lte": datetime(end.year, end.month, end.day)} if end else {"$lte": datetime.now()}
 
-        db = self.client[self.settings_dict["database"]]
+        db = self.client[self.settings_dict["database.database"]]
         collection = db["db_bar_data"]
         query = (
             {
@@ -109,7 +104,6 @@ class DBOCls(PdBase):
 
         return df
 
-    @timeit_cls_method_wrapper
     def get_bar_data(self, symbol, exchange, interval, start=None, end=None):
         ''' 速度没有本来的列表推导式快 '''
         df = self.get_bar_data_df(symbol, exchange, interval, start=start, end=end)

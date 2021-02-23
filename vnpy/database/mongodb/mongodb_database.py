@@ -2,6 +2,7 @@
 from datetime import datetime
 from typing import List
 
+from PyQt5.QtWidgets import QApplication
 from mongoengine import (
     Document,
     DateTimeField,
@@ -150,7 +151,7 @@ class MongodbDatabase(BaseDatabase):
             authentication_source=authentication_source,
         )
 
-    def save_bar_data(self, bars: List[BarData]) -> bool:
+    def save_bar_data(self, bars: List[BarData], progress_bar_dict) -> bool:
         """"""
         # Store key parameters
         bar = bars[0]
@@ -158,8 +159,12 @@ class MongodbDatabase(BaseDatabase):
         exchange = bar.exchange
         interval = bar.interval
 
+        total_sz = len(bars)
+        percent_1 = round(total_sz / 100)
+        progress_bar_display = 1
+
         # Upsert data into mongodb
-        for bar in bars:
+        for idx, bar in enumerate(bars):
             bar.datetime = convert_tz(bar.datetime)
 
             d = bar.__dict__
@@ -175,6 +180,12 @@ class MongodbDatabase(BaseDatabase):
                 interval=d["interval"],
                 datetime=d["datetime"],
             ).update_one(upsert=True, **param)
+
+            if idx % percent_1 == 0:
+                percent_saved = min(progress_bar_display, 100)
+                progress_bar_display += 1
+                QApplication.processEvents()
+                progress_bar_dict['save_progress_bar'].setValue(percent_saved)
 
         # Update bar overview
         try:

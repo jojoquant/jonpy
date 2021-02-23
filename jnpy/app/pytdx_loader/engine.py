@@ -1,4 +1,3 @@
-
 import time
 
 import pandas as pd
@@ -79,7 +78,7 @@ class PytdxLoaderEngine(BaseEngine):
             volume_head: str,
             open_interest_head: str,
             datetime_format: str,
-            progress_bar_dict:dict,
+            progress_bar_dict: dict,
             opt_str: str
     ):
         start_time = time.time()

@@ -9,16 +9,19 @@ from jnpy.utils import timeit_cls_method_wrapper
 from jnpy.app.pd_db_operator.db_base import PdBase
 from vnpy.trader.constant import Exchange, Interval
 from vnpy.trader.object import BarData
+from vnpy.trader.utility import get_file_path
 
 
 class DBOCls(PdBase):
 
-    def __init__(self, DBOCls_init_dict):
-        super(DBOCls, self).__init__(DBOCls_init_dict)
+    def __init__(self, settings_dict):
+        super(DBOCls, self).__init__(settings_dict)
+        self.file_path_str = get_file_path(settings_dict['database.database'])
         self.engine = self.new_engine()
 
+
     def new_engine(self):
-        return create_engine(f"{self.settings_dict['driver']}://{self.sqlite_os}{self.file_path_str}")
+        return create_engine(f"{self.settings_dict['database.driver']}://{self.sqlite_os}{self.file_path_str}")
 
     def get_groupby_data(self):
         sql = "select exchange, symbol, interval, count(1) from dbbardata group by symbol, interval, exchange;"
@@ -30,6 +33,9 @@ class DBOCls(PdBase):
          order by datetime desc limit 1;
          '''
         df = pd.read_sql(sql, con=self.engine)
+
+        if df.empty:
+            return df
         return df['datetime'].values[0]
 
     def get_start_date(self, symbol, exchange, interval):
@@ -39,10 +45,10 @@ class DBOCls(PdBase):
          '''
         df = pd.read_sql(sql, con=self.engine)
         # str '2013-08-19 15:00:00'
+        if df.empty:
+            return df
         return df['datetime'].values[0]
 
-    @lru_cache(maxsize=999)
-    @timeit_cls_method_wrapper
     def get_bar_data_df(self, symbol, exchange, interval, start=None, end=None):
         datetime_start = f" and datetime >= '{start}'" if start else ""
         datetime_end = f" and datetime <= '{end}'" if end else f" and datetime <= '{datetime.now()}'"
@@ -52,15 +58,19 @@ class DBOCls(PdBase):
          {datetime_start} {datetime_end}; 
          '''
         df = pd.read_sql(sql, con=self.engine).drop('id', axis=1)
+
+        if df.empty:
+            return df
+
         df['datetime'] = pd.to_datetime(df['datetime'])
         return df
 
-    @timeit_cls_method_wrapper
     def get_bar_data(self, symbol, exchange, interval, start=None, end=None):
         ''' 速度没有本来的列表推导式快 '''
         df = self.get_bar_data_df(symbol, exchange, interval, start=start, end=end)
         print(f"{self} start trans df to list")
         return df.parallel_apply(deal_func, axis=1).tolist()
+
 
 def deal_func(x):
     bar = BarData(
