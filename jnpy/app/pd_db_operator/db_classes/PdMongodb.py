@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 
 from datetime import datetime
 from functools import lru_cache
@@ -50,7 +49,6 @@ class DBOCls(PdBase):
         )
 
     def get_end_date(self, symbol, exchange, interval):
-
         # sql = f'''select * from dbbardata
         #  where symbol='{symbol}' and exchange='{exchange}' and interval='{interval}'
         #  order by datetime desc limit 1;
@@ -71,7 +69,6 @@ class DBOCls(PdBase):
         return df['datetime'].astype(str).values[0]
 
     def get_start_date(self, symbol, exchange, interval):
-
         sql = f'''select * from dbbardata 
          where symbol='{symbol}' and exchange='{exchange}' and interval='{interval}' 
          order by datetime asc limit 1;
@@ -92,16 +89,24 @@ class DBOCls(PdBase):
 
     @lru_cache(maxsize=999)
     @timeit_cls_method_wrapper
-    def get_bar_data_df(self, symbol, exchange, interval, start=None, end=None):
-        datetime_start = f" and datetime >= '{start}'" if start else ""
-        datetime_end = f" and datetime <= '{end}'" if end else f" and datetime <= '{datetime.now()}'"
+    def get_bar_data_df(
+            self, symbol: str, exchange: str, interval: str,
+            start: datetime.date = None, end: datetime.date = None) -> pd.DataFrame:
+        datetime_start = {"$gte": datetime(start.year, start.month, start.day)} if start else {}
+        datetime_end = {"$lte": datetime(end.year, end.month, end.day)} if end else {"$lte": datetime.now()}
 
-        sql = f'''select * from dbbardata 
-         where symbol='{symbol}' and exchange='{exchange}' and interval='{interval}'
-         {datetime_start} {datetime_end}; 
-         '''
-        df = pd.read_sql(sql, con=self.engine).drop('id', axis=1)
-        df['datetime'] = pd.to_datetime(df['datetime'])
+        db = self.client[self.settings_dict["database"]]
+        collection = db["db_bar_data"]
+        query = (
+            {
+                "symbol": symbol, "exchange": exchange, "interval": interval,
+                "datetime": {**datetime_start, **datetime_end}
+            },
+            {'_id': 0}
+        )
+
+        df = pd.json_normalize(list(collection.find(*query)))
+
         return df
 
     @timeit_cls_method_wrapper

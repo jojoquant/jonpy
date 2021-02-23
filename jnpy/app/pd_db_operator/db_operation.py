@@ -85,7 +85,6 @@ if __name__ == "__main__":
     rr3 = dbo.get_start_date(**dbbardata_info_dict)
     rr4 = dbo.get_bar_data_df(**dbbardata_info_dict)
 
-    # data = dbo.get_bar_data(**dbbardata_info_dict)
     df = dbo.get_bar_data_df(**dbbardata_info_dict)
     for row in df.iterrows():
         print(1)

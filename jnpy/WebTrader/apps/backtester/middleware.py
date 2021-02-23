@@ -16,7 +16,7 @@ from vnpy.trader.setting import get_settings
 from vnpy.trader.utility import load_json, save_json
 
 from jnpy.app.cta_backtester import BacktesterEngineJnpy
-from jnpy.app.cta_backtester.db_operation import DBOperation
+from jnpy.app.pd_db_operator.db_operation import DBOperation
 from jnpy.DataSource.pytdx.contracts import read_contracts_json_dict
 from jnpy.DataSource.pyccxt.contracts import Exchange
 from jnpy.WebTrader.constant import DATE_FORMAT, BACKTEST_STATISTICS_RESULT_MAP
@@ -64,7 +64,7 @@ pyccxt_exchange = Exchange()
 
 
 def getExchangeArray():
-    dbbardata_groupby_df = db_instance.get_groupby_data_from_sql_db()
+    dbbardata_groupby_df = db_instance.get_groupby_data_from_db()
     return dbbardata_groupby_df['exchange'].drop_duplicates().to_list()
 
 
@@ -73,7 +73,7 @@ def onExchangeActivated(current_exchange):
     exchange变化触发, 返回db中相应 symbol list
     '''
 
-    dbbardata_groupby_df = db_instance.get_groupby_data_from_sql_db()
+    dbbardata_groupby_df = db_instance.get_groupby_data_from_db()
 
     return dbbardata_groupby_df[
         dbbardata_groupby_df['exchange'] == current_exchange
@@ -93,7 +93,7 @@ def onSymbolActivated(current_symbol, current_exchange):
     else:
         symbol_name = current_symbol
 
-    dbbardata_groupby_df = db_instance.get_groupby_data_from_sql_db()
+    dbbardata_groupby_df = db_instance.get_groupby_data_from_db()
 
     period_array = dbbardata_groupby_df[
         (dbbardata_groupby_df['symbol'] == current_symbol)
@@ -108,7 +108,7 @@ def onIntervalActivated(current_symbol, current_exchange, current_interval):
     Period 变化触发, 重置 Period
     '''
 
-    dbbardata_groupby_df = db_instance.get_groupby_data_from_sql_db()
+    dbbardata_groupby_df = db_instance.get_groupby_data_from_db()
 
     count_series = dbbardata_groupby_df[
         (dbbardata_groupby_df['symbol'] == current_symbol)
