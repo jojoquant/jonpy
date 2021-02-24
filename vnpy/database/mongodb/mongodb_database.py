@@ -1,6 +1,6 @@
 """"""
 from datetime import datetime
-from typing import List
+from typing import List, Callable
 
 from PyQt5.QtWidgets import QApplication
 from mongoengine import (
@@ -151,17 +151,13 @@ class MongodbDatabase(BaseDatabase):
             authentication_source=authentication_source,
         )
 
-    def save_bar_data(self, bars: List[BarData], progress_bar_dict) -> bool:
+    def save_bar_data(self, bars: List[BarData], update_qt_progress_bar: Callable) -> bool:
         """"""
         # Store key parameters
         bar = bars[0]
         symbol = bar.symbol
         exchange = bar.exchange
         interval = bar.interval
-
-        total_sz = len(bars)
-        percent_1 = round(total_sz / 100)
-        progress_bar_display = 1
 
         # Upsert data into mongodb
         for idx, bar in enumerate(bars):
@@ -181,11 +177,7 @@ class MongodbDatabase(BaseDatabase):
                 datetime=d["datetime"],
             ).update_one(upsert=True, **param)
 
-            if idx % percent_1 == 0:
-                percent_saved = min(progress_bar_display, 100)
-                progress_bar_display += 1
-                QApplication.processEvents()
-                progress_bar_dict['save_progress_bar'].setValue(percent_saved)
+            update_qt_progress_bar(len(bars), idx)
 
         # Update bar overview
         try:
@@ -235,12 +227,12 @@ class MongodbDatabase(BaseDatabase):
             ).update_one(upsert=True, **param)
 
     def load_bar_data(
-        self,
-        symbol: str,
-        exchange: Exchange,
-        interval: Interval,
-        start: datetime,
-        end: datetime
+            self,
+            symbol: str,
+            exchange: Exchange,
+            interval: Interval,
+            start: datetime,
+            end: datetime
     ) -> List[BarData]:
         """"""
         s: QuerySet = DbBarData.objects(
@@ -264,11 +256,11 @@ class MongodbDatabase(BaseDatabase):
         return bars
 
     def load_tick_data(
-        self,
-        symbol: str,
-        exchange: Exchange,
-        start: datetime,
-        end: datetime
+            self,
+            symbol: str,
+            exchange: Exchange,
+            start: datetime,
+            end: datetime
     ) -> List[TickData]:
         """"""
         s: QuerySet = DbTickData.objects(
@@ -290,10 +282,10 @@ class MongodbDatabase(BaseDatabase):
         return ticks
 
     def delete_bar_data(
-        self,
-        symbol: str,
-        exchange: Exchange,
-        interval: Interval
+            self,
+            symbol: str,
+            exchange: Exchange,
+            interval: Interval
     ) -> int:
         """"""
         count = DbBarData.objects(
@@ -312,9 +304,9 @@ class MongodbDatabase(BaseDatabase):
         return count
 
     def delete_tick_data(
-        self,
-        symbol: str,
-        exchange: Exchange
+            self,
+            symbol: str,
+            exchange: Exchange
     ) -> int:
         """"""
         count = DbTickData.objects(
@@ -373,8 +365,8 @@ class MongodbDatabase(BaseDatabase):
                     exchange=id_data["exchange"],
                     interval=id_data["interval"],
                 )
-                .order_by("+datetime")
-                .first()
+                    .order_by("+datetime")
+                    .first()
             )
             overview.start = start_bar.datetime
 
@@ -384,8 +376,8 @@ class MongodbDatabase(BaseDatabase):
                     exchange=id_data["exchange"],
                     interval=id_data["interval"],
                 )
-                .order_by("-datetime")
-                .first()
+                    .order_by("-datetime")
+                    .first()
             )
             overview.end = end_bar.datetime
 

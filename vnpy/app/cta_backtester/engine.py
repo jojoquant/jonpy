@@ -85,6 +85,13 @@ class BacktesterEngine(BaseEngine):
         path2 = Path.cwd().joinpath("strategies")
         self.load_strategy_class_from_folder(path2, "strategies")
 
+        ###############
+        # fangyang add
+        path_jnpy = app_path.parent.parent.joinpath("jnpy", "strategies")
+        self.load_strategy_class_from_folder(
+            path_jnpy, "jnpy.strategies")
+        ###############
+
     def load_strategy_class_from_folder(self, path: Path, module_name: str = ""):
         """
         Load strategy class from certain folder.

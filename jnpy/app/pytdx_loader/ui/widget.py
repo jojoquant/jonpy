@@ -1,6 +1,7 @@
 """
 Author: Zehua Wei (nanoric)
 """
+from PyQt5.QtWidgets import QApplication
 
 from vnpy.event import EventEngine
 from vnpy.trader.constant import Exchange, Interval
@@ -21,7 +22,6 @@ class PytdxLoaderWidget(QtWidgets.QWidget):
 
         self.engine = main_engine.get_engine(APP_NAME)
 
-        self.progress_bar_dict = {}
         self.init_ui()
 
     def init_ui(self):
@@ -37,6 +37,9 @@ class PytdxLoaderWidget(QtWidgets.QWidget):
 
         load_button = QtWidgets.QPushButton("载入数据.to_db")
         load_button.clicked.connect(self.load_data)
+
+        load_button2 = QtWidgets.QPushButton("高速载入数据.high_to_db")
+        load_button2.clicked.connect(self.load_data)
 
         to_csv_button = QtWidgets.QPushButton("载入数据.to_csv")
         to_csv_button.clicked.connect(self.load_data)
@@ -75,9 +78,8 @@ class PytdxLoaderWidget(QtWidgets.QWidget):
         save_progress_label = QtWidgets.QLabel("保存进度信息")
         save_progress_label.setAlignment(QtCore.Qt.AlignCenter)
 
-        save_progress_bar = QtWidgets.QProgressBar()
-        save_progress_bar.setAlignment(QtCore.Qt.AlignCenter)
-        self.progress_bar_dict['save_progress_bar'] = save_progress_bar
+        self.save_progress_bar = QtWidgets.QProgressBar()
+        self.save_progress_bar.setAlignment(QtCore.Qt.AlignCenter)
 
         form_left = QtWidgets.QFormLayout()
         form_left.addRow(QtWidgets.QLabel())
@@ -100,8 +102,9 @@ class PytdxLoaderWidget(QtWidgets.QWidget):
         form_left.addRow("时间格式", self.format_edit)
         form_left.addRow(QtWidgets.QLabel())
         form_left.addRow(save_progress_label)
-        form_left.addRow(save_progress_bar)
+        form_left.addRow(self.save_progress_bar)
         form_left.addRow(load_button)
+        form_left.addRow(load_button2)
         form_left.addRow(to_csv_button)
         form_left_widget = QtWidgets.QWidget()
         form_left_widget.setLayout(form_left)
@@ -153,10 +156,12 @@ class PytdxLoaderWidget(QtWidgets.QWidget):
             QtWidgets.QMessageBox.information(self, "载入失败！", err_msg)
             print(err_msg)
 
-
-
     def load_data(self):
         """"""
+        if self.symbol_combo.currentData() is None:
+            QtWidgets.QMessageBox.warning(self, "载入失败", "请选择数据代码！")
+            return
+
         symbol_code = self.symbol_combo.currentData().split(".")[0]
         symbol_type = self.symbol_type.text()
         exchange = self.exchange_combo.currentData()
@@ -186,7 +191,7 @@ class PytdxLoaderWidget(QtWidgets.QWidget):
             volume_head,
             open_interest_head,
             datetime_format,
-            progress_bar_dict=self.progress_bar_dict,
+            update_qt_progress_bar=self.update_qt_progress_bar,
             opt_str=click_button_text
         )
 
@@ -200,3 +205,10 @@ class PytdxLoaderWidget(QtWidgets.QWidget):
         总数量：{count}\n\
         "
         QtWidgets.QMessageBox.information(self, "载入成功！", msg)
+
+    def update_qt_progress_bar(self, data_length, idx):
+        percent_1 = round(data_length / 100)
+        if idx % percent_1 == 0:
+            percent_saved = min(idx, 100)
+            # QApplication.processEvents()
+            self.save_progress_bar.setValue(percent_saved)

@@ -49,6 +49,10 @@ class PdBase(ABC):
         ''' 速度没有本来的列表推导式快 '''
         pass
 
+    @abstractmethod
+    def write_df_to_db(self, df, table, append, callback=None):
+        pass
+
 
 if __name__ == "__main__":
     pass

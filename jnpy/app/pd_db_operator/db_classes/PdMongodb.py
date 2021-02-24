@@ -110,6 +110,31 @@ class DBOCls(PdBase):
         print(f"{self} start trans df to list")
         return df.parallel_apply(deal_func, axis=1).tolist()
 
+    def write_df_to_db(self, df, table: str = None, append: bool = True, callback=None):
+
+        db = self.client[self.settings_dict["database.database"]]
+        collection = db["db_bar_data"] if table is None else db[table]
+
+        # To write
+        if not append:
+            collection.delete_many({})  # Destroy the collection
+
+        my_list = df.to_dict('records')
+
+        nrows = len(my_list)
+        chunksize = round(nrows / 10)  # 暂时设置数据分段为10
+        if nrows == 0:
+            return
+
+        for i in range(int(nrows / chunksize) + 1):
+            start_i = i * chunksize
+            end_i = min((i + 1) * chunksize, nrows)
+            if start_i >= end_i:
+                break
+
+            collection.insert_many(my_list[start_i:end_i])
+            callback(nrows, start_i)
+
 
 def deal_func(x):
     bar = BarData(

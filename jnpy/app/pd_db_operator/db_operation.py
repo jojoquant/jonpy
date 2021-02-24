@@ -12,7 +12,6 @@ from functools import lru_cache
 from vnpy.trader.object import BarData
 from vnpy.trader.constant import Exchange, Interval
 
-from vnpy.trader.utility import get_file_path
 from jnpy.utils import timeit_cls_method_wrapper
 
 
@@ -43,6 +42,9 @@ class DBOperation:
         df = self.get_bar_data_df(symbol, exchange, interval, start=start, end=end)
         print(f"{self} start trans df to list")
         return df.parallel_apply(deal_func, axis=1).tolist()
+
+    def write_df_to_db(self, df, table, append=True, callback=None):
+        self.pd_dbo.write_df_to_db(df, table, append, callback=callback)
 
 
 def deal_func(x):

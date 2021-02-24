@@ -1,13 +1,16 @@
 import time
+from typing import Callable
 
 import pandas as pd
 from datetime import datetime
 
+from jnpy.app.pd_db_operator.db_operation import DBOperation
 from vnpy.event import EventEngine
 from vnpy.trader.constant import Exchange, Interval
 from vnpy.trader.database import database_manager
 from vnpy.trader.engine import BaseEngine, MainEngine
 from vnpy.trader.object import BarData
+from vnpy.trader.setting import SETTINGS
 from vnpy.trader.utility import get_folder_path
 
 from jnpy.DataSource.pytdx import ExhqAPI, IPsSource, FutureMarketCode, KBarType
@@ -36,6 +39,8 @@ class PytdxLoaderEngine(BaseEngine):
 
         self.pytdx_ip_source = IPsSource()
         self.ex_api = ExhqAPI()
+
+        self.db_instance = DBOperation(SETTINGS)
 
     def to_bar_data(self, item,
                     symbol: str,
@@ -78,18 +83,21 @@ class PytdxLoaderEngine(BaseEngine):
             volume_head: str,
             open_interest_head: str,
             datetime_format: str,
-            progress_bar_dict: dict,
+            update_qt_progress_bar: Callable,
             opt_str: str
     ):
         start_time = time.time()
         if isinstance(data[datetime_head][0], str):
             data[datetime_head] = data[datetime_head].apply(
                 lambda x: datetime.strptime(x, datetime_format) if datetime_format else datetime.fromisoformat(x))
+
         elif isinstance(data[datetime_head][0], pd.Timestamp):
-            self.main_engine.write_log("datetime 格式为 pd.Timestamp, 不用处理.")
+            self.write_log("datetime 格式为 pd.Timestamp, 不用处理.")
+
         else:
-            self.main_engine.write_log("未知datetime类型, 请检查")
-        self.main_engine.write_log(f'df apply 处理日期时间 cost {time.time() - start_time:.2f}s')
+            self.write_log("未知datetime类型, 请检查")
+
+        self.write_log(f'df apply 处理日期时间 cost {time.time() - start_time:.2f}s')
 
         if opt_str == "to_db":
             start_time = time.time()
@@ -108,10 +116,30 @@ class PytdxLoaderEngine(BaseEngine):
                     open_interest_head
                 ),
                 axis=1).tolist()
-            self.main_engine.write_log(f'df apply 处理bars时间 cost {time.time() - start_time:.2f}s')
+            self.write_log(f'df apply 处理bars时间 cost {time.time() - start_time:.2f}s')
 
             # insert into database
-            database_manager.save_bar_data(bars, progress_bar_dict)
+            database_manager.save_bar_data(bars, update_qt_progress_bar)
+
+        elif opt_str == "high_to_db":
+
+            start_time = time.perf_counter()
+
+            collection_str = f"{exchange.value}_{interval.value}_{symbol}"
+            self.write_log(
+                f"Start write data into mongodb"
+                f"->{self.db_instance.settings_dict['database.database']}"
+                f"->{collection_str}"
+            )
+
+            self.db_instance.pd_dbo.write_df_to_db(
+                df=data,
+                table=collection_str,
+                append=False,
+                callback=update_qt_progress_bar
+            )
+
+            self.write_log(f'df apply 处理bars时间 cost {time.time() - start_time:.2f}s')
 
         elif opt_str == "to_csv":
 
@@ -137,7 +165,7 @@ class PytdxLoaderEngine(BaseEngine):
             volume_head: str,
             open_interest_head: str,
             datetime_format: str,
-            progress_bar_dict: dict,
+            update_qt_progress_bar: Callable,
             opt_str: str,
     ):
         """
@@ -179,6 +207,10 @@ class PytdxLoaderEngine(BaseEngine):
             volume_head=volume_head,
             open_interest_head=open_interest_head,
             datetime_format=datetime_format,
-            progress_bar_dict=progress_bar_dict,
+            update_qt_progress_bar=update_qt_progress_bar,
             opt_str=opt_str
         )
+
+    def write_log(self, msg: str):
+        self.main_engine.write_log(msg)
+        self.ex_api.info_log.write_log(msg)
