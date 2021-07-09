@@ -10,10 +10,11 @@ peewee
 pymysql
 psycopg2
 mongoengine
-numpy
-pandas==0.24.2
+numpy==1.19.3
+pandas
 matplotlib
 seaborn
+PyCryptodome==3.9.9
 futu-api
 tigeropen
 rqdatac
@@ -22,5 +23,8 @@ ibapi
 deap
 pyzmq
 wmi
-QScintilla
+QScintilla==2.11.4
 plotly
+quickfix
+trading-calendars
+influxdb
