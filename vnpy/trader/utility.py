@@ -194,7 +194,6 @@ class BarGenerator:
         self.on_window_bar: Callable = on_window_bar
 
         self.last_tick: TickData = None
-        self.last_bar: BarData = None
 
     def update_tick(self, tick: TickData) -> None:
         """
@@ -253,6 +252,9 @@ class BarGenerator:
             volume_change = tick.volume - self.last_tick.volume
             self.bar.volume += max(volume_change, 0)
 
+            turnover_change = tick.turnover - self.last_tick.turnover
+            self.bar.turnover += max(turnover_change, 0)
+
         self.last_tick = tick
 
     def update_bar(self, bar: BarData) -> None:
@@ -289,18 +291,16 @@ class BarGenerator:
                 bar.low_price
             )
 
-        # Update close price/volume into window bar
+        # Update close price/volume/turnover into window bar
         self.window_bar.close_price = bar.close_price
-        self.window_bar.volume += int(bar.volume)
+        self.window_bar.volume += bar.volume
+        self.window_bar.turnover += bar.turnover
         self.window_bar.open_interest = bar.open_interest
 
         # Check if window bar completed
         if not (bar.datetime.minute + 1) % self.window:
             self.on_window_bar(self.window_bar)
             self.window_bar = None
-
-        # Cache last bar object
-        self.last_bar = bar
 
     def update_bar_hour_window(self, bar: BarData) -> None:
         """"""
@@ -314,7 +314,10 @@ class BarGenerator:
                 gateway_name=bar.gateway_name,
                 open_price=bar.open_price,
                 high_price=bar.high_price,
-                low_price=bar.low_price
+                low_price=bar.low_price,
+                close_price=bar.close_price,
+                volume=bar.volume,
+                turnover=bar.turnover
             )
             return
 
@@ -332,7 +335,8 @@ class BarGenerator:
             )
 
             self.hour_bar.close_price = bar.close_price
-            self.hour_bar.volume += int(bar.volume)
+            self.hour_bar.volume += bar.volume
+            self.hour_bar.turnover += bar.turnover
             self.hour_bar.open_interest = bar.open_interest
 
             finished_bar = self.hour_bar
@@ -350,7 +354,10 @@ class BarGenerator:
                 gateway_name=bar.gateway_name,
                 open_price=bar.open_price,
                 high_price=bar.high_price,
-                low_price=bar.low_price
+                low_price=bar.low_price,
+                close_price=bar.close_price,
+                volume=bar.volume,
+                turnover=bar.turnover
             )
         # Otherwise only update minute bar
         else:
@@ -364,15 +371,13 @@ class BarGenerator:
             )
 
             self.hour_bar.close_price = bar.close_price
-            self.hour_bar.volume += int(bar.volume)
+            self.hour_bar.volume += bar.volume
+            self.hour_bar.turnover += bar.turnover
             self.hour_bar.open_interest = bar.open_interest
 
         # Push finished window bar
         if finished_bar:
             self.on_hour_bar(finished_bar)
-
-        # Cache last bar object
-        self.last_bar = bar
 
     def on_hour_bar(self, bar: BarData) -> None:
         """"""
@@ -399,9 +404,10 @@ class BarGenerator:
                     bar.low_price
                 )
 
-                self.window_bar.close_price = bar.close_price
-                self.window_bar.volume += int(bar.volume)
-                self.window_bar.open_interest = bar.open_interest
+            self.window_bar.close_price = bar.close_price
+            self.window_bar.volume += bar.volume
+            self.window_bar.turnover += bar.turnover
+            self.window_bar.open_interest = bar.open_interest
 
             self.interval_count += 1
             if not self.interval_count % self.window:
@@ -441,6 +447,7 @@ class ArrayManager(object):
         self.low_array: np.ndarray = np.zeros(size)
         self.close_array: np.ndarray = np.zeros(size)
         self.volume_array: np.ndarray = np.zeros(size)
+        self.turnover_array: np.ndarray = np.zeros(size)
         self.open_interest_array: np.ndarray = np.zeros(size)
 
     def update_bar(self, bar: BarData) -> None:
@@ -456,6 +463,7 @@ class ArrayManager(object):
         self.low_array[:-1] = self.low_array[1:]
         self.close_array[:-1] = self.close_array[1:]
         self.volume_array[:-1] = self.volume_array[1:]
+        self.turnover_array[:-1] = self.turnover_array[1:]
         self.open_interest_array[:-1] = self.open_interest_array[1:]
 
         self.open_array[-1] = bar.open_price
@@ -463,6 +471,7 @@ class ArrayManager(object):
         self.low_array[-1] = bar.low_price
         self.close_array[-1] = bar.close_price
         self.volume_array[-1] = bar.volume
+        self.turnover_array[-1] = bar.turnover
         self.open_interest_array[-1] = bar.open_interest
 
     @property
@@ -499,6 +508,13 @@ class ArrayManager(object):
         Get trading volume time series.
         """
         return self.volume_array
+
+    @property
+    def turnover(self) -> np.ndarray:
+        """
+        Get trading turnover time series.
+        """
+        return self.turnover_array
 
     @property
     def open_interest(self) -> np.ndarray:
@@ -855,7 +871,7 @@ class ArrayManager(object):
         """
         Aroon indicator.
         """
-        aroon_up, aroon_down = talib.AROON(self.high, self.low, n)
+        aroon_down, aroon_up = talib.AROON(self.high, self.low, n)
 
         if array:
             return aroon_up, aroon_down

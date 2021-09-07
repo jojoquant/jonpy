@@ -8,8 +8,9 @@ from tzlocal import get_localzone
 
 from .utility import load_json, TEMP_DIR
 
+
 SETTINGS: Dict[str, Any] = {
-    "font.family": "Arial",
+    "font.family": "微软雅黑",
     "font.size": 12,
 
     "log.active": True,
@@ -24,12 +25,13 @@ SETTINGS: Dict[str, Any] = {
     "email.sender": "",
     "email.receiver": "",
 
-    "rqdata.username": "",
-    "rqdata.password": "",
+    "datafeed.name": "",
+    "datafeed.username": "",
+    "datafeed.password": "",
 
     "database.timezone": get_localzone().zone,
-    "database.driver": "sqlite",  # see database.Driver
-    "database.database": "database.db",  # for sqlite, use this as filepath
+    "database.name": "sqlite",
+    "database.database": "database.db",         # for sqlite, use this as filepath
     "database.host": "localhost",
     "database.port": 3306,
     "database.user": "root",
