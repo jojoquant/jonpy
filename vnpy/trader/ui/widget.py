@@ -17,6 +17,7 @@ from vnpy.event import Event, EventEngine
 from ..constant import Direction, Exchange, Offset, OrderType
 from ..engine import MainEngine
 from ..event import (
+    EVENT_QUOTE,
     EVENT_TICK,
     EVENT_TRADE,
     EVENT_ORDER,
@@ -514,6 +515,49 @@ class AccountMonitor(BaseMonitor):
     }
 
 
+class QuoteMonitor(BaseMonitor):
+    """
+    Monitor for quote data.
+    """
+
+    event_type = EVENT_QUOTE
+    data_key = "vt_quoteid"
+    sorting = True
+
+    headers: Dict[str, dict] = {
+        "quoteid": {"display": "报价号", "cell": BaseCell, "update": False},
+        "reference": {"display": "来源", "cell": BaseCell, "update": False},
+        "symbol": {"display": "代码", "cell": BaseCell, "update": False},
+        "exchange": {"display": "交易所", "cell": EnumCell, "update": False},
+        "bid_offset": {"display": "买开平", "cell": EnumCell, "update": False},
+        "bid_volume": {"display": "买量", "cell": BidCell, "update": False},
+        "bid_price": {"display": "买价", "cell": BidCell, "update": False},
+        "ask_price": {"display": "卖价", "cell": AskCell, "update": False},
+        "ask_volume": {"display": "卖量", "cell": AskCell, "update": False},
+        "ask_offset": {"display": "卖开平", "cell": EnumCell, "update": False},
+        "status": {"display": "状态", "cell": EnumCell, "update": True},
+        "datetime": {"display": "时间", "cell": TimeCell, "update": True},
+        "gateway_name": {"display": "接口", "cell": BaseCell, "update": False},
+    }
+
+    def init_ui(self):
+        """
+        Connect signal.
+        """
+        super().init_ui()
+
+        self.setToolTip("双击单元格撤销报价")
+        self.itemDoubleClicked.connect(self.cancel_quote)
+
+    def cancel_quote(self, cell: BaseCell) -> None:
+        """
+        Cancel quote if cell double clicked.
+        """
+        quote = cell.get_data()
+        req = quote.create_cancel_request()
+        self.main_engine.cancel_quote(req, quote.gateway_name)
+
+
 class ConnectDialog(QtWidgets.QDialog):
     """
     Start connection of a certain gateway.
@@ -565,6 +609,10 @@ class ConnectDialog(QtWidgets.QDialog):
 
                 if "密码" in field_name:
                     widget.setEchoMode(QtWidgets.QLineEdit.Password)
+                
+                if field_type == int:
+                    validator = QtGui.QIntValidator()
+                    widget.setValidator(validator)
 
             form.addRow(f"{field_name} <{field_type.__name__}>", widget)
             self.widgets[field_name] = (widget, field_type)
@@ -585,7 +633,10 @@ class ConnectDialog(QtWidgets.QDialog):
             if field_type == list:
                 field_value = str(widget.currentText())
             else:
-                field_value = field_type(widget.text())
+                try:
+                    field_value = field_type(widget.text())
+                except ValueError:
+                    field_value = field_type()
             setting[field_name] = field_value
 
         save_json(self.filename, setting)
