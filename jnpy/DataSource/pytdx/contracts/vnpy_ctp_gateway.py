@@ -11,7 +11,7 @@ import time
 from logging import INFO
 import re
 
-from vnpy.gateway.ctp.ctp_gateway import CtpGateway
+from vnpy_ctp import CtpGateway
 from vnpy.trader.utility import load_json
 from vnpy.trader.engine import MainEngine
 from vnpy.trader.setting import SETTINGS

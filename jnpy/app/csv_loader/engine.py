@@ -26,9 +26,10 @@ from typing import TextIO
 
 from vnpy.event import EventEngine
 from vnpy.trader.constant import Exchange, Interval
-from vnpy.trader.database import database_manager
 from vnpy.trader.engine import BaseEngine, MainEngine
 from vnpy.trader.object import BarData
+
+from jnpy.app.database import database_manager
 
 APP_NAME = "CsvLoader"
 

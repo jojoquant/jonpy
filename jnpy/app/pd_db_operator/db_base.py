@@ -1,10 +1,6 @@
 
 import platform
-
 from abc import ABC, abstractmethod
-from sqlalchemy import create_engine
-
-from vnpy.trader.utility import get_file_path
 
 
 class PdBase(ABC):

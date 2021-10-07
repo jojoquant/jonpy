@@ -7,7 +7,7 @@
 import json
 import os
 
-from .vnpy_ctp_gateway import VnpyCtpGateway
+# from .vnpy_ctp_gateway import VnpyCtpGateway
 
 
 def read_contracts_json_dict():
