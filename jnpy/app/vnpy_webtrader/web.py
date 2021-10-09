@@ -6,6 +6,7 @@ import os
 from datetime import datetime, timedelta
 from dataclasses import dataclass
 
+import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, status, Depends, Query
 from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -32,22 +33,19 @@ from vnpy.trader.constant import (
 )
 from vnpy.trader.utility import load_json, get_file_path
 
-
 # Web服务运行配置
 SETTING_FILENAME = "web_trader_setting.json"
 SETTING_FILEPATH = get_file_path(SETTING_FILENAME)
 
 setting = load_json(SETTING_FILEPATH)
-USERNAME = setting["username"]              # 用户名
-PASSWORD = setting["password"]              # 密码
-REQ_ADDRESS = setting["req_address"]        # 请求服务地址
-SUB_ADDRESS = setting["sub_address"]        # 订阅服务地址
+USERNAME = setting["username"]  # 用户名
+PASSWORD = setting["password"]  # 密码
+REQ_ADDRESS = setting["req_address"]  # 请求服务地址
+SUB_ADDRESS = setting["sub_address"]  # 订阅服务地址
 
-
-SECRET_KEY = "test"                     # 数据加密密钥
-ALGORITHM = "HS256"                     # 加密算法
-ACCESS_TOKEN_EXPIRE_MINUTES = 30        # 令牌超时（分钟）
-
+SECRET_KEY = "test"  # 数据加密密钥
+ALGORITHM = "HS256"  # 加密算法
+ACCESS_TOKEN_EXPIRE_MINUTES = 30  # 令牌超时（分钟）
 
 # 实例化CryptContext用于处理哈希密码
 pwd_context = CryptContext(schemes=["sha256_crypt"], deprecated="auto")
@@ -285,8 +283,8 @@ event_loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
 
 
 async def get_websocket_access(
-    websocket: WebSocket,
-    token: Optional[str] = Query(None)
+        websocket: WebSocket,
+        token: Optional[str] = Query(None)
 ):
     """Websocket鉴权"""
     if token is None:
@@ -353,3 +351,7 @@ def shutdown_event() -> None:
     """应用停止事件"""
     print("rpc_client exit")
     rpc_client.stop()
+
+
+if __name__ == '__main__':
+    uvicorn.run(app, host="0.0.0.0", port=8000)

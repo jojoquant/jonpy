@@ -1,0 +1,1 @@
+websocket 在 QProcess命令行（widget中）运行存在问题，open后无法发送信息，单独跑web.py没有问题
