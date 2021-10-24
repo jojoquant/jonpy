@@ -56,4 +56,42 @@ vnctpmd.cpython-37m-x86_64-linux-gnu.so
 
 最后记得，、要不连接交易所的时候报错
 sudo locale-gen zh_CN.GB18030
-#日呀！
+
+## 连接CTP交易所的时候报错
+```
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  locale::facet::_S_create_c_locale name not valid
+```
+原因：接口库文件在接口调用时有返回GBK字段，但是由于本地机器没有安装相应的语言包支持。所以程序出错崩溃。
+
+解决方法：安装中文语言包支持
+```
+$sudo dpkg-reconfigure locales
+
+Generating locales (this might take a while)...
+en_US.UTF-8... done
+zh_CN.GB2312... done
+zh_CN.GB18030... done
+zh_CN.GBK... done
+zh_CN.UTF-8... done
+Generation complete.
+```
+
+## 交易服务器登录失败
+```
+/sys/firmware/dmi/tables/smbios_entry_point: Permission denied
+/dev/mem: Permission denied
+/sys/firmware/dmi/tables/smbios_entry_point: Permission denied
+/dev/mem: Permission denied
+交易服务器登录失败，代码：3，信息：CTP:不合法的登录
+```
+解决办法：
+
+```
+sudo chmod 777 /sys/firmware/dmi/tables/smbios_entry_point /dev/mem /sys/firmware/dmi/tables/DMI /dev/sda
+```
+如果不存在 /dev/sda 执行如下命令：
+```
+sudo chmod 777 /sys/firmware/dmi/tables/smbios_entry_point /dev/mem /sys/firmware/dmi/tables/DMI
+```
+

@@ -1,12 +1,11 @@
 """
 Global setting of VN Trader.
 """
-import json
 from logging import CRITICAL
 from typing import Dict, Any
 from tzlocal import get_localzone
 
-from .utility import load_json, TEMP_DIR
+from .utility import load_json
 
 
 SETTINGS: Dict[str, Any] = {
@@ -41,21 +40,6 @@ SETTINGS: Dict[str, Any] = {
 # Load global setting from json file.
 SETTING_FILENAME: str = "vt_setting.json"
 SETTINGS.update(load_json(SETTING_FILENAME))
-
-################################################################
-# .vntrader/vt_setting.json 的 database的配置只写一个driver就行,
-# 其他配置如果写在database目录下相应的json内, 会覆盖更新全局database配置
-database_dir = TEMP_DIR.joinpath("database")
-# 判断 .vntrader/database 是否存在
-if database_dir.exists():
-    # 如果存在读取相应driver的json配置, 重新更新配置
-    # with open(database_dir.joinpath(f"{SETTINGS['database.driver']}.json"), mode="r", encoding="UTF-8") as f:
-    with open(database_dir.joinpath(f"mongodb.json"), mode="r", encoding="UTF-8") as f:
-        data = json.load(f)
-    SETTINGS.update(data)
-    print(f"[来自vnpy.trader.setting消息] SETTINGS database 内容"
-          f"从 database 目录下 {SETTINGS['database.driver']}.json 文件进行更新")
-###################################################################
 
 
 def get_settings(prefix: str = "") -> Dict[str, Any]:
