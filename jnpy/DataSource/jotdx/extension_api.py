@@ -10,10 +10,9 @@ import pandas as pd
 import datetime
 
 from jotdx.exhq import TdxExHq_API
-# from ips import IPsSource
-from jnpy.DataSource.pytdx.ips import IPsSource
+from jnpy.DataSource.jotdx.ips import IPsSource
 from jnpy.utils.logging.log import LogModule
-from jnpy.DataSource.pytdx.constant import KBarType
+from jnpy.DataSource.jotdx.constant import KBarType
 
 
 class ExhqAPI(TdxExHq_API):
@@ -105,7 +104,6 @@ class ExhqAPI(TdxExHq_API):
 if __name__ == '__main__':
 
     ip, port = IPsSource().get_fast_exhq_ip()
-    # ex_api = TdxExHq_API()
     ex_api = ExhqAPI()
     with ex_api.connect(ip, port):
         data_df = ex_api.to_df(ex_api.get_markets())
@@ -120,9 +118,9 @@ if __name__ == '__main__':
             "code": "RBL8",
         }
 
-        # df = ex_api.get_all_KBars_df(**params_dict)
+        df = ex_api.get_all_KBars_df(**params_dict)
 
-        params_dict['date'] = 20191227
-        del params_dict['category']
-        df = ex_api.get_all_Ticks_df(**params_dict)
+        # params_dict['date'] = 20200927
+        # del params_dict['category']
+        # df = ex_api.get_all_Ticks_df(**params_dict)
         print(1)

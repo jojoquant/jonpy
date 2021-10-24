@@ -1,8 +1,3 @@
-"""
-Author: Zehua Wei (nanoric)
-"""
-from PyQt5.QtWidgets import QApplication
-
 from vnpy.event import EventEngine
 from vnpy.trader.constant import Exchange, Interval
 from vnpy.trader.engine import MainEngine
@@ -10,7 +5,7 @@ from vnpy.trader.ui import QtCore, QtWidgets
 
 from ..engine import APP_NAME
 
-from jnpy.DataSource.pytdx.contracts import read_contracts_json_dict
+from jnpy.DataSource.jotdx.contracts import read_contracts_json_dict
 
 
 class PytdxLoaderWidget(QtWidgets.QWidget):
