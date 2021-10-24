@@ -6,8 +6,8 @@
 # @Software : PyCharm
 
 
-from pytdx.exhq import TdxExHq_API
-from pytdx.hq import TdxHq_API
+from jotdx.exhq import TdxExHq_API
+from jotdx.hq import TdxHq_API
 import time
 from jnpy.utils.logging.log import LogModule
 

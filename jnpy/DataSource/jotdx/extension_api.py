@@ -9,7 +9,7 @@
 import pandas as pd
 import datetime
 
-from pytdx.exhq import TdxExHq_API
+from jotdx.exhq import TdxExHq_API
 # from ips import IPsSource
 from jnpy.DataSource.pytdx.ips import IPsSource
 from jnpy.utils.logging.log import LogModule
@@ -103,6 +103,7 @@ class ExhqAPI(TdxExHq_API):
 
 
 if __name__ == '__main__':
+
     ip, port = IPsSource().get_fast_exhq_ip()
     # ex_api = TdxExHq_API()
     ex_api = ExhqAPI()
