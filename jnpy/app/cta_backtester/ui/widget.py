@@ -1,6 +1,5 @@
 import csv
 from datetime import datetime, timedelta
-from tzlocal import get_localzone
 from copy import copy
 
 import numpy as np
@@ -8,7 +7,7 @@ import pyqtgraph as pg
 import pandas as pd
 import webbrowser
 
-from vnpy.trader.constant import Direction
+from vnpy.trader.constant import Direction, Interval, Exchange
 from vnpy.trader.engine import MainEngine
 from vnpy.trader.ui import QtCore, QtWidgets, QtGui
 from vnpy.trader.ui.widget import BaseMonitor, BaseCell, DirectionCell, EnumCell
@@ -16,17 +15,19 @@ from vnpy.trader.ui.editor import CodeEditor
 from vnpy.event import Event, EventEngine
 from vnpy.chart import ChartWidget, CandleItem, VolumeItem
 from vnpy.trader.utility import load_json, save_json
+from vnpy.trader.database import DB_TZ
 
-from jnpy.DataSource.pytdx.contracts import read_contracts_json_dict
-from jnpy.DataSource.pyccxt.contracts import Exchange
+from jnpy.DataSource.jotdx.contracts import read_contracts_json_dict
+# from jnpy.DataSource.pyccxt.contracts import Exchange
 from .KLine_pro_pyecharts import draw_chart
 from ..engine import (
     APP_NAME,
-    EVENT_BACKTESTER_LOG,
-    EVENT_BACKTESTER_BACKTESTING_FINISHED,
-    EVENT_BACKTESTER_OPTIMIZATION_FINISHED,
+    EVENT_JNPY_BACKTESTER_LOG,
+    EVENT_JNPY_BACKTESTER_BACKTESTING_FINISHED,
+    EVENT_JNPY_BACKTESTER_OPTIMIZATION_FINISHED,
     OptimizationSetting
 )
+from dateutil import parser
 
 
 class JnpyBacktesterManager(QtWidgets.QWidget):
@@ -48,10 +49,10 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         self.backtester_engine = main_engine.get_engine(APP_NAME)
         self.class_names = []
         self.settings = {}
-        self.db_instance = self.backtester_engine.db_instance
+        self.db_instance = self.backtester_engine.database
         self.dbbardata_groupby_df = pd.DataFrame()
         self.pytdx_contracts_dict = read_contracts_json_dict()
-        self.pyccxt_exchange = Exchange()
+        # self.pyccxt_exchange = Exchange()
 
         self.target_display = ""
 
@@ -84,7 +85,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
 
         #############################################
         # fangyang add, 根据数据库内容进行选项显示
-        self.dbbardata_groupby_df = self.db_instance.get_groupby_data()
+        self.dbbardata_groupby_df = self.db_instance.get_groupby_df()
 
         self.exchange_combo = QtWidgets.QComboBox()
         self.exchange_combo.addItems(self.dbbardata_groupby_df['exchange'].drop_duplicates().to_list())
@@ -120,10 +121,6 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         self.inverse_combo = QtWidgets.QComboBox()
         self.inverse_combo.addItems(["正向", "反向"])
 
-        # fangyang add
-        self.debug_combo = QtWidgets.QComboBox()
-        self.debug_combo.addItems(["Thread 运行回测", "Debug 运行回测"])
-
         backtesting_button = QtWidgets.QPushButton("开始回测")
         backtesting_button.clicked.connect(self.start_backtesting)
 
@@ -158,27 +155,12 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
 
         self.candle_button_web = QtWidgets.QPushButton("K线图表web")
         self.candle_button_web.clicked.connect(self.show_candle_chart_web)
-        # self.candle_button_web.setEnabled(False)
 
         edit_button = QtWidgets.QPushButton("代码编辑")
         edit_button.clicked.connect(self.edit_strategy_code)
 
         reload_button = QtWidgets.QPushButton("策略重载")
         reload_button.clicked.connect(self.reload_strategy_class)
-
-        # for button in [
-        #     backtesting_button,
-        #     optimization_button,
-        #     downloading_button,
-        #     self.result_button,
-        #     self.order_button,
-        #     self.trade_button,
-        #     self.daily_button,
-        #     self.candle_button,
-        #     edit_button,
-        #     reload_button
-        # ]:
-        #     button.setFixedHeight(button.sizeHint().height() * 2)
 
         form = QtWidgets.QFormLayout()
         form.addRow("交易策略", self.class_combo)
@@ -195,7 +177,6 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         form.addRow("价格跳动", self.pricetick_line)
         form.addRow("回测资金", self.capital_line)
         form.addRow("合约模式\n(数字货币用反向)", self.inverse_combo)
-        form.addRow("回测模式", self.debug_combo)
 
         result_grid = QtWidgets.QGridLayout()
         result_grid.addWidget(self.trade_button, 0, 0)
@@ -344,18 +325,18 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
                 self.symbol_label.setText(f"{self.pytdx_contracts_dict[symbol_de_L8_str]['name']}")
                 self.size_line.setText(f"{self.pytdx_contracts_dict[symbol_de_L8_str]['size']}")
                 self.pricetick_line.setText(f"{self.pytdx_contracts_dict[symbol_de_L8_str]['pricetick']}")
-            elif current_exchange.lower() in self.pyccxt_exchange.exchange_list:
-                self.symbol_label.setText(f"{current_symbol}")
-                cur_exchange_market_info_dict = self.pyccxt_exchange.read_local_market_info_json_file(
-                    current_exchange.lower()
-                )
-                if cur_exchange_market_info_dict \
-                        and (current_symbol.replace("_", "/").upper() in cur_exchange_market_info_dict):
-                    market_info = cur_exchange_market_info_dict[current_symbol.replace("_", "/").upper()]
-                    self.pricetick_line.setText(f"{market_info['limits']['price']['min']}")
-                else:
-                    self.pricetick_line.setText(f"999")
-                self.size_line.setText(f"{1}")
+            # elif current_exchange.lower() in self.pyccxt_exchange.exchange_list:
+            #     self.symbol_label.setText(f"{current_symbol}")
+            #     cur_exchange_market_info_dict = self.pyccxt_exchange.read_local_market_info_json_file(
+            #         current_exchange.lower()
+            #     )
+            #     if cur_exchange_market_info_dict \
+            #             and (current_symbol.replace("_", "/").upper() in cur_exchange_market_info_dict):
+            #         market_info = cur_exchange_market_info_dict[current_symbol.replace("_", "/").upper()]
+            #         self.pricetick_line.setText(f"{market_info['limits']['price']['min']}")
+            #     else:
+            #         self.pricetick_line.setText(f"999")
+            #     self.size_line.setText(f"{1}")
 
             # TODO 增加重置日期后统计数据数目
             # 重置日期
@@ -364,13 +345,13 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
                 exchange=current_exchange,
                 interval=current_interval
             )
-            db_end_dt = datetime.strptime(db_end_dt, '%Y-%m-%d %H:%M:%S')
+            db_end_dt = parser.parse(str(db_end_dt))
             db_start_dt = self.db_instance.get_start_date(
                 symbol=current_symbol,
                 exchange=current_exchange,
                 interval=current_interval
             )
-            db_start_dt = datetime.strptime(db_start_dt, '%Y-%m-%d %H:%M:%S')
+            db_start_dt =parser.parse(str(db_start_dt))
             self.start_date_edit.setDate(
                 QtCore.QDate(
                     db_start_dt.year,
@@ -394,11 +375,11 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         self.signal_optimization_finished.connect(
             self.process_optimization_finished_event)
 
-        self.event_engine.register(EVENT_BACKTESTER_LOG, self.signal_log.emit)
+        self.event_engine.register(EVENT_JNPY_BACKTESTER_LOG, self.signal_log.emit)
         self.event_engine.register(
-            EVENT_BACKTESTER_BACKTESTING_FINISHED, self.signal_backtesting_finished.emit)
+            EVENT_JNPY_BACKTESTER_BACKTESTING_FINISHED, self.signal_backtesting_finished.emit)
         self.event_engine.register(
-            EVENT_BACKTESTER_OPTIMIZATION_FINISHED, self.signal_optimization_finished.emit)
+            EVENT_JNPY_BACKTESTER_OPTIMIZATION_FINISHED, self.signal_optimization_finished.emit)
 
     def process_log_event(self, event: Event):
         """"""
@@ -422,7 +403,11 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         self.trade_button.setEnabled(True)
         self.order_button.setEnabled(True)
         self.daily_button.setEnabled(True)
-        self.candle_button.setEnabled(True)
+
+        # Tick data can not be displayed using candle chart
+        interval = self.interval_combo.currentText()
+        if interval != Interval.TICK.value:
+            self.candle_button.setEnabled(True)
 
     def process_optimization_finished_event(self, event: Event):
         """"""
@@ -448,7 +433,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         else:
             inverse = True
 
-        backtesting_debug_mode = True
+        # backtesting_debug_mode = True
         # Get strategy setting
         old_setting = self.settings[class_name]
         dialog = BacktestingSettingEditor(class_name, old_setting)
@@ -479,8 +464,8 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         class_name = self.class_combo.currentText()
         vt_symbol = f"{self.symbol_combo.currentText()}.{self.exchange_combo.currentText()}"
         interval = self.interval_combo.currentText()
-        start = self.start_date_edit.date().toPyDate()
-        end = self.end_date_edit.date().toPyDate()
+        start = self.start_date_edit.dateTime().toPyDateTime()
+        end = self.end_date_edit.dateTime().toPyDateTime()
         rate = float(self.rate_line.text())
         slippage = float(self.slippage_line.text())
         size = float(self.size_line.text())
@@ -492,12 +477,15 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         else:
             inverse = True
 
-        # fangyang add
-        if self.debug_combo.currentText() == "Thread 运行回测":  # "Debug 运行回测"
-            backtesting_debug_mode = False
-        else:
-            backtesting_debug_mode = True
-        #######################
+        # Check validity of vt_symbol
+        if "." not in vt_symbol:
+            self.write_log("本地代码缺失交易所后缀，请检查")
+            return
+
+        _, exchange_str = vt_symbol.split(".")
+        if exchange_str not in Exchange.__members__:
+            self.write_log("本地代码的交易所后缀不正确，请检查")
+            return
 
         # Save backtesting parameters
         backtesting_setting = {
@@ -535,7 +523,6 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
             pricetick,
             capital,
             inverse,
-            backtesting_debug_mode,  # fangyang add
             new_setting
         )
 
@@ -558,8 +545,8 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         class_name = self.class_combo.currentText()
         vt_symbol = f"{self.symbol_combo.currentText()}.{self.exchange_combo.currentText()}"
         interval = self.interval_combo.currentText()
-        start = self.start_date_edit.date().toPyDate()
-        end = self.end_date_edit.date().toPyDate()
+        start = self.start_date_edit.dateTime().toPyDateTime()
+        end = self.end_date_edit.dateTime().toPyDateTime()
         rate = float(self.rate_line.text())
         slippage = float(self.slippage_line.text())
         size = float(self.size_line.text())
@@ -609,8 +596,8 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
             start_date.year(),
             start_date.month(),
             start_date.day(),
-            tzinfo=get_localzone()
         )
+        start = DB_TZ.localize(start)
 
         end = datetime(
             end_date.year(),
@@ -619,8 +606,8 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
             23,
             59,
             59,
-            tzinfo=get_localzone()
         )
+        end = DB_TZ.localize(end)
 
         self.backtester_engine.start_downloading(
             vt_symbol,
@@ -712,8 +699,13 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         """"""
         self.backtester_engine.reload_strategy_class()
 
+        current_strategy_name = self.class_combo.currentText()
+
         self.class_combo.clear()
         self.init_strategy_settings()
+
+        ix = self.class_combo.findText(current_strategy_name)
+        self.class_combo.setCurrentIndex(ix)
 
     def show(self):
         """"""
@@ -802,6 +794,7 @@ class StatisticsMonitor(QtWidgets.QTableWidget):
         data["daily_commission"] = f"{data['daily_commission']:,.2f}"
         data["daily_slippage"] = f"{data['daily_slippage']:,.2f}"
         data["daily_turnover"] = f"{data['daily_turnover']:,.2f}"
+        data["daily_trade_count"] = f"{data['daily_trade_count']:,.2f}"
         data["daily_return"] = f"{data['daily_return']:,.2f}%"
         data["return_std"] = f"{data['return_std']:,.2f}%"
         data["sharpe_ratio"] = f"{data['sharpe_ratio']:,.2f}"
@@ -1188,7 +1181,7 @@ class OptimizationResultMonitor(QtWidgets.QDialog):
         for n, tp in enumerate(self.result_values):
             setting, target_value, _ = tp
             setting_cell = QtWidgets.QTableWidgetItem(str(setting))
-            target_cell = QtWidgets.QTableWidgetItem(str(target_value))
+            target_cell = QtWidgets.QTableWidgetItem(f"{target_value:.2f}")
 
             setting_cell.setTextAlignment(QtCore.Qt.AlignCenter)
             target_cell.setTextAlignment(QtCore.Qt.AlignCenter)
@@ -1271,6 +1264,17 @@ class BacktestingOrderMonitor(BaseMonitor):
     }
 
 
+class FloatCell(BaseCell):
+    """
+    Cell used for showing pnl data.
+    """
+
+    def __init__(self, content, data):
+        """"""
+        content = f"{content:.2f}"
+        super().__init__(content, data)
+
+
 class DailyResultMonitor(BaseMonitor):
     """
     Monitor for backtesting daily result.
@@ -1281,13 +1285,13 @@ class DailyResultMonitor(BaseMonitor):
         "trade_count": {"display": "成交笔数", "cell": BaseCell, "update": False},
         "start_pos": {"display": "开盘持仓", "cell": BaseCell, "update": False},
         "end_pos": {"display": "收盘持仓", "cell": BaseCell, "update": False},
-        "turnover": {"display": "成交额", "cell": BaseCell, "update": False},
-        "commission": {"display": "手续费", "cell": BaseCell, "update": False},
-        "slippage": {"display": "滑点", "cell": BaseCell, "update": False},
-        "trading_pnl": {"display": "交易盈亏", "cell": BaseCell, "update": False},
-        "holding_pnl": {"display": "持仓盈亏", "cell": BaseCell, "update": False},
-        "total_pnl": {"display": "总盈亏", "cell": BaseCell, "update": False},
-        "net_pnl": {"display": "净盈亏", "cell": BaseCell, "update": False},
+        "turnover": {"display": "成交额", "cell": FloatCell, "update": False},
+        "commission": {"display": "手续费", "cell": FloatCell, "update": False},
+        "slippage": {"display": "滑点", "cell": FloatCell, "update": False},
+        "trading_pnl": {"display": "交易盈亏", "cell": FloatCell, "update": False},
+        "holding_pnl": {"display": "持仓盈亏", "cell": FloatCell, "update": False},
+        "total_pnl": {"display": "总盈亏", "cell": FloatCell, "update": False},
+        "net_pnl": {"display": "净盈亏", "cell": FloatCell, "update": False},
     }
 
 

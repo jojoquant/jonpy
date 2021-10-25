@@ -4,16 +4,15 @@ from typing import Callable
 import pandas as pd
 from datetime import datetime
 
-from jnpy.app.pd_db_operator.db_operation import DBOperation
 from vnpy.event import EventEngine
 from vnpy.trader.constant import Exchange, Interval
-from vnpy.trader.database import database_manager
 from vnpy.trader.engine import BaseEngine, MainEngine
 from vnpy.trader.object import BarData
-from vnpy.trader.setting import SETTINGS
 from vnpy.trader.utility import get_folder_path
+from vnpy.trader.datafeed import BaseDatafeed, get_datafeed
+from vnpy.trader.database import BaseDatabase, get_database
 
-from jnpy.DataSource.pytdx import ExhqAPI, IPsSource, FutureMarketCode, KBarType
+from jnpy.DataSource.jotdx import ExhqAPI, IPsSource, FutureMarketCode, KBarType
 
 APP_NAME = "PytdxLoader"
 
@@ -40,7 +39,8 @@ class PytdxLoaderEngine(BaseEngine):
         self.pytdx_ip_source = IPsSource()
         self.ex_api = ExhqAPI()
 
-        self.db_instance = DBOperation(SETTINGS)
+        self.datafeed: BaseDatafeed = get_datafeed()
+        self.database: BaseDatabase = get_database()
 
     def to_bar_data(self, item,
                     symbol: str,
@@ -119,7 +119,7 @@ class PytdxLoaderEngine(BaseEngine):
             self.write_log(f'df apply 处理bars时间 cost {time.time() - start_time:.2f}s')
 
             # insert into database
-            database_manager.save_bar_data(bars, update_qt_progress_bar)
+            self.database.save_bar_data(bars, update_qt_progress_bar)
 
         elif opt_str == "high_to_db":
 
@@ -128,14 +128,13 @@ class PytdxLoaderEngine(BaseEngine):
             collection_str = f"{exchange.value}_{interval.value}_{symbol}"
             self.write_log(
                 f"Start write data into mongodb"
-                f"->{self.db_instance.settings_dict['database.database']}"
+                f"->{self.database.database}"
                 f"->{collection_str}"
             )
 
-            self.db_instance.pd_dbo.write_df_to_db(
+            self.database.save_bar_df(
                 df=data,
                 table=collection_str,
-                append=False,
                 callback=update_qt_progress_bar
             )
 

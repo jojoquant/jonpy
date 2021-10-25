@@ -1,23 +1,25 @@
+import traceback
 from datetime import datetime
 from threading import Thread
 
+from vnpy_ctastrategy import CtaTemplate
+from vnpy_ctastrategy.base import BacktestingMode
+
 from vnpy.event import Event, EventEngine
-from vnpy.trader.setting import SETTINGS
+from vnpy.trader.constant import Interval
 from vnpy.trader.engine import MainEngine
 
-from vnpy.app.cta_backtester.engine import BacktesterEngine
-from vnpy.app.cta_strategy.backtesting import OptimizationSetting  # 给widget使用, 和vnpy widget尽量一致, 这里不要删除
+from vnpy_ctabacktester import BacktesterEngine
+from vnpy_ctastrategy.backtesting import OptimizationSetting  # 给widget使用, 和vnpy widget尽量一致, 这里不要删除
 
 from jnpy.app.cta_backtester.DRL.main import accept_bars_data_list
 from jnpy.app.cta_backtester.backtesting import BacktestingEngineJnpy
-from jnpy.app.pd_db_operator.db_operation import DBOperation
-
 
 APP_NAME = "CtaBacktester_jnpy"
 
-EVENT_BACKTESTER_LOG = "eBacktesterLog_jnpy"
-EVENT_BACKTESTER_BACKTESTING_FINISHED = "eBacktesterBacktestingFinished_jnpy"
-EVENT_BACKTESTER_OPTIMIZATION_FINISHED = "eBacktesterOptimizationFinished_jnpy"
+EVENT_JNPY_BACKTESTER_LOG = "eBacktesterLog_jnpy"
+EVENT_JNPY_BACKTESTER_BACKTESTING_FINISHED = "eBacktesterBacktestingFinished_jnpy"
+EVENT_JNPY_BACKTESTER_OPTIMIZATION_FINISHED = "eBacktesterOptimizationFinished_jnpy"
 
 
 class BacktesterEngineJnpy(BacktesterEngine):
@@ -29,25 +31,25 @@ class BacktesterEngineJnpy(BacktesterEngine):
         """"""
         super().__init__(main_engine, event_engine)
         self.engine_name = APP_NAME
-        self.db_instance = DBOperation(SETTINGS)
 
     def init_engine(self):
         """"""
-        self.write_log("初始化CTA回测引擎")
+        self.write_log("初始化 jnpy 魔改 CTA 回测引擎")
 
-        self.backtesting_engine = BacktestingEngineJnpy(self.db_instance)
+        self.backtesting_engine = BacktestingEngineJnpy(self.database)
         # Redirect log from backtesting engine outside.
+        self.backtesting_engine.write_log = self.write_log
         self.backtesting_engine.output = self.write_log
 
         self.load_strategy_class()
         self.write_log("策略文件加载完成")
 
-        self.init_rqdata()
+        self.init_datafeed()
 
-    def write_log(self, msg: str):
+    def write_log(self, msg: str, strategy: CtaTemplate = None):
         """"""
-        event = Event(EVENT_BACKTESTER_LOG)
-        event.data = msg
+        event = Event(EVENT_JNPY_BACKTESTER_LOG)
+        event.data = msg if strategy is None else f"{strategy.strategy_name} log: {msg}"
         self.event_engine.put(event)
 
     def rl_training(
@@ -105,6 +107,11 @@ class BacktesterEngineJnpy(BacktesterEngine):
         engine = self.backtesting_engine
         engine.clear_data()
 
+        if interval == Interval.TICK.value:
+            mode = BacktestingMode.TICK
+        else:
+            mode = BacktestingMode.BAR
+
         engine.set_parameters(
             vt_symbol=vt_symbol,
             interval=interval,
@@ -115,7 +122,8 @@ class BacktesterEngineJnpy(BacktesterEngine):
             size=size,
             pricetick=pricetick,
             capital=capital,
-            inverse=inverse
+            inverse=inverse,
+            mode=mode
         )
 
         strategy_class = self.classes[class_name]
@@ -131,7 +139,14 @@ class BacktesterEngineJnpy(BacktesterEngine):
         if hasattr(engine, "backtester_engine"):
             engine.backtester_engine = self
 
-        engine.run_backtesting()
+        try:
+            engine.run_backtesting()
+        except Exception:
+            msg = f"策略回测失效, 触发异常: \n{traceback.format_exc()}"
+            self.write_log(msg)
+            self.thread = None
+            return
+
         self.result_df = engine.calculate_result()
         self.result_statistics = engine.calculate_statistics(output=False)
 
@@ -139,65 +154,64 @@ class BacktesterEngineJnpy(BacktesterEngine):
         self.thread = None
 
         # Put backtesting done event
-        event = Event(EVENT_BACKTESTER_BACKTESTING_FINISHED)
+        event = Event(EVENT_JNPY_BACKTESTER_BACKTESTING_FINISHED)
         self.event_engine.put(event)
 
-    def start_backtesting(
-            self,
-            class_name: str,
-            vt_symbol: str,
-            interval: str,
-            start: datetime,
-            end: datetime,
-            rate: float,
-            slippage: float,
-            size: int,
-            pricetick: float,
-            capital: int,
-            inverse: bool,
-            backtesting_debug_mode: bool,
-            setting: dict
-    ):
-        if self.thread:
-            self.write_log("已有任务在运行中，请等待完成")
-            return False
-
-        self.write_log("-" * 40)
-        if backtesting_debug_mode:
-            self.backtesting_engine.output = self.backtesting_engine.output_for_backtester
-            self.run_backtesting(
-                class_name,
-                vt_symbol,
-                interval,
-                start,
-                end,
-                rate,
-                slippage,
-                size,
-                pricetick,
-                capital,
-                inverse,
-                setting
-            )
-        else:
-            self.thread = Thread(
-                target=self.run_backtesting,
-                args=(
-                    class_name,
-                    vt_symbol,
-                    interval,
-                    start,
-                    end,
-                    rate,
-                    slippage,
-                    size,
-                    pricetick,
-                    capital,
-                    inverse,
-                    setting
-                )
-            )
-            self.thread.start()
-
-        return True
-
+    # def start_backtesting(
+    #         self,
+    #         class_name: str,
+    #         vt_symbol: str,
+    #         interval: str,
+    #         start: datetime,
+    #         end: datetime,
+    #         rate: float,
+    #         slippage: float,
+    #         size: int,
+    #         pricetick: float,
+    #         capital: int,
+    #         inverse: bool,
+    #         backtesting_debug_mode: bool,
+    #         setting: dict
+    # ):
+    #     if self.thread:
+    #         self.write_log("已有任务在运行中，请等待完成")
+    #         return False
+    #
+    #     self.write_log("-" * 40)
+    #     if backtesting_debug_mode:
+    #         self.backtesting_engine.output = self.backtesting_engine.output_for_backtester
+    #         self.run_backtesting(
+    #             class_name,
+    #             vt_symbol,
+    #             interval,
+    #             start,
+    #             end,
+    #             rate,
+    #             slippage,
+    #             size,
+    #             pricetick,
+    #             capital,
+    #             inverse,
+    #             setting
+    #         )
+    #     else:
+    #         self.thread = Thread(
+    #             target=self.run_backtesting,
+    #             args=(
+    #                 class_name,
+    #                 vt_symbol,
+    #                 interval,
+    #                 start,
+    #                 end,
+    #                 rate,
+    #                 slippage,
+    #                 size,
+    #                 pricetick,
+    #                 capital,
+    #                 inverse,
+    #                 setting
+    #             )
+    #         )
+    #         self.thread.start()
+    #
+    #     return True

@@ -8,28 +8,27 @@
 import traceback
 from datetime import datetime, timedelta
 import time
-from functools import lru_cache
 from pathlib import Path
-
 from pandas.tseries.offsets import Day
 
-from vnpy.trader.object import BarData, Exchange
+from vnpy.trader.object import BarData
 from vnpy.trader.constant import Exchange, Interval
-from vnpy.trader.database import database_manager, DB_TZ
+from vnpy.trader.database import DB_TZ
 
-from vnpy.app.cta_strategy.backtesting import BacktestingEngine
-from vnpy.app.cta_strategy.base import BacktestingMode, INTERVAL_DELTA_MAP
+from vnpy_ctastrategy.backtesting import BacktestingEngine, load_tick_data
+from vnpy_ctastrategy.base import BacktestingMode, INTERVAL_DELTA_MAP
+from vnpy.trader.database import BaseDatabase
 
 
 class BacktestingEngineJnpy(BacktestingEngine):
 
-    def __init__(self, db_instance):
+    def __init__(self, database: BaseDatabase):
         super(BacktestingEngineJnpy, self).__init__()
-        self.db_instance = db_instance
         self.cur_data_ix = 0
         self.load_bar_end_timestamp = ''
         self.save_history_df_path = None
         self.history_data_df = ''
+        self.database: BaseDatabase = database
 
     def trans_history_data_df_to_list(self):
         for index, row in self.history_data_df.iterrows():
@@ -50,13 +49,13 @@ class BacktestingEngineJnpy(BacktestingEngine):
 
     def load_data(self):
         """"""
-        self.output("开始加载历史数据")
+        self.write_log("开始加载历史数据")
 
         if not self.end:
             self.end = datetime.now()
 
         if self.start >= self.end:
-            self.output("起始日期必须小于结束日期")
+            self.write_log("起始日期必须小于结束日期")
             return
 
         self.history_data = []  # Clear previously loaded history data
@@ -72,7 +71,7 @@ class BacktestingEngineJnpy(BacktestingEngine):
             }
 
             # data = self.db_instance.get_bar_data(**dbbardata_info_dict)
-            self.history_data_df = self.db_instance.get_bar_data_df(**dbbardata_info_dict)
+            self.history_data_df = self.database.load_bar_df(**dbbardata_info_dict)
         else:
             # TODO tick load data 还没有进行加速优化
             # Load 30 days of data each time and allow for progress update
@@ -96,13 +95,13 @@ class BacktestingEngineJnpy(BacktestingEngine):
                 progress += progress_delta / total_delta
                 progress = min(progress, 1)
                 progress_bar = "#" * int(progress * 10)
-                self.output(f"加载进度：{progress_bar} [{progress:.0%}]")
+                self.write_log(f"加载进度：{progress_bar} [{progress:.0%}]")
 
                 start = end + interval_delta
                 end += (progress_delta + interval_delta)
 
-        self.output(f"backtesting load data cost:{time.time() - start_time:.2f}s")
-        self.output(f"历史数据加载完成，数据量：{len(self.history_data_df)}")
+        self.write_log(f"backtesting load data cost:{time.time() - start_time:.2f}s")
+        self.write_log(f"历史数据加载完成，数据量：{len(self.history_data_df)}")
 
     def run_backtesting(self, save_history_df_path=None):
         """"""
@@ -124,15 +123,15 @@ class BacktestingEngineJnpy(BacktestingEngine):
         run_backtesting_load_data()
 
         self.strategy.inited = True
-        self.output("策略初始化完成")
+        self.write_log("策略初始化完成")
 
         self.strategy.on_start()
         self.strategy.trading = True
-        self.output("开始回放历史数据")
+        self.write_log("开始回放历史数据")
 
         run_backtesting_for(func)
 
-        self.output("历史数据回放结束")
+        self.write_log("历史数据回放结束")
 
     def run_backtesting_load_data_df(self):
         # Use the first [days] of history data for initializing strategy
@@ -160,9 +159,10 @@ class BacktestingEngineJnpy(BacktestingEngine):
             # 这里将数据推送进我们的策略
             try:
                 self.callback(bar)
+                self.history_data.append(bar)
             except Exception:
-                self.output("触发异常，回测终止")
-                self.output(traceback.format_exc())
+                self.write_log("触发异常，回测终止")
+                self.write_log(traceback.format_exc())
                 return
 
     def datetime_set_timezone(self, pydatetime):
@@ -190,20 +190,23 @@ class BacktestingEngineJnpy(BacktestingEngine):
 
             try:
                 func(bar)
+                self.history_data.append(bar)
                 # fangyang 如果有设置这个属性, 那么就在这个属性打印回测进度的 log 信息
                 # 进度显示适用于 在策略中计算 耗时长的回测
-                if self.backtester_engine:
-                    progress = (ix + 1) / len(data_df)
-                    progress_interval = 10  # 设置几分区打印一次
-                    if progress >= (progress_count / progress_interval):
-                        self.backtester_engine.write_log(
-                            f"{self.strategy.strategy_name} on_bar() progress : {progress:.2%}"
-                        )
-                        progress_count += 1
+
+                # if self.backtester_engine:
+                progress = (ix + 1) / len(data_df)
+                progress_interval = 10  # 设置几分区打印一次
+                if progress >= (progress_count / progress_interval):
+                    # self.backtester_engine.write_log(
+                    self.write_log(
+                        f"{self.strategy.strategy_name} on_bar() progress : {progress:.2%}"
+                    )
+                    progress_count += 1
 
             except Exception:
-                self.output("触发异常，回测终止")
-                self.output(traceback.format_exc())
+                self.write_log("触发异常，回测终止")
+                self.write_log(traceback.format_exc())
                 return
 
     def run_backtesting_load_data_bd(self):
@@ -224,8 +227,8 @@ class BacktestingEngineJnpy(BacktestingEngine):
             try:
                 self.callback(data)
             except Exception:
-                self.output("触发异常，回测终止")
-                self.output(traceback.format_exc())
+                self.write_log("触发异常，回测终止")
+                self.write_log(traceback.format_exc())
                 return
         self.cur_data_ix = ix
 
@@ -245,22 +248,9 @@ class BacktestingEngineJnpy(BacktestingEngine):
                             f"{self.strategy.strategy_name} on_bar() progress : {progress:.2%}"
                         )
             except Exception:
-                self.output("触发异常，回测终止")
-                self.output(traceback.format_exc())
+                self.write_log("触发异常，回测终止")
+                self.write_log(traceback.format_exc())
                 return
-
-
-@lru_cache(maxsize=999)
-def load_tick_data(
-        symbol: str,
-        exchange: Exchange,
-        start: datetime,
-        end: datetime
-):
-    """"""
-    return database_manager.load_tick_data(
-        symbol, exchange, start, end
-    )
 
 
 if __name__ == "__main__":

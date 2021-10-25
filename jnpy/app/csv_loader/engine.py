@@ -29,7 +29,7 @@ from vnpy.trader.constant import Exchange, Interval
 from vnpy.trader.engine import BaseEngine, MainEngine
 from vnpy.trader.object import BarData
 
-from jnpy.app.database import database_manager
+from vnpy.trader.database import get_database
 
 APP_NAME = "CsvLoader"
 
@@ -41,6 +41,7 @@ class CsvLoaderEngine(BaseEngine):
         """"""
         super().__init__(main_engine, event_engine, APP_NAME)
 
+        self.database = get_database()
         self.file_path: str = ""
 
         self.symbol: str = ""
@@ -104,7 +105,7 @@ class CsvLoaderEngine(BaseEngine):
         end = bar.datetime
 
         # insert into database
-        database_manager.save_bar_data(bars)
+        self.database.save_bar_data(bars)
         return start, end, count
 
     def load(

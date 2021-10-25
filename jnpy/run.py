@@ -50,11 +50,11 @@ from vnpy_binance import BinanceSpotGateway
 from vnpy_ctastrategy import CtaStrategyApp
 from vnpy_ctabacktester import CtaBacktesterApp
 from vnpy_spreadtrading import SpreadTradingApp
-from vnpy.app.algo_trading import AlgoTradingApp
+# from vnpy.app.algo_trading import AlgoTradingApp
 from vnpy.app.option_master import OptionMasterApp
 from vnpy.app.portfolio_strategy import PortfolioStrategyApp
 from vnpy.app.script_trader import ScriptTraderApp
-from vnpy.app.market_radar import MarketRadarApp
+# from vnpy.app.market_radar import MarketRadarApp
 from vnpy_chartwizard import ChartWizardApp
 # from vnpy.app.rpc_service import RpcServiceApp
 from vnpy.app.excel_rtd import ExcelRtdApp
@@ -62,12 +62,12 @@ from vnpy_datamanager import DataManagerApp
 from vnpy_datarecorder import DataRecorderApp
 from vnpy_riskmanager import RiskManagerApp
 # from vnpy_webtrader import WebTraderApp
-from vnpy.app.portfolio_manager import PortfolioManagerApp
+# from vnpy.app.portfolio_manager import PortfolioManagerApp
 from vnpy.app.paper_account import PaperAccountApp
 
-# from jnpy.app.csv_loader import CsvLoaderApp
+from jnpy.app.csv_loader import CsvLoaderApp
 from jnpy.app.pytdx_loader import PytdxLoaderApp
-# from jnpy.app.cta_backtester import CtaBacktesterJnpyApp as CtaBacktesterApp_jnpy
+from jnpy.app.cta_backtester import CtaBacktesterJnpyApp as CtaBacktesterApp_jnpy
 from jnpy.app.vnpy_webtrader import WebTraderApp
 
 # from pandarallel import pandarallel
@@ -113,24 +113,24 @@ def main():
     # main_engine.add_gateway(BybitGateway)
     # main_engine.add_gateway(DeribitGateway)
 
-    # main_engine.add_app(CtaBacktesterApp_jnpy)
-    # main_engine.add_app(CsvLoaderApp)
+    main_engine.add_app(CtaBacktesterApp_jnpy)
+    main_engine.add_app(CsvLoaderApp)
     main_engine.add_app(PytdxLoaderApp)
     main_engine.add_app(WebTraderApp)
 
     main_engine.add_app(CtaStrategyApp)
     main_engine.add_app(CtaBacktesterApp)
-    main_engine.add_app(AlgoTradingApp)
+    # main_engine.add_app(AlgoTradingApp)
     main_engine.add_app(DataRecorderApp)
     main_engine.add_app(RiskManagerApp)
     main_engine.add_app(ScriptTraderApp)
     # main_engine.add_app(RpcServiceApp)
     main_engine.add_app(SpreadTradingApp)
-    main_engine.add_app(PortfolioManagerApp)
+    # main_engine.add_app(PortfolioManagerApp)
     main_engine.add_app(PortfolioStrategyApp)
     main_engine.add_app(OptionMasterApp)
     main_engine.add_app(ChartWizardApp)
-    main_engine.add_app(MarketRadarApp)
+    # main_engine.add_app(MarketRadarApp)
     main_engine.add_app(ExcelRtdApp)
     main_engine.add_app(PaperAccountApp)
     main_engine.add_app(DataManagerApp)
