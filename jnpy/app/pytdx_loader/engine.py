@@ -87,17 +87,23 @@ class PytdxLoaderEngine(BaseEngine):
             opt_str: str
     ):
         start_time = time.time()
-        if isinstance(data[datetime_head][0], str):
-            data[datetime_head] = data[datetime_head].apply(
-                lambda x: datetime.strptime(x, datetime_format) if datetime_format else datetime.fromisoformat(x))
 
-        elif isinstance(data[datetime_head][0], pd.Timestamp):
-            self.write_log("datetime 格式为 pd.Timestamp, 不用处理.")
+        try:
+            if isinstance(data[datetime_head][0], str):
+                data[datetime_head] = data[datetime_head].apply(
+                    lambda x: datetime.strptime(x, datetime_format) if datetime_format else datetime.fromisoformat(x))
 
-        else:
-            self.write_log("未知datetime类型, 请检查")
+            elif isinstance(data[datetime_head][0], pd.Timestamp):
+                self.write_log("datetime 格式为 pd.Timestamp, 不用处理.")
 
-        self.write_log(f'df apply 处理日期时间 cost {time.time() - start_time:.2f}s')
+            else:
+                self.write_log("未知datetime类型, 请检查")
+
+            self.write_log(f'df apply 处理日期时间 cost {time.time() - start_time:.2f}s')
+
+        except Exception:
+            self.write_log("通达信数据处理存在未知问题...")
+            return
 
         if opt_str == "to_db":
             start_time = time.time()
@@ -193,22 +199,26 @@ class PytdxLoaderEngine(BaseEngine):
                 inplace=True
             )
 
-        return self.load_by_handle(
-            data_df,
-            symbol=symbol,
-            exchange=exchange,
-            interval=interval,
-            datetime_head=datetime_head,
-            open_head=open_head,
-            high_head=high_head,
-            low_head=low_head,
-            close_head=close_head,
-            volume_head=volume_head,
-            open_interest_head=open_interest_head,
-            datetime_format=datetime_format,
-            update_qt_progress_bar=update_qt_progress_bar,
-            opt_str=opt_str
-        )
+        if data_df.empty:
+            return None, None, 0
+
+        else:
+            return self.load_by_handle(
+                data_df,
+                symbol=symbol,
+                exchange=exchange,
+                interval=interval,
+                datetime_head=datetime_head,
+                open_head=open_head,
+                high_head=high_head,
+                low_head=low_head,
+                close_head=close_head,
+                volume_head=volume_head,
+                open_interest_head=open_interest_head,
+                datetime_format=datetime_format,
+                update_qt_progress_bar=update_qt_progress_bar,
+                opt_str=opt_str
+            )
 
     def write_log(self, msg: str):
         self.main_engine.write_log(msg)
