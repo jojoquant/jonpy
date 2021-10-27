@@ -8,7 +8,7 @@
 from vnpy_ctp_gateway import VnpyCtpGateway
 
 
-def main():
+def dmain():
     '''
     主程序主要功能是从 ctp_gateway 更新 market_code_info.json 文件
     vnpy 的 main_engine 在事件监听, 所以需要手动停止程序运行
@@ -18,4 +18,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    dmain()

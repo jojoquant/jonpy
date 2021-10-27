@@ -105,6 +105,11 @@ class BacktestingEngineJnpy(BacktestingEngine):
 
     def run_backtesting(self, save_history_df_path=None):
         """"""
+        # fangyang 清空可视化的history_data
+        # df从数据库加载时间缩减, 但是回放并不会因为df或者BarData而缩减时间
+        # 所以这里每次回放时清空list, 然后append新的BarData
+        self.history_data = []
+
         if save_history_df_path:
             self.save_history_df_path = Path(save_history_df_path)
             self.history_data_df.to_csv(self.save_history_df_path / 'bk_history_data.csv', index=False)

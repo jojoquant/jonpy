@@ -37,9 +37,8 @@ class VnpyCtpGateway:
         }
 
     def update_local_json_contracts_info_by_ctp_gateway(self, timeout=5):
-
         for i in range(timeout):
-            time.sleep(1)  # 等待在队列中的event查询交易所信息返回
+            time.sleep(3)  # 等待在队列中的event查询交易所信息返回
             oms_engine = self.main_engine.get_engine("oms")
             contracts_dict = oms_engine.contracts
             if contracts_dict:
