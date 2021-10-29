@@ -342,14 +342,14 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
             # 重置日期
             db_end_dt = self.db_instance.get_end_date(
                 symbol=current_symbol,
-                exchange=current_exchange,
-                interval=current_interval
+                exchange=Exchange(current_exchange),
+                interval=Interval(current_interval)
             )
             db_end_dt = parser.parse(str(db_end_dt))
             db_start_dt = self.db_instance.get_start_date(
                 symbol=current_symbol,
-                exchange=current_exchange,
-                interval=current_interval
+                exchange=Exchange(current_exchange),
+                interval=Interval(current_interval)
             )
             db_start_dt =parser.parse(str(db_start_dt))
             self.start_date_edit.setDate(

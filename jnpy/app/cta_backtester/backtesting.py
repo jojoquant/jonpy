@@ -64,8 +64,8 @@ class BacktestingEngineJnpy(BacktestingEngine):
         if self.mode == BacktestingMode.BAR:
             dbbardata_info_dict = {
                 "symbol": self.symbol,
-                "exchange": self.exchange.value,
-                "interval": self.interval.value,
+                "exchange": self.exchange,
+                "interval": self.interval,
                 "start": self.start,
                 "end": self.end,
             }
