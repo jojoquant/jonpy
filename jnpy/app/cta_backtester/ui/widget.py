@@ -1,6 +1,7 @@
 import csv
 from datetime import datetime, timedelta
 from copy import copy
+from enum import Enum
 
 import numpy as np
 import pyqtgraph as pg
@@ -27,7 +28,19 @@ from ..engine import (
     EVENT_JNPY_BACKTESTER_OPTIMIZATION_FINISHED,
     OptimizationSetting
 )
+
+from vnpy_ctabacktester.engine import (
+    APP_NAME as vnpy_app_name,
+    EVENT_BACKTESTER_LOG,
+    EVENT_BACKTESTER_BACKTESTING_FINISHED,
+    EVENT_BACKTESTER_OPTIMIZATION_FINISHED)
+
 from dateutil import parser
+
+
+class BacktesterEngineType(Enum):
+    vnpy = "vnpy"
+    jnpy = "jnpy"
 
 
 class JnpyBacktesterManager(QtWidgets.QWidget):
@@ -46,10 +59,13 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         self.main_engine = main_engine
         self.event_engine = event_engine
 
-        self.backtester_engine = main_engine.get_engine(APP_NAME)
+        self.jnpy_backtester_engine = main_engine.get_engine(APP_NAME)
+        self.vnpy_backtester_engine = main_engine.get_engine(vnpy_app_name)
+        self.last_backtester_engine_type: BacktesterEngineType = None
+
         self.class_names = []
         self.settings = {}
-        self.db_instance = self.backtester_engine.database
+        self.db_instance = self.jnpy_backtester_engine.database
         self.dbbardata_groupby_df = pd.DataFrame()
         self.pytdx_contracts_dict = read_contracts_json_dict()
         # self.pyccxt_exchange = Exchange()
@@ -58,16 +74,17 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
 
         self.init_ui()
         self.register_event()
-        self.backtester_engine.init_engine()
+        self.jnpy_backtester_engine.init_engine()
+        self.vnpy_backtester_engine.init_engine()
         self.init_strategy_settings()
         self.load_backtesting_setting()
 
     def init_strategy_settings(self):
         """"""
-        self.class_names = self.backtester_engine.get_strategy_class_names()
+        self.class_names = self.jnpy_backtester_engine.get_strategy_class_names()
 
         for class_name in self.class_names:
-            setting = self.backtester_engine.get_default_setting(class_name)
+            setting = self.jnpy_backtester_engine.get_default_setting(class_name)
             self.settings[class_name] = setting
 
         self.class_combo.addItems(self.class_names)
@@ -121,8 +138,11 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         self.inverse_combo = QtWidgets.QComboBox()
         self.inverse_combo.addItems(["正向", "反向"])
 
-        backtesting_button = QtWidgets.QPushButton("开始回测")
-        backtesting_button.clicked.connect(self.start_backtesting)
+        vnpy_backtesting_button = QtWidgets.QPushButton("开始_vnpy_回测")
+        vnpy_backtesting_button.clicked.connect(lambda: self.start_backtesting(BacktesterEngineType.vnpy))
+
+        jnpy_backtesting_button = QtWidgets.QPushButton("开始_jnpy_回测")
+        jnpy_backtesting_button.clicked.connect(lambda: self.start_backtesting(BacktesterEngineType.jnpy))
 
         rl_train_button = QtWidgets.QPushButton("开始RL训练")
         rl_train_button.clicked.connect(self.start_rl_train)
@@ -187,7 +207,8 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
 
         left_vbox = QtWidgets.QVBoxLayout()
         left_vbox.addLayout(form)
-        left_vbox.addWidget(backtesting_button)
+        left_vbox.addWidget(vnpy_backtesting_button)
+        left_vbox.addWidget(jnpy_backtesting_button)
         left_vbox.addWidget(rl_train_button)
         left_vbox.addWidget(downloading_button)
         left_vbox.addStretch()
@@ -351,7 +372,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
                 exchange=Exchange(current_exchange),
                 interval=Interval(current_interval)
             )
-            db_start_dt =parser.parse(str(db_start_dt))
+            db_start_dt = parser.parse(str(db_start_dt))
             self.start_date_edit.setDate(
                 QtCore.QDate(
                     db_start_dt.year,
@@ -376,10 +397,17 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
             self.process_optimization_finished_event)
 
         self.event_engine.register(EVENT_JNPY_BACKTESTER_LOG, self.signal_log.emit)
+        self.event_engine.register(EVENT_BACKTESTER_LOG, self.signal_log.emit)
+
         self.event_engine.register(
             EVENT_JNPY_BACKTESTER_BACKTESTING_FINISHED, self.signal_backtesting_finished.emit)
         self.event_engine.register(
+            EVENT_BACKTESTER_BACKTESTING_FINISHED, self.signal_backtesting_finished.emit)
+
+        self.event_engine.register(
             EVENT_JNPY_BACKTESTER_OPTIMIZATION_FINISHED, self.signal_optimization_finished.emit)
+        self.event_engine.register(
+            EVENT_BACKTESTER_OPTIMIZATION_FINISHED, self.signal_optimization_finished.emit)
 
     def process_log_event(self, event: Event):
         """"""
@@ -394,10 +422,12 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
 
     def process_backtesting_finished_event(self, event: Event):
         """"""
-        statistics = self.backtester_engine.get_result_statistics()
-        self.statistics_monitor.set_data(statistics)
+        engine = self.get_current_backtester_engine()
 
-        df = self.backtester_engine.get_result_df()
+        statistics = engine.get_result_statistics()
+        df = engine.get_result_df()
+
+        self.statistics_monitor.set_data(statistics)
         self.chart.set_data(df)
 
         self.trade_button.setEnabled(True)
@@ -444,7 +474,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         new_setting = dialog.get_setting()
         self.settings[class_name] = new_setting
 
-        result = self.backtester_engine.rl_training(
+        result = self.jnpy_backtester_engine.rl_training(
             class_name,
             vt_symbol,
             interval,
@@ -459,7 +489,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
             new_setting
         )
 
-    def start_backtesting(self):
+    def start_backtesting(self, engine_type: BacktesterEngineType):
         """"""
         class_name = self.class_combo.currentText()
         vt_symbol = f"{self.symbol_combo.currentText()}.{self.exchange_combo.currentText()}"
@@ -492,6 +522,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
             "class_name": class_name,
             "vt_symbol": vt_symbol,
             "interval": interval,
+            "start": start.isoformat(),
             "rate": rate,
             "slippage": slippage,
             "size": size,
@@ -511,20 +542,39 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         new_setting = dialog.get_setting()
         self.settings[class_name] = new_setting
 
-        result = self.backtester_engine.start_backtesting(
-            class_name,
-            vt_symbol,
-            interval,
-            start,
-            end,
-            rate,
-            slippage,
-            size,
-            pricetick,
-            capital,
-            inverse,
-            new_setting
-        )
+        if engine_type == BacktesterEngineType.vnpy:
+            result = self.vnpy_backtester_engine.start_backtesting(
+                class_name,
+                vt_symbol,
+                interval,
+                start,
+                end,
+                rate,
+                slippage,
+                size,
+                pricetick,
+                capital,
+                inverse,
+                new_setting
+            )
+            self.last_backtester_engine_type = engine_type
+
+        elif engine_type == BacktesterEngineType.jnpy:
+            result = self.jnpy_backtester_engine.start_backtesting(
+                class_name,
+                vt_symbol,
+                interval,
+                start,
+                end,
+                rate,
+                slippage,
+                size,
+                pricetick,
+                capital,
+                inverse,
+                new_setting
+            )
+            self.last_backtester_engine_type = engine_type
 
         if result:
             self.statistics_monitor.clear_data()
@@ -567,7 +617,8 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         optimization_setting, use_ga = dialog.get_setting()
         self.target_display = dialog.target_display
 
-        self.backtester_engine.start_optimization(
+        engine = self.get_current_backtester_engine()
+        engine.start_optimization(
             class_name,
             vt_symbol,
             interval,
@@ -609,7 +660,8 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         )
         end = DB_TZ.localize(end)
 
-        self.backtester_engine.start_downloading(
+        engine = self.get_current_backtester_engine()
+        engine.start_downloading(
             vt_symbol,
             interval,
             start,
@@ -618,7 +670,9 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
 
     def show_optimization_result(self):
         """"""
-        result_values = self.backtester_engine.get_result_values()
+        engine = self.get_current_backtester_engine()
+
+        result_values = engine.get_result_values()
 
         dialog = OptimizationResultMonitor(
             result_values,
@@ -628,44 +682,52 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
 
     def show_backtesting_trades(self):
         """"""
+        engine = self.get_current_backtester_engine()
+
         if not self.trade_dialog.is_updated():
-            trades = self.backtester_engine.get_all_trades()
+            trades = engine.get_all_trades()
             self.trade_dialog.update_data(trades)
 
         self.trade_dialog.exec_()
 
     def show_backtesting_orders(self):
         """"""
+        engine = self.get_current_backtester_engine()
+
         if not self.order_dialog.is_updated():
-            orders = self.backtester_engine.get_all_orders()
+            orders = engine.get_all_orders()
             self.order_dialog.update_data(orders)
 
         self.order_dialog.exec_()
 
     def show_daily_results(self):
         """"""
+        engine = self.get_current_backtester_engine()
+
         if not self.daily_dialog.is_updated():
-            results = self.backtester_engine.get_all_daily_results()
+            results = engine.get_all_daily_results()
             self.daily_dialog.update_data(results)
 
         self.daily_dialog.exec_()
 
     def show_candle_chart_web(self):
 
+        engine = self.get_current_backtester_engine()
+
         # 所有的 BarData
-        history = self.backtester_engine.get_history_data()
+        history = engine.get_history_data()
         # 比history少了初始化用掉的那些bars, 多了pnl信息
-        results = self.backtester_engine.get_all_daily_results()
+        results = engine.get_all_daily_results()
         # 真实发生交易的结果, 都是成交的订单
         # trades = self.backtester_engine.get_all_trades()
         # 策略实际产生的订单, 包括未成交订单
-        orders = self.backtester_engine.get_all_orders()
+        orders = engine.get_all_orders()
 
-        statistics = self.backtester_engine.get_result_statistics()
-        result_df = self.backtester_engine.get_result_df()
+        # statistics = engine.get_result_statistics()
+        result_df = engine.get_result_df()
 
         # TODO 从策略中获取使用的ta-lib技术指标信息
-        strategy_tech_visual_list = self.backtester_engine.backtesting_engine.strategy.variables
+        strategy_tech_visual_list = engine.backtesting_engine.strategy.variables
         strategy_tech_visual_list = ["am.sma(n=5, array=True)", "am.sma(10, True)"]
         file_path = draw_chart(history, results, orders, strategy_tech_visual_list, result_df)
 
@@ -673,31 +735,32 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
 
     def show_candle_chart(self):
         """"""
+        engine = self.get_current_backtester_engine()
+
         if not self.candle_dialog.is_updated():
-            # TODO 这里增加一个中间层,
-            #  将 jonpy 中的 backtestingEngine 中的 self.history_data_df 转成 self.history_data
-            history = self.backtester_engine.get_history_data()
-            if not history and len(self.backtester_engine.backtesting_engine.history_data_df) != 0:
-                self.backtester_engine.backtesting_engine.trans_history_data_df_to_list()
-                history = self.backtester_engine.get_history_data()
+            history = engine.get_history_data()
             self.candle_dialog.update_history(history)
 
-            trades = self.backtester_engine.get_all_trades()
+            trades = engine.get_all_trades()
             self.candle_dialog.update_trades(trades)
 
         self.candle_dialog.exec_()
 
     def edit_strategy_code(self):
         """"""
+        engine = self.get_current_backtester_engine()
+
         class_name = self.class_combo.currentText()
-        file_path = self.backtester_engine.get_strategy_class_file(class_name)
+        file_path = engine.get_strategy_class_file(class_name)
 
         self.editor.open_editor(file_path)
         self.editor.show()
 
     def reload_strategy_class(self):
         """"""
-        self.backtester_engine.reload_strategy_class()
+        engine = self.get_current_backtester_engine()
+
+        engine.reload_strategy_class()
 
         current_strategy_name = self.class_combo.currentText()
 
@@ -710,6 +773,15 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
     def show(self):
         """"""
         self.showMaximized()
+
+    def get_current_backtester_engine(self):
+
+        if self.last_backtester_engine_type == BacktesterEngineType.vnpy:
+            return self.vnpy_backtester_engine
+        elif self.last_backtester_engine_type == BacktesterEngineType.jnpy:
+            return self.jnpy_backtester_engine
+
+        return None
 
 
 class StatisticsMonitor(QtWidgets.QTableWidget):
@@ -780,7 +852,7 @@ class StatisticsMonitor(QtWidgets.QTableWidget):
 
     def set_data(self, data: dict):
         """"""
-        data["capital"] = f"{data['capital']:,.2f}"
+        data["capital"] = f"{data['capital']:.2f}"
         data["end_balance"] = f"{data['end_balance']:,.2f}"
         data["total_return"] = f"{data['total_return']:,.2f}%"
         data["annual_return"] = f"{data['annual_return']:,.2f}%"
