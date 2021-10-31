@@ -1654,7 +1654,7 @@ def generate_trade_pairs(trades: list) -> list:
     trade_pairs = []
 
     for trade in trades:
-        trade = copy(trade)
+        trade = copy.deepcopy(trade)
 
         if trade.direction == Direction.LONG:
             same_direction = long_trades
