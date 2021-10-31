@@ -1,6 +1,6 @@
 import csv
 from datetime import datetime, timedelta
-from copy import copy
+import copy
 from enum import Enum
 
 import numpy as np
@@ -424,10 +424,16 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         """"""
         engine = self.get_current_backtester_engine()
 
+        # 这里statistics是个dict
         statistics = engine.get_result_statistics()
+        statistics_deep_copy = copy.deepcopy(statistics)
+
         df = engine.get_result_df()
 
-        self.statistics_monitor.set_data(statistics)
+        # 将上面的dict直接传入set_data, 然后再里面对其进行修改,
+        # 所以数据类型从float变成了str
+        # 正确做法这里应该使用一次深拷贝
+        self.statistics_monitor.set_data(statistics_deep_copy)
         self.chart.set_data(df)
 
         self.trade_button.setEnabled(True)
