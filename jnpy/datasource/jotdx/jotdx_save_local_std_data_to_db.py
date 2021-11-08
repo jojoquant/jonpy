@@ -103,9 +103,9 @@ class Stock:
 if __name__ == '__main__':
     db = Database()
     interval = Interval.MINUTE_5
-    symbol = "29#JDL8"
-    df = read_ext_data(symbol, interval)
-    # df = read_std_data(symbol, interval)
-    db.delete_bar_data(symbol.split("#")[1], Exchange_Map[symbol.split("#")[0]], interval)
+    symbol = "123028"
+    # df = read_ext_data(symbol, interval)
+    df = read_std_data(symbol, interval)
+    db.delete_bar_data(symbol, Exchange.SZSE, interval)
     # db.delete_bar_data("123028", Stock(), interval)
     db.save_bar_df(df)

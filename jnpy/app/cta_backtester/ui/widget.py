@@ -18,8 +18,8 @@ from vnpy.chart import ChartWidget, CandleItem, VolumeItem
 from vnpy.trader.utility import load_json, save_json
 from vnpy.trader.database import DB_TZ
 
-from jnpy.DataSource.jotdx.contracts import read_contracts_json_dict
-# from jnpy.DataSource.pyccxt.contracts import Exchange
+from jnpy.datasource.jotdx.contracts import read_contracts_json_dict
+# from jnpy.datasource.pyccxt.contracts import Exchange
 from .KLine_pro_pyecharts import draw_chart
 from ..engine import (
     APP_NAME,

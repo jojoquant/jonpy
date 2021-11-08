@@ -12,7 +12,7 @@ from vnpy.trader.utility import get_folder_path
 from vnpy.trader.datafeed import BaseDatafeed, get_datafeed
 from vnpy.trader.database import BaseDatabase, get_database
 
-from jnpy.DataSource.jotdx import ExhqAPI, IPsSource, FutureMarketCode, KBarType
+from jnpy.datasource.jotdx import ExhqAPI, IPsSource, FutureMarketCode, KBarType
 
 APP_NAME = "PytdxLoader"
 
