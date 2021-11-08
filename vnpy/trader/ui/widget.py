@@ -1061,6 +1061,7 @@ class ContractManager(QtWidgets.QWidget):
 
         self.filter_line = QtWidgets.QLineEdit()
         self.filter_line.setPlaceholderText("输入合约代码或者交易所，留空则查询所有合约")
+        self.filter_line.returnPressed.connect(self.show_contracts)
 
         self.button_show = QtWidgets.QPushButton("查询")
         self.button_show.clicked.connect(self.show_contracts)
