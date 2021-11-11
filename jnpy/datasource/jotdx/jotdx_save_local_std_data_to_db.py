@@ -84,11 +84,11 @@ def change_df_colums(df: pd.DataFrame):
             "low": "low_price",
             "close": "close_price",
             "volume": "volume",
-            "amount": "open_interest"
+            "amount": "turnover"
         },
         inplace=True
     )
-    df['turnover'] = 0
+    df['open_interest'] = 0
     return df[[
         "symbol", "exchange", "datetime", "interval",
         "volume", "turnover", "open_interest",
