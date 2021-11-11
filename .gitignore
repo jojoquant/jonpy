@@ -38,3 +38,5 @@ _templates
 
 # Jnpy
 jnpy/datasource/goCrawel/data/*
+jnpy/gateway/acestock/
+jnpy/database/vnpy_jomongodb/
