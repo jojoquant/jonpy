@@ -51,6 +51,7 @@ if __name__ == '__main__':
 
             overview_end_datetime = overview_dict[overview_dict_key].end
             # 根据 date 判断是否要补全更早的数据, 比较适合盘前运行
+            # now 如果包含不交易的休息日，那么会补全 overview 的 end datetime 的数据
             if overview_end_datetime.date() < now.date():
                 # 追加数据库中 end -> now 的数据
                 req = HistoryRequest(
