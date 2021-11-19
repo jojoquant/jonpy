@@ -2,6 +2,7 @@ import csv
 from datetime import datetime, timedelta
 import copy
 from enum import Enum
+from typing import Dict
 
 import numpy as np
 import pyqtgraph as pg
@@ -1627,6 +1628,20 @@ class CandleChartDialog(QtWidgets.QDialog):
         trade_scatter = pg.ScatterPlotItem(scatter_data)
         self.items.append(trade_scatter)
         candle_plot.addItem(trade_scatter)
+
+    def update_indicates(self, indicates: Dict[str, Dict[str, list]], plot_name: str = "candle"):
+        ''' 在策略中记录技术指标, 使用该方法更新到 k线图表中 '''
+        candle_plot = self.chart.get_plot(plot_name)
+
+        x = [self.dt_ix_map[key] for key in indicates['dt']]
+
+        indicates.pop('dt')
+
+        for key, indicate_dict in indicates.items():
+            pen = indicate_dict.get('pen', pg.mkPen('y', width=1, style=QtCore.Qt.DashLine))
+            item = pg.PlotCurveItem(x, indicate_dict['value'], pen=pen, name=key)
+            self.items.append(item)
+            candle_plot.addItem(item)
 
     def clear_data(self):
         """"""
