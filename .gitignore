@@ -35,3 +35,8 @@ _templates
 
 # Misc
 .DS_Store
+jnpy/database/vnpy_jomongodb/
+
+jnpy/dolphinscheduler/
+
+jnpy/gateway/acestock/
