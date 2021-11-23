@@ -9,6 +9,7 @@ import pyqtgraph as pg
 import pandas as pd
 import webbrowser
 
+from vnpy.chart.item import ChartItem, LineItem, BalanceLineItem
 from vnpy.trader.constant import Direction, Interval, Exchange
 from vnpy.trader.engine import MainEngine
 from vnpy.trader.ui import QtCore, QtWidgets, QtGui
@@ -1457,8 +1458,12 @@ class CandleChartDialog(QtWidgets.QDialog):
         self.chart = ChartWidget()
         self.chart.add_plot("candle", hide_x_axis=True)
         self.chart.add_plot("volume", maximum_height=200)
+        self.chart.add_plot("others", maximum_height=200)
+        self.chart.add_plot("balance", maximum_height=200)
         self.chart.add_item(CandleItem, "candle", "candle")
         self.chart.add_item(VolumeItem, "volume", "volume")
+        self.chart.add_item(LineItem, "others", "others")
+        self.chart.add_item(BalanceLineItem, "balance", "balance")
         self.chart.add_cursor()
 
         # Create help widget
@@ -1633,15 +1638,34 @@ class CandleChartDialog(QtWidgets.QDialog):
         ''' 在策略中记录技术指标, 使用该方法更新到 k线图表中 '''
         candle_plot = self.chart.get_plot(plot_name)
 
+        # if candle_plot is None:
+        #     self.chart.add_plot(plot_name=plot_name, maximum_height=200)
+        #     candle_plot = self.chart.get_plot(plot_name)
+        #     self.chart.add_item(LineItem, plot_name, plot_name)
+        #
+        #     # Update limit for y-axis
+        #     y_min, y_max = 0, 0
+        #     for key, indicate_dict in indicates.items():
+        #         if key == 'dt':
+        #             continue
+        #         y_min = min(min(indicate_dict['value']), y_min)
+        #         y_max = max(max(indicate_dict['value']), y_max)
+        #
+        #     candle_plot.setYRange(y_min, y_max)
+
         x = [self.dt_ix_map[key] for key in indicates['dt']]
 
-        indicates.pop('dt')
-
         for key, indicate_dict in indicates.items():
+
+            if key=='dt':
+                continue
+
             pen = indicate_dict.get('pen', pg.mkPen('y', width=1, style=QtCore.Qt.DashLine))
             item = pg.PlotCurveItem(x, indicate_dict['value'], pen=pen, name=key)
             self.items.append(item)
             candle_plot.addItem(item)
+            # if plot_name== "others":
+            #     pass
 
     def clear_data(self):
         """"""

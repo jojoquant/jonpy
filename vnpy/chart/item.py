@@ -316,3 +316,71 @@ class VolumeItem(ChartItem):
             text = ""
 
         return text
+
+
+class LineItem(CandleItem):
+    """"""
+
+    def __init__(self, manager: BarManager):
+        """"""
+        super().__init__(manager)
+
+        self.white_pen: QtGui.QPen = pg.mkPen(color=(255, 255, 255), width=1)
+
+
+    def _draw_bar_picture(self, ix: int, bar: BarData) -> QtGui.QPicture:
+        """"""
+        # last_bar = self._manager.get_bar(ix - 1)
+
+        # Create objects
+        picture = QtGui.QPicture()
+        painter = QtGui.QPainter(picture)
+
+        # Set painter color
+        painter.setPen(self.white_pen)
+
+        # # Draw Line
+        # end_point = QtCore.QPointF(ix, bar.close_price)
+        #
+        # if last_bar:
+        #     start_point = QtCore.QPointF(ix - 1, last_bar.close_price)
+        # else:
+        #     start_point = end_point
+        #
+        # painter.drawLine(start_point, end_point)
+
+        # Finish
+        painter.end()
+        return picture
+
+    def get_info_text(self, ix: int) -> str:
+        """"""
+        text = ""
+        bar = self._manager.get_bar(ix)
+        if bar:
+            text = f"Close:{bar.close_price}"
+        return text
+
+    def get_y_range(self, min_ix: int = None, max_ix: int = None) -> Tuple[float, float]:
+        """
+        Get range of y-axis with given x-axis range.
+
+        If min_ix and max_ix not specified, then return range with whole data set.
+        """
+        # min_volume, max_volume = self._manager.get_volume_range(min_ix, max_ix)
+        return -0.4, 0.4
+
+
+class BalanceLineItem(LineItem):
+    def __init__(self, manager: BarManager):
+        """"""
+        super().__init__(manager)
+
+    def get_y_range(self, min_ix: int = None, max_ix: int = None) -> Tuple[float, float]:
+        """
+        Get range of y-axis with given x-axis range.
+
+        If min_ix and max_ix not specified, then return range with whole data set.
+        """
+        # min_volume, max_volume = self._manager.get_volume_range(min_ix, max_ix)
+        return 50_0000, 200_0000
