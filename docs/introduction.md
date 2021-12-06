@@ -16,12 +16,11 @@
 
 ## 应用场景
 
-从专业个人投资者、创业型私募，到券商资管部门、币圈Token Fund，都能找到vn.py的应用场景。
+从专业个人投资者、创业型私募，到券商资管部门，都能找到vn.py的应用场景。
 
 * 专业个人投资者：使用VN Trader直连期货公司的CTP期货柜台，实现从策略开发到全实盘自动交易的完整CTA业务流程
 * 创业型私募：基于RpcService构建服务器端的统一报盘通道，允许交易员在自己的本地电脑自行开发各类交易策略应用
 * 券商资管部门：对接证券公司统一部署的O32资管系统，基于事件驱动引擎定制开发多策略复杂系统
-* 币圈Token Fund：使用VN Trader同时连接多个币圈交易所，通过AlgoTrading算法交易模块实现自动化委托执行，降低冲击成本
 
 
 ## 支持的接口
@@ -39,7 +38,7 @@
   * CTP Mini测试（minitest）：期货、期货期权
 
   * 飞马（femas）：期货
-    
+
   * CTP期权（sopt）：ETF期权
 
   * CTP期权测试（sopttest）：ETF期权
@@ -59,7 +58,7 @@
   * 华鑫奇点股票（torastock）：A股
 
   * 华鑫奇点期权（toraoption）：ETF期权
-    
+
   * 中亿汇达Comstar XBond（comstarxbond）：银行间市场
 
   * 中亿汇达Comstar 双边（comstarquote）：银行间市场
