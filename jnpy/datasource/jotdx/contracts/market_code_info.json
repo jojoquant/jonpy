@@ -1,0 +1,614 @@
+{
+    "SC": {
+        "exchange": "INE",
+        "name": "原油2209",
+        "main_continue_code": "SCL8",
+        "index_code": "SCL9",
+        "size": 1000,
+        "pricetick": 0.1,
+        "min_volume": 1
+    },
+    "BU": {
+        "exchange": "SHFE",
+        "name": "石油沥青2112",
+        "main_continue_code": "BUL8",
+        "index_code": "BUL9",
+        "size": 10,
+        "pricetick": 2.0,
+        "min_volume": 1
+    },
+    "A": {
+        "exchange": "DCE",
+        "name": "黄大豆1号2111",
+        "main_continue_code": "AL8",
+        "index_code": "AL9",
+        "size": 10,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "B": {
+        "exchange": "DCE",
+        "name": "黄大豆2号2111",
+        "main_continue_code": "BL8",
+        "index_code": "BL9",
+        "size": 10,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "BB": {
+        "exchange": "DCE",
+        "name": "胶合板2111",
+        "main_continue_code": "BBL8",
+        "index_code": "BBL9",
+        "size": 500,
+        "pricetick": 0.05,
+        "min_volume": 1
+    },
+    "C": {
+        "exchange": "DCE",
+        "name": "黄玉米2111",
+        "main_continue_code": "CL8",
+        "index_code": "CL9",
+        "size": 10,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "CS": {
+        "exchange": "DCE",
+        "name": "玉米淀粉2111",
+        "main_continue_code": "CSL8",
+        "index_code": "CSL9",
+        "size": 10,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "FB": {
+        "exchange": "DCE",
+        "name": "纤维板2111",
+        "main_continue_code": "FBL8",
+        "index_code": "FBL9",
+        "size": 10,
+        "pricetick": 0.5,
+        "min_volume": 1
+    },
+    "I": {
+        "exchange": "DCE",
+        "name": "铁矿石2111",
+        "main_continue_code": "IL8",
+        "index_code": "IL9",
+        "size": 100,
+        "pricetick": 0.5,
+        "min_volume": 1
+    },
+    "J": {
+        "exchange": "DCE",
+        "name": "冶金焦炭2111",
+        "main_continue_code": "JL8",
+        "index_code": "JL9",
+        "size": 100,
+        "pricetick": 0.5,
+        "min_volume": 1
+    },
+    "JM": {
+        "exchange": "DCE",
+        "name": "焦煤2111",
+        "main_continue_code": "JML8",
+        "index_code": "JML9",
+        "size": 60,
+        "pricetick": 0.5,
+        "min_volume": 1
+    },
+    "L": {
+        "exchange": "DCE",
+        "name": "线型低密度聚乙烯2111",
+        "main_continue_code": "LL8",
+        "index_code": "LL9",
+        "size": 5,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "M": {
+        "exchange": "DCE",
+        "name": "豆粕2111",
+        "main_continue_code": "ML8",
+        "index_code": "ML9",
+        "size": 10,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "P": {
+        "exchange": "DCE",
+        "name": "棕榈油2111",
+        "main_continue_code": "PL8",
+        "index_code": "PL9",
+        "size": 10,
+        "pricetick": 2.0,
+        "min_volume": 1
+    },
+    "PP": {
+        "exchange": "DCE",
+        "name": "聚丙烯2111",
+        "main_continue_code": "PPL8",
+        "index_code": "PPL9",
+        "size": 5,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "RR": {
+        "exchange": "DCE",
+        "name": "粳米2111",
+        "main_continue_code": "RRL8",
+        "index_code": "RRL9",
+        "size": 10,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "V": {
+        "exchange": "DCE",
+        "name": "聚氯乙烯2111",
+        "main_continue_code": "VL8",
+        "index_code": "VL9",
+        "size": 5,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "Y": {
+        "exchange": "DCE",
+        "name": "豆油2111",
+        "main_continue_code": "YL8",
+        "index_code": "YL9",
+        "size": 10,
+        "pricetick": 2.0,
+        "min_volume": 1
+    },
+    "AP": {
+        "exchange": "CZCE",
+        "name": "苹果111",
+        "main_continue_code": "APL8",
+        "index_code": "APL9",
+        "size": 10,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "CF": {
+        "exchange": "CZCE",
+        "name": "一号棉花111",
+        "main_continue_code": "CFL8",
+        "index_code": "CFL9",
+        "size": 5,
+        "pricetick": 5.0,
+        "min_volume": 1
+    },
+    "CY": {
+        "exchange": "CZCE",
+        "name": "棉纱111",
+        "main_continue_code": "CYL8",
+        "index_code": "CYL9",
+        "size": 5,
+        "pricetick": 5.0,
+        "min_volume": 1
+    },
+    "FG": {
+        "exchange": "CZCE",
+        "name": "玻璃111",
+        "main_continue_code": "FGL8",
+        "index_code": "FGL9",
+        "size": 20,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "JR": {
+        "exchange": "CZCE",
+        "name": "粳稻111",
+        "main_continue_code": "JRL8",
+        "index_code": "JRL9",
+        "size": 20,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "LR": {
+        "exchange": "CZCE",
+        "name": "晚籼稻111",
+        "main_continue_code": "LRL8",
+        "index_code": "LRL9",
+        "size": 20,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "MA": {
+        "exchange": "CZCE",
+        "name": "甲醇N111",
+        "main_continue_code": "MAL8",
+        "index_code": "MAL9",
+        "size": 10,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "OI": {
+        "exchange": "CZCE",
+        "name": "菜籽油111",
+        "main_continue_code": "OIL8",
+        "index_code": "OIL9",
+        "size": 10,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "PF": {
+        "exchange": "CZCE",
+        "name": "短纤111",
+        "main_continue_code": "PFL8",
+        "index_code": "PFL9",
+        "size": 5,
+        "pricetick": 2.0,
+        "min_volume": 1
+    },
+    "PM": {
+        "exchange": "CZCE",
+        "name": "普通小麦111",
+        "main_continue_code": "PML8",
+        "index_code": "PML9",
+        "size": 50,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "RI": {
+        "exchange": "CZCE",
+        "name": "早籼稻111",
+        "main_continue_code": "RIL8",
+        "index_code": "RIL9",
+        "size": 20,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "RM": {
+        "exchange": "CZCE",
+        "name": "菜籽粕111",
+        "main_continue_code": "RML8",
+        "index_code": "RML9",
+        "size": 10,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "RS": {
+        "exchange": "CZCE",
+        "name": "油菜籽111",
+        "main_continue_code": "RSL8",
+        "index_code": "RSL9",
+        "size": 10,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "SA": {
+        "exchange": "CZCE",
+        "name": "纯碱111",
+        "main_continue_code": "SAL8",
+        "index_code": "SAL9",
+        "size": 20,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "SF": {
+        "exchange": "CZCE",
+        "name": "硅铁111",
+        "main_continue_code": "SFL8",
+        "index_code": "SFL9",
+        "size": 5,
+        "pricetick": 2.0,
+        "min_volume": 1
+    },
+    "SM": {
+        "exchange": "CZCE",
+        "name": "锰硅111",
+        "main_continue_code": "SML8",
+        "index_code": "SML9",
+        "size": 5,
+        "pricetick": 2.0,
+        "min_volume": 1
+    },
+    "SR": {
+        "exchange": "CZCE",
+        "name": "白砂糖111",
+        "main_continue_code": "SRL8",
+        "index_code": "SRL9",
+        "size": 10,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "TA": {
+        "exchange": "CZCE",
+        "name": "精对苯二甲酸111",
+        "main_continue_code": "TAL8",
+        "index_code": "TAL9",
+        "size": 5,
+        "pricetick": 2.0,
+        "min_volume": 1
+    },
+    "UR": {
+        "exchange": "CZCE",
+        "name": "尿素111",
+        "main_continue_code": "URL8",
+        "index_code": "URL9",
+        "size": 20,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "WH": {
+        "exchange": "CZCE",
+        "name": "优质强筋小麦111",
+        "main_continue_code": "WHL8",
+        "index_code": "WHL9",
+        "size": 20,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "AL": {
+        "exchange": "SHFE",
+        "name": "铝2203",
+        "main_continue_code": "ALL8",
+        "index_code": "ALL9",
+        "size": 5,
+        "pricetick": 5.0,
+        "min_volume": 1
+    },
+    "AU": {
+        "exchange": "SHFE",
+        "name": "黄金2204",
+        "main_continue_code": "AUL8",
+        "index_code": "AUL9",
+        "size": 1000,
+        "pricetick": 0.02,
+        "min_volume": 1
+    },
+    "CU": {
+        "exchange": "SHFE",
+        "name": "铜2203",
+        "main_continue_code": "CUL8",
+        "index_code": "CUL9",
+        "size": 5,
+        "pricetick": 10.0,
+        "min_volume": 1
+    },
+    "HC": {
+        "exchange": "SHFE",
+        "name": "热轧卷板2203",
+        "main_continue_code": "HCL8",
+        "index_code": "HCL9",
+        "size": 10,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "NI": {
+        "exchange": "SHFE",
+        "name": "镍2203",
+        "main_continue_code": "NIL8",
+        "index_code": "NIL9",
+        "size": 1,
+        "pricetick": 10.0,
+        "min_volume": 1
+    },
+    "TS": {
+        "exchange": "CFFEX",
+        "name": "2年期国债2112",
+        "main_continue_code": "TSL8",
+        "index_code": "TSL9",
+        "size": 20000,
+        "pricetick": 0.005,
+        "min_volume": 1
+    },
+    "TF": {
+        "exchange": "CFFEX",
+        "name": "5年期国债2112",
+        "main_continue_code": "TFL8",
+        "index_code": "TFL9",
+        "size": 10000,
+        "pricetick": 0.005,
+        "min_volume": 1
+    },
+    "T": {
+        "exchange": "CFFEX",
+        "name": "10年期国债2112",
+        "main_continue_code": "TL8",
+        "index_code": "TL9",
+        "size": 10000,
+        "pricetick": 0.005,
+        "min_volume": 1
+    },
+    "EB": {
+        "exchange": "DCE",
+        "name": "苯乙烯2203",
+        "main_continue_code": "EBL8",
+        "index_code": "EBL9",
+        "size": 5,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "EG": {
+        "exchange": "DCE",
+        "name": "乙二醇2203",
+        "main_continue_code": "EGL8",
+        "index_code": "EGL9",
+        "size": 10,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "JD": {
+        "exchange": "DCE",
+        "name": "鸡蛋2203",
+        "main_continue_code": "JDL8",
+        "index_code": "JDL9",
+        "size": 10,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "LH": {
+        "exchange": "DCE",
+        "name": "生猪2203",
+        "main_continue_code": "LHL8",
+        "index_code": "LHL9",
+        "size": 16,
+        "pricetick": 5.0,
+        "min_volume": 1
+    },
+    "PG": {
+        "exchange": "DCE",
+        "name": "液化石油气2203",
+        "main_continue_code": "PGL8",
+        "index_code": "PGL9",
+        "size": 20,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "AG": {
+        "exchange": "SHFE",
+        "name": "白银2111",
+        "main_continue_code": "AGL8",
+        "index_code": "AGL9",
+        "size": 15,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "NR": {
+        "exchange": "INE",
+        "name": "20号胶2111",
+        "main_continue_code": "NRL8",
+        "index_code": "NRL9",
+        "size": 10,
+        "pricetick": 5.0,
+        "min_volume": 1
+    },
+    "PB": {
+        "exchange": "SHFE",
+        "name": "铅2111",
+        "main_continue_code": "PBL8",
+        "index_code": "PBL9",
+        "size": 5,
+        "pricetick": 5.0,
+        "min_volume": 1
+    },
+    "RB": {
+        "exchange": "SHFE",
+        "name": "螺纹钢2111",
+        "main_continue_code": "RBL8",
+        "index_code": "RBL9",
+        "size": 10,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "RU": {
+        "exchange": "SHFE",
+        "name": "天然橡胶2111",
+        "main_continue_code": "RUL8",
+        "index_code": "RUL9",
+        "size": 10,
+        "pricetick": 5.0,
+        "min_volume": 1
+    },
+    "SN": {
+        "exchange": "SHFE",
+        "name": "锡2111",
+        "main_continue_code": "SNL8",
+        "index_code": "SNL9",
+        "size": 1,
+        "pricetick": 10.0,
+        "min_volume": 1
+    },
+    "SP": {
+        "exchange": "SHFE",
+        "name": "漂针浆2111",
+        "main_continue_code": "SPL8",
+        "index_code": "SPL9",
+        "size": 10,
+        "pricetick": 2.0,
+        "min_volume": 1
+    },
+    "SS": {
+        "exchange": "SHFE",
+        "name": "不锈钢2111",
+        "main_continue_code": "SSL8",
+        "index_code": "SSL9",
+        "size": 5,
+        "pricetick": 5.0,
+        "min_volume": 1
+    },
+    "WR": {
+        "exchange": "SHFE",
+        "name": "线材2111",
+        "main_continue_code": "WRL8",
+        "index_code": "WRL9",
+        "size": 10,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "ZN": {
+        "exchange": "SHFE",
+        "name": "锌2111",
+        "main_continue_code": "ZNL8",
+        "index_code": "ZNL9",
+        "size": 5,
+        "pricetick": 5.0,
+        "min_volume": 1
+    },
+    "LU": {
+        "exchange": "INE",
+        "name": "低硫燃料油2203",
+        "main_continue_code": "LUL8",
+        "index_code": "LUL9",
+        "size": 10,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "FU": {
+        "exchange": "SHFE",
+        "name": "燃料油2203",
+        "main_continue_code": "FUL8",
+        "index_code": "FUL9",
+        "size": 10,
+        "pricetick": 1.0,
+        "min_volume": 1
+    },
+    "IH": {
+        "exchange": "CFFEX",
+        "name": "上证50期货2203",
+        "main_continue_code": "IHL8",
+        "index_code": "IHL9",
+        "size": 300,
+        "pricetick": 0.2,
+        "min_volume": 1
+    },
+    "IF": {
+        "exchange": "CFFEX",
+        "name": "股指2203",
+        "main_continue_code": "IFL8",
+        "index_code": "IFL9",
+        "size": 300,
+        "pricetick": 0.2,
+        "min_volume": 1
+    },
+    "CJ": {
+        "exchange": "CZCE",
+        "name": "红枣7月",
+        "main_continue_code": "CJL8",
+        "index_code": "CJL9",
+        "size": 5,
+        "pricetick": 5.0,
+        "min_volume": 1
+    },
+    "BC": {
+        "exchange": "INE",
+        "name": "bc2207",
+        "main_continue_code": "BCL8",
+        "index_code": "BCL9",
+        "size": 5,
+        "pricetick": 10.0,
+        "min_volume": 1
+    },
+    "ZC": {
+        "exchange": "CZCE",
+        "name": "动力煤N203",
+        "main_continue_code": "ZCL8",
+        "index_code": "ZCL9",
+        "size": 100,
+        "pricetick": 0.2,
+        "min_volume": 1
+    }
+}

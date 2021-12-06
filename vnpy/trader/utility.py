@@ -4,6 +4,7 @@ General utility functions.
 
 import json
 import logging
+import pickle
 import sys
 from pathlib import Path
 from typing import Callable, Dict, Tuple, Union, Optional
@@ -114,6 +115,30 @@ def save_json(filename: str, data: dict) -> None:
             indent=4,
             ensure_ascii=False
         )
+
+
+def load_pickle(filename: str) -> dict:
+    """
+    Load data from json file in temp path.
+    """
+    filepath = get_file_path(filename)
+
+    if filepath.exists():
+        with open(filepath, mode="rb") as f:
+            data = pickle.load(f)
+        return data
+    else:
+        save_pickle(filename, {})
+        return {}
+
+
+def save_pickle(filename: str, data: any) -> None:
+    """
+    Save data into pickle file in temp path.
+    """
+    filepath = get_file_path(filename)
+    with open(filepath, mode="wb") as f:
+        pickle.dump(data, f)
 
 
 def round_to(value: float, target: float) -> float:
@@ -950,6 +975,35 @@ class ArrayManager(object):
         if array:
             return result
         return result[-1]
+
+    def stoch(
+        self,
+        fastk_period: int,
+        slowk_period: int,
+        slowk_matype: int,
+        slowd_period: int,
+        slowd_matype: int,
+        array: bool = False
+    ) -> Union[
+        Tuple[float, float],
+        Tuple[np.ndarray, np.ndarray]
+    ]:
+        """
+        Stochastic Indicator
+        """
+        k, d = talib.STOCH(
+            self.high,
+            self.low,
+            self.close,
+            fastk_period,
+            slowk_period,
+            slowk_matype,
+            slowd_period,
+            slowd_matype
+        )
+        if array:
+            return k, d
+        return k[-1], d[-1]
 
 
 class DataFrameManager(object):

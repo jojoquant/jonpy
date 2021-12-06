@@ -5,7 +5,7 @@ from vnpy.trader.ui import QtCore, QtWidgets
 
 from ..engine import APP_NAME
 
-from jnpy.DataSource.jotdx.contracts import read_contracts_json_dict
+from jnpy.datasource.jotdx.contracts import read_contracts_json_dict
 
 
 class PytdxLoaderWidget(QtWidgets.QWidget):

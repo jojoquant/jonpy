@@ -17,8 +17,8 @@ from vnpy.trader.utility import load_json, save_json
 
 from jnpy.app.cta_backtester import BacktesterEngineJnpy
 from jnpy.app.pd_db_operator.db_operation import DBOperation
-from jnpy.DataSource.jotdx.contracts import read_contracts_json_dict
-from jnpy.DataSource.pyccxt.contracts import Exchange
+from jnpy.datasource.jotdx.contracts import read_contracts_json_dict
+from jnpy.datasource.pyccxt.contracts import Exchange
 from jnpy.WebTrader.constant import DATE_FORMAT, BACKTEST_STATISTICS_RESULT_MAP
 
 #############################################################

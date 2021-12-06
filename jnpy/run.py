@@ -47,6 +47,9 @@ from vnpy_binance import BinanceSpotGateway
 # from vnpy_tts import TtsGateway
 # from vnpy.gateway.alpaca import AlpacaGateway
 
+from jnpy.gateway.acestock.acestock.gateway import AcestockGateway
+# from acestock import AcestockGateway
+
 from vnpy_ctastrategy import CtaStrategyApp
 from vnpy_ctabacktester import CtaBacktesterApp
 from vnpy_spreadtrading import SpreadTradingApp
@@ -57,7 +60,7 @@ from vnpy.app.script_trader import ScriptTraderApp
 # from vnpy.app.market_radar import MarketRadarApp
 from vnpy_chartwizard import ChartWizardApp
 # from vnpy.app.rpc_service import RpcServiceApp
-from vnpy.app.excel_rtd import ExcelRtdApp
+# from vnpy.app.excel_rtd import ExcelRtdApp
 from vnpy_datamanager import DataManagerApp
 from vnpy_datarecorder import DataRecorderApp
 from vnpy_riskmanager import RiskManagerApp
@@ -82,6 +85,7 @@ def main():
 
     main_engine = MainEngine(event_engine)
 
+    main_engine.add_gateway(AcestockGateway)
     main_engine.add_gateway(CtpGateway)
     main_engine.add_gateway(BinanceSpotGateway)
     # main_engine.add_gateway(CtptestGateway)
@@ -131,8 +135,8 @@ def main():
     main_engine.add_app(OptionMasterApp)
     main_engine.add_app(ChartWizardApp)
     # main_engine.add_app(MarketRadarApp)
-    main_engine.add_app(ExcelRtdApp)
-    main_engine.add_app(PaperAccountApp)
+    # main_engine.add_app(ExcelRtdApp)
+    # main_engine.add_app(PaperAccountApp)
     main_engine.add_app(DataManagerApp)
     # main_engine.add_app(WebTraderApp)
 

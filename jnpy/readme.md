@@ -95,3 +95,24 @@ sudo chmod 777 /sys/firmware/dmi/tables/smbios_entry_point /dev/mem /sys/firmwar
 sudo chmod 777 /sys/firmware/dmi/tables/smbios_entry_point /dev/mem /sys/firmware/dmi/tables/DMI
 ```
 
+### 回测报错
+```buildoutcfg
+  File "/home/fangyang/anaconda3/envs/jonpy/lib/python3.7/site-packages/vnpy_ctastrategy/backtesting.py", line 168, in load_data
+    interval_delta = INTERVAL_DELTA_MAP[self.interval]
+KeyError: <Interval.MINUTE_5: '5m'>
+```
+解决方法：
+```buildoutcfg
+在 /home/fangyang/anaconda3/envs/jonpy/lib/python3.7/site-packages/vnpy_ctastrategy/base.py
+
+增加5分钟支持
+
+INTERVAL_DELTA_MAP = {
+    Interval.TICK: timedelta(milliseconds=1),
+    Interval.MINUTE: timedelta(minutes=1),
+    Interval.MINUTE_5: timedelta(minutes=5),
+    Interval.HOUR: timedelta(hours=1),
+    Interval.DAILY: timedelta(days=1),
+}
+
+```
