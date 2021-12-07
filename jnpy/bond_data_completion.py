@@ -3,23 +3,28 @@ import tqdm
 
 from vnpy.trader.engine import MainEngine, EventEngine
 from jnpy.gateway.acestock.acestock.gateway import AcestockGateway
-from vnpy.trader.constant import Interval, Product
-from vnpy.trader.database import DB_TZ, get_database
+from vnpy.trader.constant import Interval, Product, Exchange
+from vnpy.trader.database import DB_TZ, get_database, DATETIME_TZ
 from vnpy.trader.object import HistoryRequest
+
 
 completion_product = Product.BOND
 
-want_interval = Interval.MINUTE_5
-want_start_datetime = datetime.datetime(year=2021, month=9, day=1, tzinfo=DB_TZ)
-now = datetime.datetime.now(tz=DB_TZ)
+want_interval = Interval.MINUTE
+want_start_datetime = datetime.datetime(year=2021, month=12, day=2, tzinfo=DATETIME_TZ)
+now = datetime.datetime.now(tz=DATETIME_TZ)
 if now.time() < datetime.time(hour=9, minute=30, tzinfo=DB_TZ):
     now -= datetime.timedelta(days=1)
+end_datetime = datetime.datetime.combine(now.date(), datetime.time(hour=15), tzinfo=DATETIME_TZ)
 
 if __name__ == '__main__':
     main_engine = MainEngine(EventEngine())
     acestock_gateway = main_engine.add_gateway(AcestockGateway)
 
     db = get_database()
+    # df_110081 = db.load_bar_df("110081", Exchange.SSE, Interval.MINUTE)
+    # df_113009 = db.load_bar_df("113009", Exchange.SSE, Interval.MINUTE)
+
     overview_dict = {
         f"{overview.symbol}.{overview.exchange.value}_{overview.interval}": overview
         for overview in db.get_bar_overview()
@@ -52,13 +57,13 @@ if __name__ == '__main__':
             overview_end_datetime = overview_dict[overview_dict_key].end
             # 根据 date 判断是否要补全更早的数据, 比较适合盘前运行
             # now 如果包含不交易的休息日，那么会补全 overview 的 end datetime 的数据
-            if overview_end_datetime.date() < now.date():
+            if overview_end_datetime < end_datetime:
                 # 追加数据库中 end -> now 的数据
                 req = HistoryRequest(
                     symbol=contract_data.symbol,
                     exchange=contract_data.exchange,
                     start=overview_end_datetime,
-                    end=now,
+                    end=end_datetime,
                     interval=want_interval,
                 )
                 r = acestock_gateway.query_history(req)
