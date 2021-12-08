@@ -11,7 +11,7 @@ from vnpy.trader.object import HistoryRequest
 completion_product = Product.BOND
 
 want_interval = Interval.MINUTE
-want_start_datetime = datetime.datetime(year=2021, month=12, day=2, tzinfo=DATETIME_TZ)
+want_start_datetime = datetime.datetime(year=2021, month=11, day=15, tzinfo=DATETIME_TZ)
 now = datetime.datetime.now(tz=DATETIME_TZ)
 if now.time() < datetime.time(hour=9, minute=30, tzinfo=DB_TZ):
     now -= datetime.timedelta(days=1)
@@ -35,6 +35,8 @@ if __name__ == '__main__':
 
     for _, contract_data in tqdm.tqdm(bond_contracts_dict.items(), total=len(bond_contracts_dict)):
         overview_dict_key = f"{contract_data.vt_symbol}_{want_interval}"
+        print("-"*100)
+        print(f"开始处理 {overview_dict_key}")
         if overview_dict_key in overview_dict:
             print(f"数据已存在, 开始检查是否需要补全数据...")
             # 是否要补全更早的数据
@@ -84,5 +86,6 @@ if __name__ == '__main__':
             if r:
                 db.save_bar_data(r)
                 print(f"[新增] {len(r)}条数据: {req}")
+        print("-" * 100)
 
     print("数据补完任务完成")
