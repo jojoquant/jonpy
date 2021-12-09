@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import List
+
+from dateutil.tz import tz
 from pytz import timezone
 from dataclasses import dataclass
 from importlib import import_module
@@ -11,6 +13,9 @@ from .setting import SETTINGS
 
 
 DB_TZ = timezone(SETTINGS["database.timezone"])
+
+# use this tz in datetime tzinfo, remove 6min problem
+DATETIME_TZ = tz.gettz('Asia/Shanghai')
 
 
 def convert_tz(dt: datetime) -> datetime:
