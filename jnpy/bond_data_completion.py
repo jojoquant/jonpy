@@ -10,7 +10,7 @@ from vnpy.trader.object import HistoryRequest
 
 completion_product = Product.BOND
 
-want_interval = Interval.MINUTE
+want_interval = Interval.MINUTE_5
 want_start_datetime = datetime.datetime(year=2021, month=11, day=15, tzinfo=DATETIME_TZ)
 now = datetime.datetime.now(tz=DATETIME_TZ)
 if now.time() < datetime.time(hour=9, minute=30, tzinfo=DB_TZ):
@@ -30,8 +30,8 @@ if __name__ == '__main__':
         for overview in db.get_bar_overview()
     }
 
-    acestock_gateway.connect_md_api()
-    bond_contracts_dict = acestock_gateway.contracts_dict[completion_product]
+    acestock_gateway.md.connect(False)
+    bond_contracts_dict = acestock_gateway.md.contracts_dict[completion_product]
 
     for _, contract_data in tqdm.tqdm(bond_contracts_dict.items(), total=len(bond_contracts_dict)):
         overview_dict_key = f"{contract_data.vt_symbol}_{want_interval}"
