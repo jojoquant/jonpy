@@ -305,7 +305,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         self.symbol_combo.addItems(
             self.dbbardata_groupby_df[
                 self.dbbardata_groupby_df['exchange'] == current_exchange_text
-                ]['symbol'].drop_duplicates().to_list()
+                ]['symbol'].drop_duplicates().sort_values().to_list()
         )
 
     def onSymbolActivated(self):
