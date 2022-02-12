@@ -1,7 +1,7 @@
 six
 wheel
 tzlocal==2.0.0
-PyQt5
+PyQt5==5.14.1
 pyqtgraph
 qdarkstyle
 numpy==1.18.2
@@ -29,7 +29,7 @@ vnpy_tts==6.5.1.1
 vnpy_rohon==6.5.1.1
 vnpy_mini==1.5.6.3
 vnpy_sopt==3.5.5.0
-vnpy_uft==3.7.2.4.1
+vnpy_uft==3.7.2.4.2
 vnpy_esunny==1.0.2.2.3
 vnpy_comstar==1.0.1
 vnpy_ib==9.81.1.0
@@ -39,7 +39,7 @@ vnpy_femas==1.0.0
 vnpy_ost==2.0.1.1
 vnpy_tora==2021.12.24
 vnpy_hft==1.0.0
-vnpy_sec==1.0.0
+vnpy_sec==1.0.1
 vnpy_hts==1.0.0
 
 vnpy_ctastrategy==1.0.6
@@ -57,13 +57,14 @@ vnpy_portfoliomanager==1.0.0
 vnpy_portfoliostrategy==1.0.0
 vnpy_paperaccount==1.0.0
 vnpy_excelrtd==1.0.0
+vnpy_rpcservice==1.0.0
 
 vnpy_sqlite==1.0.0
 vnpy_mysql==1.0.0
 vnpy_postgresql==1.0.0
 vnpy_mongodb==1.0.1
 vnpy_influxdb==1.0.1
-vnpy_dolphindb==1.0.5
+vnpy_dolphindb==1.0.6
 vnpy_leveldb==1.0.1
 
 vnpy_rqdata==2.9.38.1
