@@ -1,0 +1,8 @@
+
+experiments/**/*.csv
+datasource/goCrawel/data/*
+
+gateway/acestock/
+database/vnpy_jomongodb/
+dolphinscheduler/
+local_whl/

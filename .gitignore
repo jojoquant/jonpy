@@ -35,10 +35,3 @@ _templates
 
 # Misc
 .DS_Store
-
-# Jnpy
-jnpy/datasource/goCrawel/data/*
-jnpy/gateway/acestock/
-jnpy/database/vnpy_jomongodb/
-jnpy/dolphinscheduler/
-jnpy/local_whl/
