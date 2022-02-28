@@ -1,6 +1,9 @@
-import pandas as pd
+
+import tqdm
 from jotdx.reader import Reader
 from vnpy_jomongodb import Database
+
+from jnpy.datasource.utils import change_df_colums, move_sunday_night_to_friday_night
 from vnpy.trader.constant import Exchange, Interval
 from vnpy.trader.database import DB_TZ
 
@@ -34,11 +37,17 @@ def read_ext_data(file_name, interval):
         df = reader.daily(symbol=file_name)
         df['interval'] = Interval.DAILY.value
 
+    df = df.drop(df[df['volume'] <= 0].index)
+    df = df.tz_localize(DB_TZ)  # 设置 datetime 的 tzinfo 为 DBTZ, 通过 df.tz_convert("UTC") 转为UTC时区
+    df.reset_index(inplace=True)
+
     exchange_code, symbol = file_name.split("#")
     df['symbol'] = symbol
     df['exchange'] = Exchange_Map[exchange_code].value
+    df = change_df_colums(df)
+    df = move_sunday_night_to_friday_night(df)
 
-    return change_df_colums(df)
+    return df
 
 
 def read_std_data(file_name, interval):
@@ -66,33 +75,15 @@ def read_std_data(file_name, interval):
         df = reader.daily(symbol=file_name)
         df['interval'] = Interval.DAILY.value
 
-    df['symbol'] = file_name
-    df['exchange'] = "SZSE"
-
-    print(1)
-    return change_df_colums(df)
-
-
-def change_df_colums(df: pd.DataFrame):
     df = df.tz_localize(DB_TZ)  # 设置 datetime 的 tzinfo 为 DBTZ, 通过 df.tz_convert("UTC") 转为UTC时区
     df.reset_index(inplace=True)
-    df.rename(
-        columns={
-            "date": "datetime",
-            "open": "open_price",
-            "high": "high_price",
-            "low": "low_price",
-            "close": "close_price",
-            "volume": "volume",
-            "amount": "open_interest"
-        },
-        inplace=True
-    )
-    df['turnover'] = 0
-    return df[[
-        "symbol", "exchange", "datetime", "interval",
-        "volume", "turnover", "open_interest",
-        "open_price", "high_price", "low_price", "close_price"]]
+
+    df['symbol'] = file_name
+    #TODO 这里对exchange没有做区分
+    df['exchange'] = "SZSE"
+    df = change_df_colums(df)
+
+    return df
 
 
 class Stock:
@@ -102,10 +93,12 @@ class Stock:
 
 if __name__ == '__main__':
     db = Database()
-    interval = Interval.MINUTE_5
-    symbol = "30#CUL8"
-    df = read_ext_data(symbol, interval)
-    # df = read_std_data(symbol, interval)
-    db.delete_bar_data(symbol.split("#")[1], Exchange_Map[symbol.split("#")[0]], interval)
-    # db.delete_bar_data("123028", Stock(), interval)
-    db.save_bar_df(df)
+    interval = Interval.MINUTE
+    symbol_list = ["30#RBL8", "30#FU2205", "30#RB2205"]
+
+    for symbol in tqdm.tqdm(symbol_list):
+        df = read_ext_data(symbol, interval)
+        # df = read_std_data(symbol, interval)
+        # db.delete_bar_data(symbol.split("#")[1], Exchange_Map[symbol.split("#")[0]], interval)
+        # db.delete_bar_data("123028", Stock(), interval)
+        db.save_bar_df(df)
