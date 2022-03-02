@@ -14,7 +14,7 @@ from pyecharts.commons.utils import JsCode
 from pyecharts.charts import Kline, Line, Bar, Grid
 
 from jnpy.utils.DataManager import ArrayManagerWithDatetime
-from jnpy.utils.logging.log import LogModule
+from jnpy.utils.utils_log import LogModule
 from vnpy.trader.utility import get_folder_path
 from vnpy.trader.constant import Status, Offset, Direction
 

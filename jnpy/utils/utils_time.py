@@ -20,6 +20,7 @@ def timeit_cls_method_wrapper(func):
         return result
     return clocked  # --> 3
 
+
 def timeit_function_wrapper(func):
     @wraps(func)  # --> 4
     def clocked(*args, **kwargs):  # -- 1
