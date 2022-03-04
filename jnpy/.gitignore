@@ -1,8 +1,13 @@
 
 experiments/**/*.csv
+
 datasource/goCrawel/data/*
 
 gateway/acestock/
+
 database/vnpy_jomongodb/
+
+datafeed/*
+
 dolphinscheduler/
 local_whl/
