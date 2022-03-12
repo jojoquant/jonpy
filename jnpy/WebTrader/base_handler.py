@@ -10,7 +10,7 @@ from abc import ABC
 from tornado.web import RequestHandler
 from tornado.websocket import WebSocketHandler
 from jnpy.WebTrader.settings import get_global_config_json_dict
-from jnpy.utils.logging import LogModule
+from jnpy.utils.custom_log import LogModule
 
 
 class BaseRestfulHandler(RequestHandler, ABC):
