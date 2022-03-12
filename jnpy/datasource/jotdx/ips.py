@@ -9,7 +9,7 @@
 from jotdx.exhq import TdxExHq_API
 from jotdx.hq import TdxHq_API
 import time
-from jnpy.utils.logging.log import LogModule
+from jnpy.utils.utils_log import LogModule
 
 
 class IPsSource:
@@ -96,6 +96,6 @@ class IPsSource:
 
 if __name__ == '__main__':
     ips_pool = IPsSource()
-    exhq_ip, exhq_port = ips_pool.get_fast_exhq_ip()
+    # exhq_ip, exhq_port = ips_pool.get_fast_exhq_ip()
     hq_ip, hq_port = ips_pool.get_fast_hq_ip()
     print(1)

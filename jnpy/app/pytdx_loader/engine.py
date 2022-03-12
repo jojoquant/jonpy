@@ -4,6 +4,8 @@ from typing import Callable
 import pandas as pd
 from datetime import datetime
 
+from jotdx.reader import Reader
+
 from vnpy.event import EventEngine
 from vnpy.trader.constant import Exchange, Interval
 from vnpy.trader.engine import BaseEngine, MainEngine
@@ -176,28 +178,38 @@ class PytdxLoaderEngine(BaseEngine):
         """
         load by filename   %m/%d/%Y
         """
-        ip, port = self.pytdx_ip_source.get_fast_exhq_ip()
-        with self.ex_api.connect(ip, port):
-            params_dict = {
-                "category": KBarType[interval.name].value,
-                "market": FutureMarketCode[exchange.value].value,
-                "code": symbol,
-            }
-            data_df = self.ex_api.get_all_KBars_df(**params_dict)
 
-            # transform column name to vnpy format
-            data_df.rename(
-                columns={
-                    "datetime": "Datetime",
-                    "open": "Open",
-                    "high": "High",
-                    "low": "Low",
-                    "close": "Close",
-                    "position": "OpenInterest",
-                    "trade": "Volume",
-                },
-                inplace=True
-            )
+        read_local_file = True
+
+        if read_local_file:
+            reader = Reader.factory(market='ext', tdxdir='C:/new_jyplug')
+            # 读取日线数据
+            # df = reader.daily(symbol='600000')
+            data_df = reader.minute(symbol='30#RBL8')
+            print(1)
+        else:
+            ip, port = self.pytdx_ip_source.get_fast_exhq_ip()
+            with self.ex_api.connect(ip, port):
+                params_dict = {
+                    "category": KBarType[interval.name].value,
+                    "market": FutureMarketCode[exchange.value].value,
+                    "code": symbol,
+                }
+                data_df = self.ex_api.get_all_KBars_df(**params_dict)
+
+        # transform column name to vnpy format
+        data_df.rename(
+            columns={
+                "datetime": "Datetime",
+                "open": "Open",
+                "high": "High",
+                "low": "Low",
+                "close": "Close",
+                "position": "OpenInterest",
+                "trade": "Volume",
+            },
+            inplace=True
+        )
 
         if data_df.empty:
             return None, None, 0

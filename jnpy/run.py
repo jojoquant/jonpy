@@ -51,8 +51,8 @@ from jnpy.gateway.acestock.acestock.gateway import AcestockGateway
 # from acestock import AcestockGateway
 
 from vnpy_ctastrategy import CtaStrategyApp
-from vnpy_ctabacktester import CtaBacktesterApp
-from vnpy_spreadtrading import SpreadTradingApp
+# from vnpy_ctabacktester import CtaBacktesterApp
+# from vnpy_spreadtrading import SpreadTradingApp
 # from vnpy.app.algo_trading import AlgoTradingApp
 # from vnpy.app.option_master import OptionMasterApp
 from vnpy.app.portfolio_strategy import PortfolioStrategyApp
@@ -123,13 +123,13 @@ def main():
     main_engine.add_app(WebTraderApp)
 
     main_engine.add_app(CtaStrategyApp)
-    main_engine.add_app(CtaBacktesterApp)
+    # main_engine.add_app(CtaBacktesterApp)
     # main_engine.add_app(AlgoTradingApp)
     main_engine.add_app(DataRecorderApp)
     main_engine.add_app(RiskManagerApp)
     main_engine.add_app(ScriptTraderApp)
     # main_engine.add_app(RpcServiceApp)
-    main_engine.add_app(SpreadTradingApp)
+    # main_engine.add_app(SpreadTradingApp)
     # main_engine.add_app(PortfolioManagerApp)
     main_engine.add_app(PortfolioStrategyApp)
     # main_engine.add_app(OptionMasterApp)

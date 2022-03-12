@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import talib
 
-from jnpy.utils.logging import LogModule
+from jnpy.utils.utils_log import LogModule
 from lnpy.objects import TalibFuns
 
 

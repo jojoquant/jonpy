@@ -6,7 +6,7 @@
 @Author   :   Fangyang
 """
 
-from jnpy.utils.timeit import timeit_cls_method_wrapper
+from jnpy.utils.utils_time import timeit_cls_method_wrapper
 
 if __name__ == "__main__":
     pass
