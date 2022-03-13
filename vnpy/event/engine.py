@@ -8,7 +8,9 @@ from time import sleep
 from typing import Any, Callable, List
 
 import pika
-from vnpy.trader.object import TickData, LogData
+from pika.adapters.blocking_connection import BlockingChannel
+
+from vnpy.trader.object import TickData, LogData, AccountData, PositionData
 
 from jnpy.utils.utils_json import convert_object_to_json
 from vnpy.trader.event import EVENT_TICK, EVENT_TRADE, EVENT_ORDER, EVENT_POSITION, EVENT_ACCOUNT, EVENT_QUOTE, \
@@ -60,17 +62,24 @@ class EventEngine:
         self.message_queue_setting = load_json(self.message_queue_setting_filename)
 
         self.connection: pika.BlockingConnection = None
+
         self.tick_send_channel = None
+        self.tick_exchange: str = "tick_ex"
+
         self.log_send_channel = None
+        self.log_exchange: str = "log_ex"
+
+        self.account_send_channel = None
+        self.account_exchange: str = "account_ex"
+
+        self.position_send_channel = None
+        self.position_exchange: str = "position_ex"
 
         if self.message_queue_setting:
             self.msq_host: str = self.message_queue_setting['host']
             self.msq_port: int = self.message_queue_setting['port']
             self.msq_username: str = self.message_queue_setting['username']
             self.msq_password: str = self.message_queue_setting['password']
-
-            self.tick_exchange: str = "tick_ex"
-            self.log_exchange: str = "log_ex"
 
             self.queue_list = [
                 EVENT_TIMER, EVENT_TICK, EVENT_TRADE, EVENT_ORDER,
@@ -116,6 +125,22 @@ class EventEngine:
                 self.log_send_channel = self.connection.channel()
                 self.log_send_channel.exchange_declare(
                     exchange=self.log_exchange,
+                    exchange_type="topic",
+                    durable=True
+                )
+
+            if self.account_send_channel is None:
+                self.account_send_channel = self.connection.channel()
+                self.account_send_channel.exchange_declare(
+                    exchange=self.account_exchange,
+                    exchange_type="topic",
+                    durable=True
+                )
+
+            if self.position_send_channel is None:
+                self.position_send_channel = self.connection.channel()
+                self.position_send_channel.exchange_declare(
+                    exchange=self.position_exchange,
                     exchange_type="topic",
                     durable=True
                 )
@@ -176,6 +201,41 @@ class EventEngine:
         self._timer.join()
         self._thread.join()
 
+    def msq_pub(self, event: Event):
+        channel: BlockingChannel = None
+        exchange: str = ""
+        event_type_filtered: bool = True
+
+        if isinstance(event.data, TickData):
+            channel = self.tick_send_channel
+            exchange = self.tick_exchange
+            # 如果添加filter，publish event.type 不等于 filter 的 event
+            # 如果没有filter， filter_condition 是 True 不影响判断
+            event_type_filtered = (event.type != EVENT_TICK)
+        elif isinstance(event.data, LogData):
+            channel = self.log_send_channel
+            exchange = self.log_exchange
+            event_type_filtered = True
+        elif isinstance(event.data, AccountData):
+            channel = self.account_send_channel
+            exchange = self.account_exchange
+            event_type_filtered = (event.type != EVENT_ACCOUNT)
+        elif isinstance(event.data, PositionData):
+            channel = self.position_send_channel
+            exchange = self.position_exchange
+            event_type_filtered = (event.type != EVENT_POSITION)
+
+        if (channel is not None) and event_type_filtered:
+            try:
+                body_msg = convert_object_to_json(event.data)
+                channel.basic_publish(
+                    exchange=exchange,
+                    routing_key=event.type,  # 'eTick.2205.SHFE'
+                    body=body_msg
+                )
+            except Exception as e:
+                print(e)
+
     def put(self, event: Event) -> None:
         """
         Put an event object into event queue.
@@ -183,30 +243,7 @@ class EventEngine:
         self._queue.put(event)
         if event.type != EVENT_TIMER:
             print("[put] ", event.type, event.data)
-
-        if (self.tick_send_channel is not None) \
-                and isinstance(event.data, TickData) \
-                and (event.type != EVENT_TICK):
-            try:
-                body_msg = convert_object_to_json(event.data)
-                self.tick_send_channel.basic_publish(
-                    exchange=self.tick_exchange,
-                    routing_key=event.type,  # 'eTick.2205.SHFE'
-                    body=body_msg
-                )
-            except Exception as e:
-                print(e)
-
-        if (self.log_send_channel is not None) and isinstance(event.data, LogData):
-            try:
-                body_msg = convert_object_to_json(event.data)
-                self.log_send_channel.basic_publish(
-                    exchange=self.log_exchange,
-                    routing_key=event.type,
-                    body=body_msg
-                )
-            except Exception as e:
-                print(e)
+            self.msq_pub(event=event)
 
         # if self.recv_channel_map.get(event.type):
         #     self.tick_send_channel.basic_publish(

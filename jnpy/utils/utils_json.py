@@ -3,7 +3,7 @@ import json
 from dataclasses import asdict
 from typing import Union
 
-from vnpy.trader.object import TickData, BarData, LogData
+from vnpy.trader.object import TickData, BarData, LogData, AccountData, PositionData
 from vnpy.trader.constant import Exchange, Interval
 
 
@@ -23,7 +23,7 @@ class DateEncoder(json.JSONEncoder):
             return json.JSONEncoder.default(self, obj)
 
 
-def convert_object_to_json(obj: Union[TickData, BarData, LogData]):
+def convert_object_to_json(obj: TickData | BarData | LogData | AccountData | PositionData) -> str:
     tick_dict = asdict(obj)
     return json.dumps(tick_dict, cls=DateEncoder)
 
