@@ -59,13 +59,15 @@ class EventEngine:
         self.message_queue_setting_filename = "message_queue_setting.json"
         self.message_queue_setting = load_json(self.message_queue_setting_filename)
 
+        self.connection: pika.BlockingConnection = None
+        self.tick_send_channel = None
+        self.log_send_channel = None
+
         if self.message_queue_setting:
             self.msq_host: str = self.message_queue_setting['host']
             self.msq_port: int = self.message_queue_setting['port']
             self.msq_username: str = self.message_queue_setting['username']
             self.msq_password: str = self.message_queue_setting['password']
-
-            self.connection: pika.BlockingConnection = None
 
             self.tick_exchange: str = "tick_ex"
             self.log_exchange: str = "log_ex"
@@ -85,8 +87,6 @@ class EventEngine:
             #     }
             # }
             # self.recv_channel_map = {k: {} for k in self.queue_list}
-            self.tick_send_channel = None
-            self.log_send_channel = None
 
             self._init_rabbitmq()
 
@@ -181,7 +181,8 @@ class EventEngine:
         Put an event object into event queue.
         """
         self._queue.put(event)
-        print("[put] ", event.type, event.data)
+        if event.type != EVENT_TIMER:
+            print("[put] ", event.type, event.data)
 
         if (self.tick_send_channel is not None) \
                 and isinstance(event.data, TickData) \

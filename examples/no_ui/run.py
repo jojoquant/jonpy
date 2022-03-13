@@ -4,19 +4,20 @@ from time import sleep
 from datetime import datetime, time
 from logging import INFO
 
+
 from vnpy.event import EventEngine
 from vnpy.trader.setting import SETTINGS
 from vnpy.trader.engine import MainEngine
+from vnpy.trader.utility import load_json
 
 from vnpy_ctp import CtpGateway
 from vnpy_ctastrategy import CtaStrategyApp
+from vnpy_datarecorder import DataRecorderApp
 from vnpy_ctastrategy.base import EVENT_CTA_LOG
-
 
 SETTINGS["log.active"] = True
 SETTINGS["log.level"] = INFO
 SETTINGS["log.console"] = True
-
 
 ctp_setting = {
     "用户名": "",
@@ -29,10 +30,11 @@ ctp_setting = {
     "产品信息": ""
 }
 
+ctp_setting = load_json("connect_ctp.json")
 
 # Chinese futures market trading period (day/night)
 DAY_START = time(8, 45)
-DAY_END = time(15, 0)
+DAY_END = time(15, 15)
 
 NIGHT_START = time(20, 45)
 NIGHT_END = time(2, 45)
@@ -44,9 +46,9 @@ def check_trading_period():
 
     trading = False
     if (
-        (current_time >= DAY_START and current_time <= DAY_END)
-        or (current_time >= NIGHT_START)
-        or (current_time <= NIGHT_END)
+            (current_time >= DAY_START and current_time <= DAY_END)
+            or (current_time >= NIGHT_START)
+            or (current_time <= NIGHT_END)
     ):
         trading = True
 
@@ -74,11 +76,13 @@ def run_child():
 
     sleep(10)
 
+    data_record_engine = main_engine.add_app(DataRecorderApp)
+
     cta_engine.init_engine()
     main_engine.write_log("CTA策略初始化完成")
 
     cta_engine.init_all_strategies()
-    sleep(60)   # Leave enough time to complete strategy initialization
+    sleep(60)  # Leave enough time to complete strategy initialization
     main_engine.write_log("CTA策略全部初始化")
 
     cta_engine.start_all_strategies()

@@ -499,8 +499,8 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         class_name = self.class_combo.currentText()
         vt_symbol = f"{self.symbol_combo.currentText()}.{self.exchange_combo.currentText()}"
         interval = self.interval_combo.currentText()
-        start = self.start_date_edit.dateTime().toPyDateTime()
-        end = self.end_date_edit.dateTime().toPyDateTime()
+        start = self.start_date_edit.dateTime().toPython()
+        end = self.end_date_edit.dateTime().toPython()
         rate = float(self.rate_line.text())
         slippage = float(self.slippage_line.text())
         size = float(self.size_line.text())
