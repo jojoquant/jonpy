@@ -14,4 +14,4 @@ class CtaBacktesterJnpyApp(BaseApp):
     display_name = "CTA回测"
     engine_class = BacktesterEngineJnpy
     widget_name = "JnpyBacktesterManager"
-    icon_name = "Meowth.svg"
+    icon_name = str(app_path.joinpath("ui", "Meowth.svg"))

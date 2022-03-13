@@ -1,4 +1,5 @@
 import csv
+import subprocess
 from datetime import datetime, timedelta
 import copy
 from enum import Enum
@@ -14,15 +15,14 @@ from vnpy.trader.constant import Direction, Interval, Exchange
 from vnpy.trader.engine import MainEngine
 from vnpy.trader.ui import QtCore, QtWidgets, QtGui
 from vnpy.trader.ui.widget import BaseMonitor, BaseCell, DirectionCell, EnumCell
-from vnpy.trader.ui.editor import CodeEditor
+
 from vnpy.event import Event, EventEngine
 from vnpy.chart import ChartWidget, CandleItem, VolumeItem
 from vnpy.trader.utility import load_json, save_json
 from vnpy.trader.database import DB_TZ
 
 from jnpy.datasource.jotdx.contracts import read_contracts_json_dict
-# from jnpy.datasource.pyccxt.contracts import Exchange
-from .KLine_pro_pyecharts import draw_chart
+# from .KLine_pro_pyecharts import draw_chart
 from ..engine import (
     APP_NAME,
     EVENT_JNPY_BACKTESTER_LOG,
@@ -50,9 +50,9 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
 
     setting_filename = "cta_backtester_setting.json"
 
-    signal_log = QtCore.pyqtSignal(Event)
-    signal_backtesting_finished = QtCore.pyqtSignal(Event)
-    signal_optimization_finished = QtCore.pyqtSignal(Event)
+    signal_log = QtCore.Signal(Event)
+    signal_backtesting_finished = QtCore.Signal(Event)
+    signal_optimization_finished = QtCore.Signal(Event)
 
     def __init__(self, main_engine: MainEngine, event_engine: EventEngine):
         """"""
@@ -70,7 +70,6 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         self.db_instance = self.jnpy_backtester_engine.database
         self.dbbardata_groupby_df = pd.DataFrame()
         self.pytdx_contracts_dict = read_contracts_json_dict()
-        # self.pyccxt_exchange = Exchange()
 
         self.target_display = ""
 
@@ -104,11 +103,12 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
 
         #############################################
         # fangyang add, 根据数据库内容进行选项显示
-        self.dbbardata_groupby_df = self.db_instance.get_groupby_df()
-
         self.exchange_combo = QtWidgets.QComboBox()
-        self.exchange_combo.addItems(self.dbbardata_groupby_df['exchange'].drop_duplicates().to_list())
-        self.exchange_combo.activated[str].connect(self.onExchangeActivated)
+        self.exchange_combo.textActivated.connect(self.onExchangeActivated)
+
+        self.dbbardata_groupby_df = self.db_instance.get_groupby_df()
+        if not self.dbbardata_groupby_df.empty:
+            self.exchange_combo.addItems(self.dbbardata_groupby_df['exchange'].drop_duplicates().to_list())
 
         self.symbol_combo = QtWidgets.QComboBox()
         self.symbol_combo.currentIndexChanged.connect(self.onSymbolActivated)
@@ -263,9 +263,6 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         hbox.addLayout(vbox)
         hbox.addWidget(self.chart)
         self.setLayout(hbox)
-
-        # Code Editor
-        self.editor = CodeEditor(self.main_engine, self.event_engine)
 
     def load_backtesting_setting(self):
         """"""
@@ -756,13 +753,21 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
 
     def edit_strategy_code(self):
         """"""
-        engine = self.get_current_backtester_engine()
-
         class_name = self.class_combo.currentText()
-        file_path = engine.get_strategy_class_file(class_name)
 
-        self.editor.open_editor(file_path)
-        self.editor.show()
+        if not class_name:
+            return
+
+        file_path = self.backtester_engine.get_strategy_class_file(class_name)
+        cmd = ["code", file_path]
+
+        p: subprocess.CompletedProcess = subprocess.run(cmd, shell=True)
+        if p.returncode:
+            QtWidgets.QMessageBox.warning(
+                self,
+                "启动代码编辑器失败",
+                "请检查是否安装了Visual Studio Code，并将其路径添加到了系统全局变量中！"
+            )
 
     def reload_strategy_class(self):
         """"""
@@ -1657,7 +1662,7 @@ class CandleChartDialog(QtWidgets.QDialog):
 
         for key, indicate_dict in indicates.items():
 
-            if key=='dt':
+            if key == 'dt':
                 continue
 
             pen = indicate_dict.get('pen', pg.mkPen('y', width=1, style=QtCore.Qt.DashLine))

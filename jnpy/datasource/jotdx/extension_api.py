@@ -9,7 +9,7 @@
 import pandas as pd
 import datetime
 
-from pytdx.exhq import TdxExHq_API
+from jotdx.exhq import TdxExHq_API
 from jnpy.datasource.jotdx.ips import IPsSource
 from jnpy.utils.utils_log import LogModule
 from jnpy.datasource.jotdx.constant import KBarType

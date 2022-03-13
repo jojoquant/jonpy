@@ -12,7 +12,7 @@ from vnpy.trader.engine import MainEngine
 from vnpy_ctabacktester import BacktesterEngine
 from vnpy_ctastrategy.backtesting import OptimizationSetting  # 给widget使用, 和vnpy widget尽量一致, 这里不要删除
 
-from jnpy.app.cta_backtester.DRL.main import accept_bars_data_list
+# from jnpy.app.cta_backtester.DRL.main import accept_bars_data_list
 from jnpy.app.cta_backtester.backtesting import BacktestingEngineJnpy
 
 APP_NAME = "CtaBacktester_jnpy"

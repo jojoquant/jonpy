@@ -15,4 +15,4 @@ class PytdxLoaderApp(BaseApp):
     display_name = "通达信API载入"
     engine_class = PytdxLoaderEngine
     widget_name = "PytdxLoaderWidget"
-    icon_name = "Bulbasaur.svg"
+    icon_name = str(app_path.joinpath("ui", "Bulbasaur.svg"))
