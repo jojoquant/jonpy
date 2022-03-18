@@ -7,13 +7,13 @@ shift 2
 [[ -z $python ]] && python=python
 [[ -z $prefix ]] && prefix=~/usr/talib
 
-$python -m pip install --upgrade pip setuptools wheel
+$python -m pip install --upgrade pip wheel
 
 # Get and build ta-lib
 function install-ta-lib()
 {   
     # install numpy first
-    $python -m pip install numpy==1.18.2
+    $python -m pip install numpy==1.21.5
 
     mkdir -p $prefix
     pushd $prefix
@@ -28,7 +28,7 @@ function install-ta-lib()
     echo "export LD_LIBRARY_PATH=$prefix/lib:\$LD_LIBRARY_PATH" >> ~/.bashrc
     export LD_LIBRARY_PATH=$prefix/lib:\$LD_LIBRARY_PATH
     
-    CPPFLAGS="-I$prefix/include" LDFLAGS="-L$prefix/lib" pip install ta-lib==0.4.17
+    CPPFLAGS="-I$prefix/include" LDFLAGS="-L$prefix/lib" pip install ta-lib==0.4.24
 }
 function ta-lib-exists()
 {
@@ -42,5 +42,5 @@ $python -m pip install -r requirements.txt
 # Install local Chinese language environment
 locale-gen zh_CN.GB18030
 
-# Install vn.py
+# Install VeighNa
 $python -m pip install .

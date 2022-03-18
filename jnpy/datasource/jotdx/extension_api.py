@@ -11,7 +11,7 @@ import datetime
 
 from jotdx.exhq import TdxExHq_API
 from jnpy.datasource.jotdx.ips import IPsSource
-from jnpy.utils.logging.log import LogModule
+from jnpy.utils.utils_log import LogModule
 from jnpy.datasource.jotdx.constant import KBarType
 
 

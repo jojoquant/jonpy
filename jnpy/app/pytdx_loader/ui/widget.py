@@ -45,7 +45,7 @@ class PytdxLoaderWidget(QtWidgets.QWidget):
         self.exchange_combo = QtWidgets.QComboBox()
         for i in Exchange:
             self.exchange_combo.addItem(str(i.name), i)
-        self.exchange_combo.activated[str].connect(self.onExchangeActivated)
+        self.exchange_combo.textActivated.connect(self.onExchangeActivated)
 
         self.interval_combo = QtWidgets.QComboBox()
         for i in Interval:

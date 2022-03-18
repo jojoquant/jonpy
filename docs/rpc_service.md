@@ -2,15 +2,15 @@
 
 ## 功能简介
 
-RpcService模块用于将VN Trader进程转化为RPC服务器，对外提供交易路由、行情数据推送、持仓资金查询等功能。
+RpcService模块用于将VeighNa Trader进程转化为RPC服务器，对外提供交易路由、行情数据推送、持仓资金查询等功能。
 
 关于RPC的具体应用场景请参考本文档最后的【RPC的应用场景】版块。
 
 ## 加载启动
 
-### VN Station加载
+### VeighNa Station加载
 
-启动登录VN Station后，点击【VN Trader Pro】按钮，在配置对话框中的【上层应用】栏勾选【RpcService】。
+启动登录VeighNa Station后，点击【交易】按钮，在配置对话框中的【应用模块】栏勾选【RpcService】。
 
 ### 脚本加载
 
@@ -26,7 +26,7 @@ main_engine.add_app(RpcServiceApp)
 
 ### 启动模块
 
-在启动模块之前，请先连接登录交易接口（连接方法详见基本使用篇的连接接口部分）。看到VN Trader主界面【日志】栏输出“合约信息查询成功”之后再启动模块，如下图所示：  
+在启动模块之前，请先连接登录交易接口（连接方法详见基本使用篇的连接接口部分）。看到VeighNa Trader主界面【日志】栏输出“合约信息查询成功”之后再启动模块，如下图所示：  
 
 ![](https://vnpy-doc.oss-cn-shanghai.aliyuncs.com/market_radar/1.png) 
 
@@ -78,18 +78,18 @@ RPC服务支持的通讯协议包括：
 
 ![](https://vnpy-doc.oss-cn-shanghai.aliyuncs.com/rpc_service/3.png) 
 
-启动成功后，即可在另一VN Trader进程中（客户端）使用RpcGateway来连接
+启动成功后，即可在另一VeighNa Trader进程中（客户端）使用RpcGateway来连接
 
 如需停止RPC服务可以点击【停止】按钮，此时日志输出"RPC服务已停止"。
 
 
 ### 连接客户端
 
-vn.py提供了与RpcService配套使用的RpcGateway，作为客户端的标准接口来连接服务端并进行交易，对上层应用完全透明。
+VeighNa提供了与RpcService配套使用的RpcGateway，作为客户端的标准接口来连接服务端并进行交易，对上层应用完全透明。
 
 从客户端的视角看，RpcGateway是类似CTP的接口。因为已经在服务端统一完成外部交易账户的配置连接，客户端只需要和服务器端进行通讯即可，无需再次输入账户密码等信息。
 
-在客户端加载RpcGateway接口后，进入VN Trader主界面，点击菜单栏中【系统】->【连接RPC】，在弹出的窗口中点击【连接】即可连接使用，如下图所示。
+在客户端加载RpcGateway接口后，进入VeighNa Trader主界面，点击菜单栏中【系统】->【连接RPC】，在弹出的窗口中点击【连接】即可连接使用，如下图所示。
 
 ![](https://vnpy-doc.oss-cn-shanghai.aliyuncs.com/rpc_service/5.png)
 

@@ -13,4 +13,4 @@ class CsvLoaderApp(BaseApp):
     display_name = "CSV载入"
     engine_class = CsvLoaderEngine
     widget_name = "CsvLoaderWidget"
-    icon_name = "csv.svg"
+    icon_name = str(app_path.joinpath("ui", "csv.svg"))

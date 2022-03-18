@@ -6,9 +6,9 @@ DataManager是用于**历史数据管理**的功能模块，用户可以通过�
 
 ## 加载启动
 
-### VN Station加载
+### VeighNa Station加载
 
-启动登录VN Station后，点击【VN Trader Pro】按钮，在配置对话框中的【上层应用】栏勾选【DataManager】。
+启动登录VeighNa Station后，点击【交易】按钮，在配置对话框中的【应用模块】栏勾选【DataManager】。
 
 ### 脚本加载
 
@@ -25,7 +25,7 @@ main_engine.add_app(DataManagerApp)
 
 ## 启动模块
 
-启动VN Trader后，在菜单栏中点击【功能】-> 【数据管理】，或者点击左侧按钮栏的图标：
+启动VeighNa Trader后，在菜单栏中点击【功能】-> 【数据管理】，或者点击左侧按钮栏的图标：
 
 ![](https://vnpy-doc.oss-cn-shanghai.aliyuncs.com/data_manager/00.png)
 
@@ -48,7 +48,7 @@ DataManager模块提供了一键下载历史数据的功能，点击右上角【
   - 代码格式为合约品种
   - 如IF888、rb2105
 - 交易所
-  - 合约交易的交易所（点击窗口右侧箭头按钮可选择vn.py支持的所有交易所）
+  - 合约交易的交易所（点击窗口右侧箭头按钮可选择VeighNa支持的所有交易所）
 - 周期
   - MINUTE（1分钟K线）
   - HOUR（1小时K线）
@@ -73,12 +73,12 @@ DataManager模块提供了一键下载历史数据的功能，点击右上角【
 
 ### 数据来源：IB（外盘期货、股票、现货等）
 
-Interactive Brokers盈透证券（IB）提供丰富的外盘市场历史数据下载（包括股票、期货、期权、现货等），注意下载前需要先启动IB TWS交易软件，并在VN Trader主界面连接好IB接口，并订阅所需合约行情。
+Interactive Brokers盈透证券（IB）提供丰富的外盘市场历史数据下载（包括股票、期货、期权、现货等），注意下载前需要先启动IB TWS交易软件，并在VeighNa Trader主界面连接好IB接口，并订阅所需合约行情。
 
 
 ## 导入数据
 
-如果已经从其他渠道获取到了CSV格式的数据文件，可以通过DataManager的数据导入功能，将其快速导入vn.py数据库。点击右上角的【导入数据】按钮，会弹出从如下图所示的对话框：
+如果已经从其他渠道获取到了CSV格式的数据文件，可以通过DataManager的数据导入功能，将其快速导入VeighNa数据库。点击右上角的【导入数据】按钮，会弹出从如下图所示的对话框：
 
 ![](https://vnpy-doc.oss-cn-shanghai.aliyuncs.com/data_manager/21.png)
 
@@ -112,7 +112,7 @@ Interactive Brokers盈透证券（IB）提供丰富的外盘市场历史数据�
 
 ## 查看数据
 
-目前VN Trader中获取数据的方式一共有三种：
+目前VeighNa Trader中获取数据的方式一共有三种：
 
 - 通过数据服务或者交易接口下载
 
