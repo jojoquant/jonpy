@@ -14,9 +14,9 @@
     <img src ="https://img.shields.io/github/license/vnpy/vnpy.svg?color=orange"/>
 </p>
 
-VeighNa是一套基于Python的开源量化交易系统开发框架，在开源社区7年持续不断的贡献下一步步成长为全功能量化交易平台，自2015年正式发布以来已经积累了众多来自金融机构或相关领域的用户，包括私募基金、证券公司、期货公司等。
+VeighNa是一套基于Python的开源量化交易系统开发框架，在开源社区持续不断的贡献下一步步成长为多功能量化交易平台，自发布以来已经积累了众多来自金融机构或相关领域的用户，包括私募基金、证券公司、期货公司等。
 
-全新的《VeighNa全实战进阶》系列在线课程，已经在官方微信公众号[**VeighNa开源量化**]上线，覆盖30天入门、CTA策略、期权波动率交易等内容。购买请扫描下方二维码关注后，点击菜单栏的【进阶资料】按钮即可：
+《VeighNa实战进阶》系列在线课程，已经在官方微信公众号[**VeighNa开源量化**]上线，覆盖30天入门、CTA策略、期权波动率交易等内容。购买请扫描下方二维码关注后，点击菜单栏的【进阶资料】按钮即可：
 
 <p align="center">
   <img src ="https://vnpy.oss-cn-shanghai.aliyuncs.com/vnpy_qr.jpg"/>
@@ -28,9 +28,9 @@ VeighNa是一套基于Python的开源量化交易系统开发框架，在开源�
 
 ## 功能特点
 
-1. 全功能量化交易平台（trader），整合了多种交易接口，并针对具体策略算法和功能开发提供了简洁易用的API，用于快速构建交易员所需的量化交易应用。
+1. 多功能量化交易平台（trader），整合了多种交易接口，并针对具体策略算法和功能开发提供了简洁易用的API，用于快速构建交易员所需的量化交易应用。
 
-2. 覆盖国内外所有交易品种的交易接口（gateway）：
+2. 覆盖国内外所拥有的下述交易品种的交易接口（gateway）：
 
     * 国内市场
 
@@ -72,23 +72,23 @@ VeighNa是一套基于Python的开源量化交易系统开发框架，在开源�
 
     * 海外市场
 
-        * Interactive Brokers（[ib](https://www.github.com/vnpy/vnpy_ib)）：全球证券、期货、期权、贵金属等
+        * Interactive Brokers（[ib](https://www.github.com/vnpy/vnpy_ib)）：海外证券、期货、期权、贵金属等
 
-        * 易盛9.0外盘（[tap](https://www.github.com/vnpy/vnpy_tap)）：全球期货
+        * 易盛9.0外盘（[tap](https://www.github.com/vnpy/vnpy_tap)）：海外期货
 
-        * 直达期货（[da](https://www.github.com/vnpy/vnpy_da)）：全球期货
+        * 直达期货（[da](https://www.github.com/vnpy/vnpy_da)）：海外期货
 
     * 特殊应用
 
         * RPC服务（[rpc](https://www.github.com/vnpy/vnpy_rpcservice)）：跨进程通讯接口，用于分布式架构
 
-3. 开箱即用的各类量化策略交易应用（app）：
+3. 覆盖下述各类量化策略的交易应用（app）：
 
     * [cta_strategy](https://www.github.com/vnpy/vnpy_ctastrategy)：CTA策略引擎模块，在保持易用性的同时，允许用户针对CTA类策略运行过程中委托的报撤行为进行细粒度控制（降低交易滑点、实现高频策略）
 
-    * [cta_backtester](https://www.github.com/vnpy/vnpy_ctabacktester)：CTA策略回测模块，无需使用Jupyter Notebook，直接使用图形界面直接进行策略回测分析、参数优化等相关工作
+    * [cta_backtester](https://www.github.com/vnpy/vnpy_ctabacktester)：CTA策略回测模块，无需使用Jupyter Notebook，直接使用图形界面进行策略回测分析、参数优化等相关工作
 
-    * [spread_trading](https://www.github.com/vnpy/vnpy_spreadtrading)：价差交易模块，支持自定义价差，实时计算价差行情和持仓，支持半自动价差算法交易以及全自动价差策略交易两种模式
+    * [spread_trading](https://www.github.com/vnpy/vnpy_spreadtrading)：价差交易模块，支持自定义价差，实时计算价差行情和持仓，支持价差算法交易以及自动价差策略两种模式
 
     * [option_master](https://www.github.com/vnpy/vnpy_optionmaster)：期权交易模块，针对国内期权市场设计，支持多种期权定价模型、隐含波动率曲面计算、希腊值风险跟踪等功能
 
@@ -96,7 +96,7 @@ VeighNa是一套基于Python的开源量化交易系统开发框架，在开源�
 
     * [algo_trading](https://www.github.com/vnpy/vnpy_algotrading)：算法交易模块，提供多种常用的智能交易算法：TWAP、Sniper、Iceberg、BestLimit等
 
-    * [script_trader](https://www.github.com/vnpy/vnpy_scripttrader)：脚本策略模块，针对多标的组合类交易策略设计，同时也可以直接在命令行中实现REPL指令形式的交易，不支持回测功能
+    * [script_trader](https://www.github.com/vnpy/vnpy_scripttrader)：脚本策略模块，面向多标的类量化策略和计算任务设计，同时也可以在命令行中实现REPL指令形式的交易，不支持回测功能
 
     * [paper_account](https://www.github.com/vnpy/vnpy_paperaccount)：本地仿真模块，纯本地化实现的仿真模拟交易功能，基于交易接口获取的实时行情进行委托撮合，提供委托成交推送以及持仓记录
 
@@ -120,7 +120,7 @@ VeighNa是一套基于Python的开源量化交易系统开发框架，在开源�
 
     * REST Client（[rest](https://www.github.com/vnpy/vnpy_rest)）：基于协程异步IO的高性能REST API客户端，采用事件消息循环的编程模型，支持高并发实时交易请求发送
 
-    * Websocket Client（[websocket](https://www.github.com/vnpy/vnpy_websocket)）：基于协程异步IO的高性能Websocket API客户端，支持和REST Client共用事件循环并发运行，避免GIL带来的多线程性能损耗
+    * Websocket Client（[websocket](https://www.github.com/vnpy/vnpy_websocket)）：基于协程异步IO的高性能Websocket API客户端，支持和REST Client共用事件循环并发运行
 
 5. 简洁易用的事件驱动引擎（event），作为事件驱动型交易程序的核心。
 
@@ -130,15 +130,15 @@ VeighNa是一套基于Python的开源量化交易系统开发框架，在开源�
 
         * SQLite（[sqlite](https://www.github.com/vnpy/vnpy_sqlite)）：轻量级单文件数据库，无需安装和配置数据服务程序，VeighNa的默认选项，适合入门新手用户
 
-        * MySQL（[mysql](https://www.github.com/vnpy/vnpy_mysql)）：世界最流行的开源关系型数据库，文档资料极为丰富，且可替换其他高NewSQL兼容实现（如TiDB）
+        * MySQL（[mysql](https://www.github.com/vnpy/vnpy_mysql)）：主流的开源关系型数据库，文档资料极为丰富，且可替换其他NewSQL兼容实现（如TiDB）
 
         * PostgreSQL（[postgresql](https://www.github.com/vnpy/vnpy_postgresql)）：特性更为丰富的开源关系型数据库，支持通过扩展插件来新增功能，只推荐熟手使用
 
     * NoSQL类
 
-        * DolphinDB（[dolphindb](https://www.github.com/vnpy/vnpy_dolphindb)）：由浙江智臾科技有限公司研发的一款高性能分布式时序数据库，特别适用于对速度要求极高的低延时或实时性任务
+        * DolphinDB（[dolphindb](https://www.github.com/vnpy/vnpy_dolphindb)）：一款高性能分布式时序数据库，适用于对速度要求极高的低延时或实时性任务
 
-        * Arctic（[arctic](https://www.github.com/vnpy/vnpy_arctic)）：由量化对冲基金Man AHL基于MongoDB开发的高性能金融时序数据库，采用了分块化储存、LZ4压缩等性能优化方案，实现比MongoDB更高的读写效率
+        * Arctic（[arctic](https://www.github.com/vnpy/vnpy_arctic)）：高性能金融时序数据库，采用了分块化储存、LZ4压缩等性能优化方案，以实现时序数据的高效读写
 
         * MongoDB（[mongodb](https://www.github.com/vnpy/vnpy_mongodb)）：基于分布式文件储存（bson格式）的文档式数据库，内置的热数据内存缓存提供更快读写速度
 
@@ -146,7 +146,7 @@ VeighNa是一套基于Python的开源量化交易系统开发框架，在开源�
 
         * LevelDB（[leveldb](https://www.github.com/vnpy/vnpy_leveldb)）：由Google推出的高性能Key/Value数据库，基于LSM算法实现进程内存储引擎，支持数十亿级别的海量数据
 
-7. 对接各类数据服务的适配器接口（datafeed）：
+7. 对接下述各类数据服务的适配器接口（datafeed）：
 
     * 米筐RQData（[rqdata](https://www.github.com/vnpy/vnpy_rqdata)）：股票、期货、期权、基金、债券、黄金TD
 
@@ -164,21 +164,23 @@ VeighNa是一套基于Python的开源量化交易系统开发框架，在开源�
 
 8. 跨进程通讯标准组件（rpc），用于实现分布式部署的复杂交易系统。
 
-9. Python高性能K线图表（hart），支持大数据量图表显示以及实时数据更新功能。
+9. Python高性能K线图表（chart），支持大数据量图表显示以及实时数据更新功能。
 
 10. [社区论坛](http://www.vnpy.com/forum)和[知乎专栏](http://zhuanlan.zhihu.com/vn-py)，内容包括VeighNa项目的开发教程和Python在量化交易领域的应用研究等内容。
 
 11. 官方交流群262656087（QQ），管理严格（定期清除长期潜水的成员），入群费将捐赠给VeighNa社区基金。
 
+注：以上关于功能特点的说明为根据说明文档发布时情况罗列，后续可能存在更新或调整。若功能描述同实际存在出入，欢迎通过Issue联系进行调整。
+
 ## 环境准备
 
-* 推荐使用VeighNa团队为量化交易专门打造的Python发行版[VeighNa Studio-3.0.0](https://download.vnpy.com/veighna_studio-3.0.0.exe)，内置了最新版的VeighNa框架以及VeighNa Station量化管理平台，无需手动安装
+* 推荐使用VeighNa团队为量化交易专门打造的Python发行版[VeighNa Studio-3.0.0](https://download.vnpy.com/veighna_studio-3.0.0.exe)，集成内置了VeighNa框架以及VeighNa Station量化管理平台，无需手动安装
 * 支持的系统版本：Windows 10以上 / Windows Server 2016以上 / Ubuntu 20.04 LTS以上
 * 支持的Python版本：Python 3.7/ 3.8 / 3.9 / 3.10 64位（**推荐使用Python 3.10**）
 
 ## 安装步骤
 
-在[这里](https://github.com/vnpy/vnpy/releases)下载最新版本，解压后运行以下命令安装：
+在[这里](https://github.com/vnpy/vnpy/releases)下载Release发布版本，解压后运行以下命令安装：
 
 **Windows**
 
@@ -257,7 +259,7 @@ if __name__ == "__main__":
 
 VeighNa使用Github托管其源代码，如果希望贡献代码请使用github的PR（Pull Request）的流程:
 
-1. [创建 Issue](https://github.com/vnpy/vnpy/issues/new) - 对于较大的改动（如新功能，大型重构等）最好先开issue讨论一下，较小的improvement（如文档改进，bufix等）直接发PR即可
+1. [创建 Issue](https://github.com/vnpy/vnpy/issues/new) - 对于较大的改动（如新功能，大型重构等）建议先开issue讨论一下，较小的improvement（如文档改进，bufix等）直接发PR即可
 
 2. Fork [VeighNa](https://github.com/vnpy/vnpy) - 点击右上角**Fork**按钮
 
