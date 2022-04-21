@@ -7,7 +7,7 @@ from vnpy.trader.object import TickData, BarData, LogData, AccountData, Position
 from vnpy.trader.constant import Exchange, Interval
 
 
-class DateEncoder(json.JSONEncoder):
+class DataEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime.datetime):
             # return obj.strftime("%Y-%m-%d %H:%M:%S")
@@ -25,7 +25,7 @@ class DateEncoder(json.JSONEncoder):
 
 def convert_object_to_json(obj: Union[TickData, BarData, LogData, AccountData, PositionData]) -> str:
     tick_dict = asdict(obj)
-    return json.dumps(tick_dict, cls=DateEncoder)
+    return json.dumps(tick_dict, cls=DataEncoder)
 
 
 def convert_json_to_TickData(json_str: str):
