@@ -134,8 +134,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # Global setting editor
         action: QtGui.QAction = QtWidgets.QAction("配置", self)
         action.triggered.connect(self.edit_global_setting)
-        # bar.addAction(action)
-        edit_menu.addAction(action)
+        bar.addAction(action)
+        # edit_menu.addAction(action)
 
         # Help menu
         help_menu: QtWidgets.QMenu = bar.addMenu("帮助")

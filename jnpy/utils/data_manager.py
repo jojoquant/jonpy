@@ -35,7 +35,11 @@ class ArrayManagerWithDatetime(ArrayManager):
 
     def update_bar(self, bar: BarData) -> None:
         super().update_bar(bar)
-        self.datetime.append(bar.datetime)
+
+        from pytz import timezone
+        dt = bar.datetime.astimezone(tz=timezone("utc")).replace(tzinfo=None)
+
+        self.datetime.append(dt)
 
         if len(self.datetime) > self.size:
             self.datetime.pop(0)

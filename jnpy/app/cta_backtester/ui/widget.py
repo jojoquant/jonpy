@@ -137,8 +137,8 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         self.pricetick_line = QtWidgets.QLineEdit("0.2")
         self.capital_line = QtWidgets.QLineEdit("1000000")
 
-        self.inverse_combo = QtWidgets.QComboBox()
-        self.inverse_combo.addItems(["正向", "反向"])
+        # self.inverse_combo = QtWidgets.QComboBox()
+        # self.inverse_combo.addItems(["正向", "反向"])
 
         vnpy_backtesting_button = QtWidgets.QPushButton("开始_vnpy_回测")
         vnpy_backtesting_button.clicked.connect(lambda: self.start_backtesting(BacktesterEngineType.vnpy))
@@ -198,7 +198,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         form.addRow("合约乘数", self.size_line)
         form.addRow("价格跳动", self.pricetick_line)
         form.addRow("回测资金", self.capital_line)
-        form.addRow("合约模式\n(数字货币用反向)", self.inverse_combo)
+        # form.addRow("合约模式\n(数字货币用反向)", self.inverse_combo)
 
         result_grid = QtWidgets.QGridLayout()
         result_grid.addWidget(self.trade_button, 0, 0)
@@ -286,10 +286,10 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         self.pricetick_line.setText(str(setting["pricetick"]))
         self.capital_line.setText(str(setting["capital"]))
 
-        if not setting["inverse"]:
-            self.inverse_combo.setCurrentIndex(0)
-        else:
-            self.inverse_combo.setCurrentIndex(1)
+        # if not setting["inverse"]:
+        #     self.inverse_combo.setCurrentIndex(0)
+        # else:
+        #     self.inverse_combo.setCurrentIndex(1)
 
     def onExchangeActivated(self, current_exchange_text):
 
@@ -463,10 +463,10 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         pricetick = float(self.pricetick_line.text())
         capital = float(self.capital_line.text())
 
-        if self.inverse_combo.currentText() == "正向":
-            inverse = False
-        else:
-            inverse = True
+        # if self.inverse_combo.currentText() == "正向":
+        #     inverse = False
+        # else:
+        #     inverse = True
 
         # backtesting_debug_mode = True
         # Get strategy setting
@@ -479,20 +479,20 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         new_setting = dialog.get_setting()
         self.settings[class_name] = new_setting
 
-        result = self.jnpy_backtester_engine.rl_training(
-            class_name,
-            vt_symbol,
-            interval,
-            start,
-            end,
-            rate,
-            slippage,
-            size,
-            pricetick,
-            capital,
-            inverse,
-            new_setting
-        )
+        # result = self.jnpy_backtester_engine.rl_training(
+        #     class_name,
+        #     vt_symbol,
+        #     interval,
+        #     start,
+        #     end,
+        #     rate,
+        #     slippage,
+        #     size,
+        #     pricetick,
+        #     capital,
+        #     inverse,
+        #     new_setting
+        # )
 
     def start_backtesting(self, engine_type: BacktesterEngineType):
         """"""
@@ -507,10 +507,10 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         pricetick = float(self.pricetick_line.text())
         capital = float(self.capital_line.text())
 
-        if self.inverse_combo.currentText() == "正向":
-            inverse = False
-        else:
-            inverse = True
+        # if self.inverse_combo.currentText() == "正向":
+        #     inverse = False
+        # else:
+        #     inverse = True
 
         # Check validity of vt_symbol
         if "." not in vt_symbol:
@@ -533,7 +533,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
             "size": size,
             "pricetick": pricetick,
             "capital": capital,
-            "inverse": inverse,
+            # "inverse": inverse,
         }
         save_json(self.setting_filename, backtesting_setting)
 
@@ -559,7 +559,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
                 size,
                 pricetick,
                 capital,
-                inverse,
+                # inverse,
                 new_setting
             )
             self.last_backtester_engine_type = engine_type
@@ -576,7 +576,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
                 size,
                 pricetick,
                 capital,
-                inverse,
+                # inverse,
                 new_setting
             )
             self.last_backtester_engine_type = engine_type
@@ -608,10 +608,10 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
         pricetick = float(self.pricetick_line.text())
         capital = float(self.capital_line.text())
 
-        if self.inverse_combo.currentText() == "正向":
-            inverse = False
-        else:
-            inverse = True
+        # if self.inverse_combo.currentText() == "正向":
+        #     inverse = False
+        # else:
+        #     inverse = True
 
         parameters = self.settings[class_name]
         dialog = OptimizationSettingEditor(class_name, parameters)
@@ -634,7 +634,7 @@ class JnpyBacktesterManager(QtWidgets.QWidget):
             size,
             pricetick,
             capital,
-            inverse,
+            # inverse,
             optimization_setting,
             use_ga
         )
