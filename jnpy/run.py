@@ -30,13 +30,15 @@ from vnpy_datamanager import DataManagerApp
 from vnpy_datarecorder import DataRecorderApp
 from vnpy_riskmanager import RiskManagerApp
 # from vnpy_webtrader import WebTraderApp
-# from vnpy.app.portfolio_manager import PortfolioManagerApp
-# from vnpy_paperaccount import PaperAccountApp
+from vnpy_portfoliomanager import PortfolioManagerApp
+from vnpy_paperaccount import PaperAccountApp
 
 from jnpy.app.csv_loader import CsvLoaderApp
 from jnpy.app.pytdx_loader import PytdxLoaderApp
 from jnpy.app.cta_backtester import CtaBacktesterJnpyApp as CtaBacktesterApp_jnpy
 from jnpy.app.vnpy_webtrader import WebTraderApp
+from jnpy.app.dingding_robot import DingdingRobotApp
+
 
 # from pandarallel import pandarallel
 # pandarallel.initialize()
@@ -72,9 +74,11 @@ def main():
     main_engine.add_app(ChartWizardApp)
     # main_engine.add_app(MarketRadarApp)
     # main_engine.add_app(ExcelRtdApp)
-    # main_engine.add_app(PaperAccountApp)
+    main_engine.add_app(PortfolioManagerApp)
+    main_engine.add_app(PaperAccountApp)
     main_engine.add_app(DataManagerApp)
     # main_engine.add_app(WebTraderApp)
+    main_engine.add_app(DingdingRobotApp)
 
     # main_engine.query_history()
 
