@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_widget.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.2.3
+## Created by: Qt User Interface Compiler version 6.3.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -23,15 +23,73 @@ class Ui_widget(object):
     def setupUi(self, widget):
         if not widget.objectName():
             widget.setObjectName(u"widget")
-        widget.resize(475, 281)
+        widget.resize(405, 440)
         self.gridLayout = QGridLayout(widget)
         self.gridLayout.setObjectName(u"gridLayout")
         self.frame = QFrame(widget)
         self.frame.setObjectName(u"frame")
         self.frame.setFrameShape(QFrame.StyledPanel)
         self.frame.setFrameShadow(QFrame.Raised)
-        self.gridLayout_2 = QGridLayout(self.frame)
-        self.gridLayout_2.setObjectName(u"gridLayout_2")
+        self.verticalLayout_2 = QVBoxLayout(self.frame)
+        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
+        self.frame_6 = QFrame(self.frame)
+        self.frame_6.setObjectName(u"frame_6")
+        self.frame_6.setFrameShape(QFrame.StyledPanel)
+        self.frame_6.setFrameShadow(QFrame.Raised)
+        self.verticalLayout_3 = QVBoxLayout(self.frame_6)
+        self.verticalLayout_3.setObjectName(u"verticalLayout_3")
+        self.label = QLabel(self.frame_6)
+        self.label.setObjectName(u"label")
+        self.label.setScaledContents(True)
+
+        self.verticalLayout_3.addWidget(self.label)
+
+        self.plainTextEdit = QPlainTextEdit(self.frame_6)
+        self.plainTextEdit.setObjectName(u"plainTextEdit")
+
+        self.verticalLayout_3.addWidget(self.plainTextEdit)
+
+
+        self.verticalLayout_2.addWidget(self.frame_6)
+
+        self.frame_3 = QFrame(self.frame)
+        self.frame_3.setObjectName(u"frame_3")
+        self.frame_3.setFrameShape(QFrame.StyledPanel)
+        self.frame_3.setFrameShadow(QFrame.Raised)
+        self.verticalLayout_4 = QVBoxLayout(self.frame_3)
+        self.verticalLayout_4.setObjectName(u"verticalLayout_4")
+        self.label_2 = QLabel(self.frame_3)
+        self.label_2.setObjectName(u"label_2")
+
+        self.verticalLayout_4.addWidget(self.label_2)
+
+        self.plainTextEdit_2 = QPlainTextEdit(self.frame_3)
+        self.plainTextEdit_2.setObjectName(u"plainTextEdit_2")
+
+        self.verticalLayout_4.addWidget(self.plainTextEdit_2)
+
+        self.frame_5 = QFrame(self.frame_3)
+        self.frame_5.setObjectName(u"frame_5")
+        self.frame_5.setFrameShape(QFrame.StyledPanel)
+        self.frame_5.setFrameShadow(QFrame.Raised)
+        self.horizontalLayout_2 = QHBoxLayout(self.frame_5)
+        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
+        self.pushButton_3 = QPushButton(self.frame_5)
+        self.pushButton_3.setObjectName(u"pushButton_3")
+
+        self.horizontalLayout_2.addWidget(self.pushButton_3)
+
+        self.pushButton_5 = QPushButton(self.frame_5)
+        self.pushButton_5.setObjectName(u"pushButton_5")
+
+        self.horizontalLayout_2.addWidget(self.pushButton_5)
+
+
+        self.verticalLayout_4.addWidget(self.frame_5)
+
+
+        self.verticalLayout_2.addWidget(self.frame_3)
+
         self.frame_4 = QFrame(self.frame)
         self.frame_4.setObjectName(u"frame_4")
         self.frame_4.setFrameShape(QFrame.StyledPanel)
@@ -49,27 +107,7 @@ class Ui_widget(object):
         self.horizontalLayout.addWidget(self.pushButton_2)
 
 
-        self.gridLayout_2.addWidget(self.frame_4, 1, 0, 1, 2)
-
-        self.frame_2 = QFrame(self.frame)
-        self.frame_2.setObjectName(u"frame_2")
-        self.frame_2.setFrameShape(QFrame.StyledPanel)
-        self.frame_2.setFrameShadow(QFrame.Raised)
-        self.verticalLayout = QVBoxLayout(self.frame_2)
-        self.verticalLayout.setObjectName(u"verticalLayout")
-        self.label = QLabel(self.frame_2)
-        self.label.setObjectName(u"label")
-        self.label.setScaledContents(True)
-
-        self.verticalLayout.addWidget(self.label)
-
-
-        self.gridLayout_2.addWidget(self.frame_2, 0, 0, 1, 1)
-
-        self.plainTextEdit = QPlainTextEdit(self.frame)
-        self.plainTextEdit.setObjectName(u"plainTextEdit")
-
-        self.gridLayout_2.addWidget(self.plainTextEdit, 0, 1, 1, 1)
+        self.verticalLayout_2.addWidget(self.frame_4)
 
 
         self.gridLayout.addWidget(self.frame, 0, 0, 1, 1)
@@ -82,8 +120,11 @@ class Ui_widget(object):
 
     def retranslateUi(self, widget):
         widget.setWindowTitle(QCoreApplication.translate("widget", u"\u9489\u9489\u673a\u5668\u4eba\u914d\u7f6e", None))
+        self.label.setText(QCoreApplication.translate("widget", u"webhook", None))
+        self.label_2.setText(QCoreApplication.translate("widget", u"\u4fe1\u606f\u5185\u5bb9", None))
+        self.pushButton_3.setText(QCoreApplication.translate("widget", u"\u4ee5 Text \u5f62\u5f0f\u53d1\u9001", None))
+        self.pushButton_5.setText(QCoreApplication.translate("widget", u"\u4ee5 Markdown \u5f62\u5f0f\u53d1\u9001", None))
         self.pushButton.setText(QCoreApplication.translate("widget", u"\u786e\u5b9a", None))
         self.pushButton_2.setText(QCoreApplication.translate("widget", u"\u53d6\u6d88", None))
-        self.label.setText(QCoreApplication.translate("widget", u"webhook", None))
     # retranslateUi
 
