@@ -13,6 +13,7 @@ from vnpy.trader.utility import load_json
 
 APP_NAME = "DingdingRobot"
 WEBHOOK = "webhook"
+TEST_CONTENT = "test_content"
 
 
 class RobotEngine(BaseEngine):
@@ -33,12 +34,10 @@ class RobotEngine(BaseEngine):
         self.robot_setting_filename = "dingding_robot_setting.json"
 
         self.robot_setting_dict = load_json(self.robot_setting_filename)
-        if WEBHOOK in self.robot_setting_dict:
-            self.webhook = self.robot_setting_dict[WEBHOOK]
-        else:
-            self.robot_setting_dict[WEBHOOK] = ""
 
-        self.webhook: str = self.robot_setting_dict[WEBHOOK]
+        self.webhook: str = self.robot_setting_dict[WEBHOOK] if WEBHOOK in self.robot_setting_dict else ""
+        self.test_content: str = self.robot_setting_dict[TEST_CONTENT] \
+            if TEST_CONTENT in self.robot_setting_dict else ""
 
     def send_message(self, message=None):
         try:

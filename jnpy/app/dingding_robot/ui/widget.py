@@ -2,7 +2,7 @@ from vnpy.trader.ui import QtWidgets
 from vnpy.trader.engine import MainEngine, EventEngine
 from vnpy.trader.utility import save_json
 
-from ..engine import APP_NAME, RobotEngine, WEBHOOK
+from ..engine import APP_NAME, RobotEngine, WEBHOOK, TEST_CONTENT
 from .ui_widget import Ui_widget
 
 
@@ -26,13 +26,23 @@ class RobotWidget(QtWidgets.QWidget):
 
     def update_dingding_setting(self):
         self.engine.webhook = self.ui.plainTextEdit.toPlainText()
-        save_json(self.engine.robot_setting_filename, data={WEBHOOK: self.engine.webhook})
+        self.engine.test_content = self.ui.plainTextEdit_2.toPlainText()
+
+        save_json(
+            self.engine.robot_setting_filename,
+            data={
+                WEBHOOK: self.engine.webhook,
+                TEST_CONTENT: self.engine.test_content
+            }
+        )
         self.close()
 
     def send_text(self):
         self.engine.webhook = self.ui.plainTextEdit.toPlainText()
-        self.engine.send_text(content=self.ui.plainTextEdit_2.toPlainText())
+        self.engine.test_content = self.ui.plainTextEdit_2.toPlainText()
+        self.engine.send_text(content=self.engine.test_content)
 
     def send_markdown(self):
         self.engine.webhook = self.ui.plainTextEdit.toPlainText()
-        self.engine.send_markdown(title="Dingding Robot Test", content=self.ui.plainTextEdit_2.toPlainText())
+        self.engine.test_content = self.ui.plainTextEdit_2.toPlainText()
+        self.engine.send_markdown(title="Dingding Robot Test", content=self.engine.test_content)
