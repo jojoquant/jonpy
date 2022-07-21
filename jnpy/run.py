@@ -52,6 +52,8 @@ def main():
 
     main_engine = MainEngine(event_engine)
 
+    # 加载acestock前, 防止订阅不到合约, 还有本地合约gateway_name异常
+    main_engine.add_app(PaperAccountApp)
     main_engine.add_gateway(AcestockGateway)
     main_engine.add_gateway(CtpGateway)
 
@@ -75,7 +77,7 @@ def main():
     # main_engine.add_app(MarketRadarApp)
     # main_engine.add_app(ExcelRtdApp)
     main_engine.add_app(PortfolioManagerApp)
-    main_engine.add_app(PaperAccountApp)
+
     main_engine.add_app(DataManagerApp)
     # main_engine.add_app(WebTraderApp)
     main_engine.add_app(DingdingRobotApp)
