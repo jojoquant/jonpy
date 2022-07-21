@@ -242,7 +242,7 @@ class EventEngine:
         """
         self._queue.put(event)
         if event.type != EVENT_TIMER:
-            print("[put] ", event.type, event.data)
+            # print("[put] ", event.type, event.data)
             self.msq_pub(event=event)
 
         # if self.recv_channel_map.get(event.type):
