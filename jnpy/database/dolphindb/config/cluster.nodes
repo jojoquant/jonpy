@@ -1,0 +1,5 @@
+ localSite,mode
+192.168.0.102:8960:P1-agent,agent
+192.168.0.102:8961:P1-NODE1,datanode
+192.168.0.104:8960:P2-agent,agent
+192.168.0.104:8961:P2-NODE1,datanode
