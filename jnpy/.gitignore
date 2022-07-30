@@ -6,6 +6,7 @@ datasource/goCrawel/data/*
 gateway/acestock/
 
 database/vnpy_jomongodb/
+database/vnpy_jodolphindb/
 database/Tutorials_CN/
 
 datafeed/*
