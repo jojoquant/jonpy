@@ -5,6 +5,7 @@
 # @Author   : Fangyang
 # @Software : PyCharm
 import json
+from typing import List
 
 import requests
 
@@ -35,18 +36,26 @@ class RobotEngine(BaseEngine):
 
         self.robot_setting_dict = load_json(self.robot_setting_filename)
 
-        self.webhook: str = self.robot_setting_dict[WEBHOOK] if WEBHOOK in self.robot_setting_dict else ""
+        self.webhooks: str = self.robot_setting_dict[WEBHOOK] if WEBHOOK in self.robot_setting_dict else ''
+        self.webhook_list: List[str] = [
+            i for i in self.webhooks.split('\n') if i
+        ]
         self.test_content: str = self.robot_setting_dict[TEST_CONTENT] \
             if TEST_CONTENT in self.robot_setting_dict else ""
 
+    def update_webhooks(self, webhooks):
+        self.webhooks = webhooks
+        self.webhook_list: List[str] = [
+            i for i in self.webhooks.split('\n') if i
+        ]
+
     def send_message(self, message=None):
-        try:
-            res = requests.post(self.webhook, data=json.dumps(message), headers=self.headers)
-            print(res.text)
-            return res
-        except Exception as e:
-            print("Dingding send message error: ", e)
-            return None
+        for webhook in self.webhook_list:
+            try:
+                res = requests.post(webhook, data=json.dumps(message), headers=self.headers)
+                print(res.text)
+            except Exception as e:
+                print("Dingding send message error: ", e)
 
     def send_text(self, content, is_at_all=True):
         msg = {

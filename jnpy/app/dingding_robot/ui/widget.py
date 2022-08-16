@@ -17,7 +17,7 @@ class RobotWidget(QtWidgets.QWidget):
         self.ui = Ui_widget()
         self.ui.setupUi(self)
 
-        self.ui.plainTextEdit.setPlainText(self.engine.webhook)
+        self.ui.plainTextEdit.setPlainText(self.engine.webhooks)
 
         self.ui.pushButton.clicked.connect(self.update_dingding_setting)
         self.ui.pushButton_3.clicked.connect(self.send_text)
@@ -25,24 +25,24 @@ class RobotWidget(QtWidgets.QWidget):
         self.ui.pushButton_2.clicked.connect(self.close)
 
     def update_dingding_setting(self):
-        self.engine.webhook = self.ui.plainTextEdit.toPlainText()
+        self.engine.update_webhooks(self.ui.plainTextEdit.toPlainText())
         self.engine.test_content = self.ui.plainTextEdit_2.toPlainText()
 
         save_json(
             self.engine.robot_setting_filename,
             data={
-                WEBHOOK: self.engine.webhook,
+                WEBHOOK: self.engine.webhooks,
                 TEST_CONTENT: self.engine.test_content
             }
         )
         self.close()
 
     def send_text(self):
-        self.engine.webhook = self.ui.plainTextEdit.toPlainText()
+        self.engine.update_webhooks(self.ui.plainTextEdit.toPlainText())
         self.engine.test_content = self.ui.plainTextEdit_2.toPlainText()
         self.engine.send_text(content=self.engine.test_content)
 
     def send_markdown(self):
-        self.engine.webhook = self.ui.plainTextEdit.toPlainText()
+        self.engine.update_webhooks(self.ui.plainTextEdit.toPlainText())
         self.engine.test_content = self.ui.plainTextEdit_2.toPlainText()
         self.engine.send_markdown(title="Dingding Robot Test", content=self.engine.test_content)
